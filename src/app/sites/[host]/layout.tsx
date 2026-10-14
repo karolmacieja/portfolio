@@ -54,8 +54,11 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/sit
           </header>
         )}
         <div className="flex-1">{children}</div>
-        {/* Shown on every site until plans (Phase 3) can remove it. */}
-        <footer className="site-muted px-6 py-6 text-center text-xs">{t("site.madeWith", { brand })}</footer>
+        {(site?.showBranding ?? true) && (
+          <footer className="site-muted px-6 py-6 text-center text-xs" data-testid="site-branding">
+            {t("site.madeWith", { brand })}
+          </footer>
+        )}
       </body>
     </html>
   );

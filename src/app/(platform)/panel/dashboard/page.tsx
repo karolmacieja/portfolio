@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { SignOutButton } from "@/components/sign-out-button";
+import { PlanSummary } from "@/components/plans/plan-summary";
 import { CreateSiteForm } from "@/components/sites/create-site-form";
 import { SiteList } from "@/components/sites/site-list";
 import { Alert } from "@/components/ui/alert";
@@ -47,6 +48,8 @@ export default async function DashboardPage() {
         </div>
       </header>
       {!emailVerified && <Alert>{t("auth.emailNotVerified")}</Alert>}
+
+      <PlanSummary userId={user.id} />
 
       <section className="grid gap-4">
         <h2 className="text-lg font-semibold">{t("sites.title")}</h2>

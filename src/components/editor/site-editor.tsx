@@ -25,6 +25,8 @@ type Props = {
   pages: { id: string; title: string; path: string }[];
   theme: Theme;
   initialData: Data;
+  /** Block types above the user's plan: shown locked in the drawer, cannot be inserted. */
+  lockedBlocks: string[];
 };
 
 const AUTOSAVE_DELAY_MS = 1500;
@@ -38,6 +40,7 @@ export function SiteEditor({
   pages,
   theme,
   initialData,
+  lockedBlocks,
 }: Props) {
   const t = useTranslations("editor");
   const tBlocks = useTranslations("blocks");
@@ -46,6 +49,7 @@ export function SiteEditor({
   const router = useRouter();
 
   const config = useMemo(() => createEditorConfig((key) => tBlocks(key as never), theme), [tBlocks, theme]);
+  const locked = useMemo(() => new Set(lockedBlocks), [lockedBlocks]);
   const dataRef = useRef<Data>(initialData);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [status, setStatus] = useState<Status>("saved");
@@ -121,6 +125,25 @@ export function SiteEditor({
         { width: 1280, height: "auto", label: t("viewport.desktop"), icon: "Monitor" },
       ]}
       overrides={{
+        // Locked blocks render as a non-draggable item with an upgrade link (the server refuses them anyway).
+        drawerItem: ({ children, name }) =>
+          locked.has(name) ? (
+            <div
+              className="mb-2 flex items-center justify-between gap-2 rounded-md border border-dashed px-3 py-3 text-sm text-muted-foreground"
+              title={t("locked")}
+              data-testid={`locked-block-${name}`}
+            >
+              <span>
+                <span aria-hidden="true">🔒 </span>
+                {tBlocks(`names.${name}` as never)}
+              </span>
+              <a href="/plans" className="text-xs font-medium text-foreground underline">
+                {t("lockedCta")}
+              </a>
+            </div>
+          ) : (
+            <>{children}</>
+          ),
         headerActions: () => (
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <Button asChild variant="ghost" size="sm">

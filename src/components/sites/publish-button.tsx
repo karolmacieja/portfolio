@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 
@@ -15,7 +16,16 @@ export function PublishButton({ siteId, republish }: { siteId: string; republish
       <Button type="submit" size="sm" disabled={pending}>
         {republish ? t("republish") : t("publish")}
       </Button>
-      {state.error && <span className="text-sm text-destructive">{t(`errors.${state.error}`)}</span>}
+      {state.error && (
+        <span className="text-sm text-destructive" role="alert" data-testid="publish-error">
+          {t(`errors.${state.error}`)}{" "}
+          {state.error === "subscriptionRequired" && (
+            <Link href="/plans" className="underline">
+              {t("upgradeLink")}
+            </Link>
+          )}
+        </span>
+      )}
       {state.ok && <span className="text-sm text-muted-foreground">{t("published")}</span>}
     </form>
   );

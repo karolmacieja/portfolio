@@ -121,6 +121,13 @@
         "invalidChars": "The address may only contain lowercase letters (no accents), digits and single hyphens.",
         "tooDeep": "The address can have at most 3 levels.",
         "reserved": "This address is reserved."
+      },
+      "subscriptionRequired": "Publishing requires an active plan. Choose a plan to publish your site.",
+      "blockNotAllowed": "Some blocks are not available on your plan. Remove them or change your plan.",
+      "limit": {
+        "sites": "You've reached your plan's site limit.",
+        "pages": "You've reached your plan's page limit.",
+        "projects": "You've reached your plan's project limit."
       }
     },
     "slugErrors": {
@@ -131,7 +138,8 @@
       "punycode": "The address cannot contain two hyphens at positions 3 and 4.",
       "reserved": "This address is reserved. Please choose another one."
     },
-    "edit": "Manage"
+    "edit": "Manage",
+    "upgradeLink": "See plans"
   },
   "siteNav": {
     "back": "All sites",
@@ -284,7 +292,9 @@
       "mobile": "Mobile",
       "tablet": "Tablet",
       "desktop": "Desktop"
-    }
+    },
+    "locked": "On a higher plan",
+    "lockedCta": "Upgrade"
   },
   "blocks": {
     "categories": {
@@ -409,5 +419,50 @@
     "layout-maximize": "maximize",
     "layout-minimize": "minimize",
     "loader-loading": "loading"
+  },
+  "plans": {
+    "title": "Plans",
+    "current": "Your plan",
+    "noPlan": "No active plan",
+    "noPlanHint": "You can build and edit your site, but publishing requires a plan (14 days free to start).",
+    "upgrade": "See plans",
+    "upgradeHint": "Available on a higher plan",
+    "perMonth": "{price} / month",
+    "perYear": "{price} / year",
+    "trial": "{days}-day free trial",
+    "choose": "Choose plan",
+    "comingSoon": "Online payments are coming soon.",
+    "currentBadge": "Current",
+    "status": {
+      "TRIALING": "Trial until {date}",
+      "ACTIVE": "Active",
+      "PAST_DUE": "Payment overdue",
+      "cancelAtPeriodEnd": "Ends {date}"
+    },
+    "unlimited": "unlimited",
+    "limits": {
+      "maxSites": "{count, plural, one {# site} other {# sites}}",
+      "maxPagesPerSite": "up to {count} pages per site",
+      "maxProjects": "{count} projects",
+      "maxProjectsUnlimited": "Unlimited projects",
+      "storageMb": "{size} of storage"
+    },
+    "features": {
+      "customDomain": "Custom domain",
+      "domainPurchase": "Buy a domain through us",
+      "removeBranding": "No “Made with…” footer",
+      "analytics": "Visitor statistics",
+      "formsExport": "Contact form export"
+    },
+    "tiers": {
+      "basic": "Basic blocks",
+      "pro": "Pro blocks",
+      "business": "Business blocks"
+    },
+    "usage": {
+      "title": "Usage",
+      "sites": "Sites: {used} of {limit}",
+      "storage": "Storage: {used} of {limit}"
+    }
   }
 }

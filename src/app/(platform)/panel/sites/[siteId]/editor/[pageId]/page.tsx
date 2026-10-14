@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { parseRenderableContent } from "@/blocks/content";
 import { SiteEditor } from "@/components/editor/site-editor";
 import { requireUser } from "@/server/auth/session";
+import { getBlockTiers, getEntitlements, lockedBlocks } from "@/server/entitlements";
 import { SiteError } from "@/server/sites/errors";
 import { getPageForEditing } from "@/server/sites/service";
 import { siteSubdomainUrl } from "@/server/sites/urls";
@@ -31,6 +32,7 @@ export default async function EditorPage({ params }: PageProps<"/panel/sites/[si
   }
   if (editing.site.id !== siteId) notFound();
 
+  const [entitlements, tiers] = await Promise.all([getEntitlements(user.id), getBlockTiers()]);
   const data = (parseRenderableContent(editing.page.draftContent) ?? {
     root: { props: {} },
     content: [],
@@ -46,6 +48,7 @@ export default async function EditorPage({ params }: PageProps<"/panel/sites/[si
       pages={editing.pages}
       theme={editing.theme}
       initialData={data}
+      lockedBlocks={lockedBlocks(entitlements, tiers)}
     />
   );
 }

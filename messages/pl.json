@@ -121,6 +121,13 @@
         "invalidChars": "Adres może zawierać tylko małe litery (bez polskich znaków), cyfry i pojedyncze myślniki.",
         "tooDeep": "Adres może mieć najwyżej 3 poziomy.",
         "reserved": "Ten adres jest zarezerwowany."
+      },
+      "subscriptionRequired": "Publikacja wymaga aktywnego planu. Wybierz plan, aby opublikować stronę.",
+      "blockNotAllowed": "Niektóre bloki nie są dostępne w Twoim planie. Usuń je albo zmień plan.",
+      "limit": {
+        "sites": "Osiągnięto limit stron w Twoim planie.",
+        "pages": "Osiągnięto limit podstron w Twoim planie.",
+        "projects": "Osiągnięto limit projektów w Twoim planie."
       }
     },
     "slugErrors": {
@@ -131,7 +138,8 @@
       "punycode": "Adres nie może zawierać dwóch myślników na 3. i 4. pozycji.",
       "reserved": "Ten adres jest zarezerwowany. Wybierz inny."
     },
-    "edit": "Zarządzaj"
+    "edit": "Zarządzaj",
+    "upgradeLink": "Zobacz plany"
   },
   "siteNav": {
     "back": "Wszystkie strony",
@@ -284,7 +292,9 @@
       "mobile": "Telefon",
       "tablet": "Tablet",
       "desktop": "Komputer"
-    }
+    },
+    "locked": "W wyższym planie",
+    "lockedCta": "Ulepsz"
   },
   "blocks": {
     "categories": {
@@ -409,5 +419,50 @@
     "layout-maximize": "maksymalizuj",
     "layout-minimize": "minimalizuj",
     "loader-loading": "wczytywanie"
+  },
+  "plans": {
+    "title": "Plany",
+    "current": "Twój plan",
+    "noPlan": "Brak aktywnego planu",
+    "noPlanHint": "Możesz tworzyć i edytować stronę, ale publikacja wymaga planu (14 dni za darmo na start).",
+    "upgrade": "Zobacz plany",
+    "upgradeHint": "Dostępne w wyższym planie",
+    "perMonth": "{price} / mies.",
+    "perYear": "{price} / rok",
+    "trial": "{days} dni za darmo",
+    "choose": "Wybierz plan",
+    "comingSoon": "Płatności online będą dostępne wkrótce.",
+    "currentBadge": "Aktualny",
+    "status": {
+      "TRIALING": "Okres próbny do {date}",
+      "ACTIVE": "Aktywny",
+      "PAST_DUE": "Zaległa płatność",
+      "cancelAtPeriodEnd": "Wygasa {date}"
+    },
+    "unlimited": "bez limitu",
+    "limits": {
+      "maxSites": "{count, plural, one {# strona} few {# strony} other {# stron}}",
+      "maxPagesPerSite": "do {count} podstron na stronę",
+      "maxProjects": "{count} projektów",
+      "maxProjectsUnlimited": "Projekty bez limitu",
+      "storageMb": "{size} na pliki"
+    },
+    "features": {
+      "customDomain": "Własna domena",
+      "domainPurchase": "Zakup domeny przez nas",
+      "removeBranding": "Bez stopki „Stworzone w…”",
+      "analytics": "Statystyki odwiedzin",
+      "formsExport": "Eksport wiadomości z formularzy"
+    },
+    "tiers": {
+      "basic": "Bloki podstawowe",
+      "pro": "Bloki Pro",
+      "business": "Bloki Business"
+    },
+    "usage": {
+      "title": "Wykorzystanie",
+      "sites": "Strony: {used} z {limit}",
+      "storage": "Miejsce: {used} z {limit}"
+    }
   }
 }
