@@ -125,6 +125,7 @@ export async function updateSiteSettingsAction(
 }
 
 export async function saveThemeAction(siteId: string, theme: unknown): Promise<SiteFormState> {
+  // Bound to a site id by the theme page; the theme is validated below.
   const user = await requireUser();
   const parsed = themeSchema.safeParse(theme);
   if (!id.safeParse(siteId).success || !parsed.success) return { error: "generic" };
@@ -190,8 +191,15 @@ export async function restoreVersionAction(_prev: SiteFormState, formData: FormD
 
 export type EditorResult = { ok: true } | { ok: false; error: SiteErrorCode | "generic" };
 
-/** Called by the editor (autosave). Content is validated strictly by the service. */
-export async function savePageDraftAction(pageId: string, content: unknown): Promise<EditorResult> {
+/**
+ * Called by the editor (autosave), bound to a page id. Content is validated strictly by the service;
+ * the editor's lock rules argument is ignored for client sites (their locks come from the template).
+ */
+export async function savePageDraftAction(
+  pageId: string,
+  content: unknown,
+  _lockRules?: unknown,
+): Promise<EditorResult> {
   const user = await requireUser();
   if (!id.safeParse(pageId).success) return { ok: false, error: "notFound" };
   try {

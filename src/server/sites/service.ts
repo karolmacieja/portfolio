@@ -3,6 +3,7 @@ import "server-only";
 import { isDeepStrictEqual } from "node:util";
 
 import { emptyContent, starterContent, validatePageContent, type PageContent } from "@/blocks/content";
+import { findLockViolations, parseLockRules } from "@/blocks/locks";
 import { Prisma, SiteStatus, type SuspensionReason } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import {
@@ -196,6 +197,7 @@ async function getOwnedPage(ownerId: string, pageId: string) {
 
 export async function getPageForEditing(ownerId: string, pageId: string) {
   const page = await getOwnedPage(ownerId, pageId);
+  const lockRules = parseLockRules(page.lockRules);
   const pages = await db.page.findMany({
     where: { siteId: page.siteId },
     orderBy: [{ position: "asc" }, { createdAt: "asc" }],
@@ -205,6 +207,7 @@ export async function getPageForEditing(ownerId: string, pageId: string) {
     page,
     site: page.site,
     pages,
+    lockRules,
     theme: parseTheme(page.site.themeDraft ?? page.site.themePublished ?? DEFAULT_THEME),
   };
 }
@@ -231,6 +234,14 @@ export async function savePageDraft(
     tiers,
   );
   if (disallowed.length > 0) throw new SiteError("blockNotAllowed", disallowed);
+
+  // Template lock rules: locked blocks can't be deleted or (when edit-locked) changed.
+  const violations = findLockViolations(
+    validation.content,
+    page.draftContent,
+    parseLockRules(page.lockRules),
+  );
+  if (violations.length > 0) throw new SiteError("blockLocked", violations);
 
   if (entitlements.limits.maxProjects !== null) {
     const others = await db.page.findMany({

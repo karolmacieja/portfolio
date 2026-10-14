@@ -10,6 +10,7 @@ export type SiteErrorCode =
   | "invalidContent"
   | "subscriptionRequired"
   | "blockNotAllowed"
+  | "blockLocked"
   | "limit.sites"
   | "limit.pages"
   | "limit.projects"
