@@ -54,8 +54,7 @@
     }
   },
   "dashboard": {
-    "title": "Welcome, {name}!",
-    "description": "Your sites, stats and settings will appear here soon."
+    "title": "Welcome, {name}!"
   },
   "admin": {
     "title": "Admin panel",
@@ -77,6 +76,50 @@
       "intro": "Thanks for signing up! Please confirm your email address by clicking the link below.",
       "cta": "Confirm email address",
       "ignore": "If you didn't create an account, you can ignore this email."
+    }
+  },
+  "site": {
+    "madeWith": "Made with {brand}",
+    "suspendedTitle": "Site temporarily unavailable",
+    "suspendedDescription": "This site has been temporarily suspended. Please try again later.",
+    "notFoundTitle": "Page not found",
+    "notFoundDescription": "The page you are looking for doesn't exist or has been moved.",
+    "navigation": "Navigation"
+  },
+  "sites": {
+    "title": "Your sites",
+    "empty": "You don't have any sites yet. Create your first one below.",
+    "createTitle": "New site",
+    "name": "Site name",
+    "slug": "Site address",
+    "slugHint": "Your site will be available at {url}",
+    "create": "Create site",
+    "publish": "Publish",
+    "republish": "Publish changes",
+    "statusPublished": "Published",
+    "statusDraft": "Not published",
+    "statusChanges": "Unpublished changes",
+    "statusSuspended": "Suspended",
+    "view": "View site",
+    "published": "Your site has been published.",
+    "created": "Your site has been created. Publish it to make it visible.",
+    "starterSubtitle": "Welcome to my portfolio.",
+    "starterBody": "This is sample content. Soon you will add your projects, photos and bio here in the editor.",
+    "errors": {
+      "notFound": "Site not found.",
+      "slugInvalid": "Invalid site address.",
+      "slugTaken": "This address is already taken. Please choose another one.",
+      "nothingToPublish": "This site has no pages to publish yet.",
+      "nameRequired": "Please enter a site name.",
+      "generic": "Something went wrong. Please try again."
+    },
+    "slugErrors": {
+      "tooShort": "The address must be at least 3 characters long.",
+      "tooLong": "The address can be at most 40 characters long.",
+      "invalidChars": "Only lowercase letters (no accents), digits and hyphens are allowed.",
+      "hyphenEdge": "The address cannot start or end with a hyphen.",
+      "punycode": "The address cannot contain two hyphens at positions 3 and 4.",
+      "reserved": "This address is reserved. Please choose another one."
     }
   }
 }

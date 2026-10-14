@@ -54,8 +54,7 @@
     }
   },
   "dashboard": {
-    "title": "Witaj, {name}!",
-    "description": "Tu wkrótce pojawią się Twoje strony, statystyki i ustawienia."
+    "title": "Witaj, {name}!"
   },
   "admin": {
     "title": "Panel administratora",
@@ -77,6 +76,50 @@
       "intro": "Dziękujemy za rejestrację! Potwierdź swój adres e-mail, klikając poniższy link.",
       "cta": "Potwierdź adres e-mail",
       "ignore": "Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość."
+    }
+  },
+  "site": {
+    "madeWith": "Stworzone w {brand}",
+    "suspendedTitle": "Strona tymczasowo niedostępna",
+    "suspendedDescription": "Ta strona została tymczasowo wstrzymana. Spróbuj ponownie później.",
+    "notFoundTitle": "Nie znaleziono strony",
+    "notFoundDescription": "Strona, której szukasz, nie istnieje lub została przeniesiona.",
+    "navigation": "Nawigacja"
+  },
+  "sites": {
+    "title": "Twoje strony",
+    "empty": "Nie masz jeszcze żadnej strony. Utwórz pierwszą poniżej.",
+    "createTitle": "Nowa strona",
+    "name": "Nazwa strony",
+    "slug": "Adres strony",
+    "slugHint": "Strona będzie dostępna pod adresem {url}",
+    "create": "Utwórz stronę",
+    "publish": "Opublikuj",
+    "republish": "Opublikuj zmiany",
+    "statusPublished": "Opublikowana",
+    "statusDraft": "Nieopublikowana",
+    "statusChanges": "Niepublikowane zmiany",
+    "statusSuspended": "Wstrzymana",
+    "view": "Zobacz stronę",
+    "published": "Strona została opublikowana.",
+    "created": "Strona została utworzona. Opublikuj ją, aby była widoczna.",
+    "starterSubtitle": "Witaj na mojej stronie portfolio.",
+    "starterBody": "To jest przykładowa treść. Wkrótce w edytorze dodasz tu swoje projekty, zdjęcia i opis.",
+    "errors": {
+      "notFound": "Nie znaleziono strony.",
+      "slugInvalid": "Nieprawidłowy adres strony.",
+      "slugTaken": "Ten adres jest już zajęty. Wybierz inny.",
+      "nothingToPublish": "Strona nie ma jeszcze żadnych podstron do opublikowania.",
+      "nameRequired": "Podaj nazwę strony.",
+      "generic": "Coś poszło nie tak. Spróbuj ponownie."
+    },
+    "slugErrors": {
+      "tooShort": "Adres musi mieć co najmniej 3 znaki.",
+      "tooLong": "Adres może mieć najwyżej 40 znaków.",
+      "invalidChars": "Dozwolone są tylko małe litery (bez polskich znaków), cyfry i myślniki.",
+      "hyphenEdge": "Adres nie może zaczynać się ani kończyć myślnikiem.",
+      "punycode": "Adres nie może zawierać dwóch myślników na 3. i 4. pozycji.",
+      "reserved": "Ten adres jest zarezerwowany. Wybierz inny."
     }
   }
 }
