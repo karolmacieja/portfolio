@@ -21,9 +21,17 @@ env:
 
 jobs:
   checks:
-    name: Lint, typecheck, unit tests, build
+    name: Lint, typecheck, unit + integration tests, build
     runs-on: ubuntu-latest
     services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: portfolio
+          POSTGRES_PASSWORD: portfolio
+          POSTGRES_DB: portfolio
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U portfolio" --health-interval 5s --health-retries 10
       redis:
         image: redis:7-alpine
         ports: ["6379:6379"]
@@ -39,6 +47,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm format:check
       - run: pnpm typecheck
+      - run: pnpm db:deploy
       - run: pnpm test
       - run: pnpm build
 
