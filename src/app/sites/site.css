@@ -1,14 +1,9 @@
 @import "tailwindcss";
+@import "../../themes/fonts.css";
+@import "../../blocks/blocks.css";
 
-/* Base styles for published client sites. Theme tokens (colors, fonts, radii) arrive in Phase 2
-   as CSS variables set per site; panels use src/app/globals.css instead. */
-:root {
-  --site-background: #ffffff;
-  --site-foreground: #111111;
-}
-
+/* Published client sites. Theme tokens are set as CSS variables on <body> (see layout.tsx);
+   panels use src/app/globals.css instead. */
 body {
-  background: var(--site-background);
-  color: var(--site-foreground);
   -webkit-font-smoothing: antialiased;
 }

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Render } from "@puckeditor/core/rsc";
 
-import { blocksConfig } from "@/blocks/config";
+import { renderConfig } from "@/blocks/config";
 import { parseRenderableContent } from "@/blocks/content";
 import { getTranslator } from "@/i18n/translator";
 import { getPublishedPage } from "@/server/sites/public";
@@ -30,10 +30,21 @@ async function load(params: Params) {
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const data = await load(params);
-  if (!data) return {};
-  if (!data.page) return { title: data.site.name, robots: { index: false } };
-  const title = data.page.path === "" ? data.site.name : `${data.page.title} · ${data.site.name}`;
-  return { title };
+  if (!data?.page) return {};
+  const { page, site } = data;
+  // Layout title template appends the site name; the home page uses the site name alone.
+  const title = page.seoTitle || (page.path === "" ? { absolute: site.name } : page.title);
+  const description = page.seoDescription || site.description || undefined;
+  return {
+    title,
+    description,
+    openGraph: {
+      title: page.seoTitle || page.title,
+      description,
+      siteName: site.name,
+      images: page.ogImageUrl ? [page.ogImageUrl] : undefined,
+    },
+  };
 }
 
 export default async function SitePage({ params }: { params: Params }) {
@@ -57,5 +68,5 @@ export default async function SitePage({ params }: { params: Params }) {
   const content = parseRenderableContent(data.page.content);
   if (!content) notFound();
 
-  return <Render config={blocksConfig} data={content} />;
+  return <Render config={renderConfig} data={content} />;
 }
