@@ -30,8 +30,10 @@ describe("resolveRoute", () => {
     });
   });
 
-  it("serves the health check on any host", () => {
+  it("serves the health check and local media on any host", () => {
     expect(resolveRoute("10.0.0.5:3000", "/api/health", ROOT).action).toBe("next");
+    expect(resolveRoute("jan.example.com", "/storage/u/1/a.webp", ROOT).action).toBe("next");
+    expect(resolveRoute("app.example.com", "/storage/u/1/a.webp", ROOT).action).toBe("next");
   });
 
   it("never exposes platform APIs on client hosts", () => {

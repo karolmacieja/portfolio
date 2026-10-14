@@ -43,8 +43,23 @@ describe("parseEnv", () => {
     expect(() => parseEnv({ ...base, AUTH_GOOGLE_ID: "id" })).toThrow(/AUTH_GOOGLE_SECRET/);
   });
 
-  it("forbids the mock mailer when APP_ENV=production", () => {
+  it("forbids the mock mailer and local storage when APP_ENV=production", () => {
     expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/MAIL_PROVIDER/);
+    expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/STORAGE_PROVIDER/);
+  });
+
+  it("requires bucket credentials for S3 storage", () => {
+    expect(() => parseEnv({ ...base, STORAGE_PROVIDER: "s3" })).toThrow(/S3_BUCKET/);
+    const env = parseEnv({
+      ...base,
+      STORAGE_PROVIDER: "s3",
+      S3_BUCKET: "b",
+      S3_ACCESS_KEY_ID: "k",
+      S3_SECRET_ACCESS_KEY: "s",
+      S3_PUBLIC_URL: "https://cdn.example.com",
+      S3_FORCE_PATH_STYLE: "false",
+    });
+    expect(env.S3_FORCE_PATH_STYLE).toBe(false);
   });
 
   it("allows the mock mailer in a local production build", () => {

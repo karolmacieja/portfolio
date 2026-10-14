@@ -24,3 +24,4 @@ blob-report/
 .DS_Store
 *.log
 dump.rdb
+.storage/

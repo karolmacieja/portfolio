@@ -12,10 +12,12 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  serverExternalPackages: ["@node-rs/argon2"],
+  serverExternalPackages: ["@node-rs/argon2", "sharp"],
   experimental: {
     // Multiple root layouts (platform vs. client sites) need a routing-level 404 page.
     globalNotFound: true,
+    // Editor drafts are sent through server actions; large pages exceed the 1 MB default.
+    serverActions: { bodySizeLimit: "4mb" },
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

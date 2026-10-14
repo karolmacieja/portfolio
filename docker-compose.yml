@@ -49,7 +49,7 @@ services:
       timeout: 5s
       retries: 10
 
-  # Creates the bucket used by the app and exits.
+  # Creates the bucket used by the app (publicly readable, like an R2 public bucket) and exits.
   minio-init:
     image: minio/mc:latest
     depends_on:
@@ -59,7 +59,7 @@ services:
       /bin/sh -c "
       mc alias set local http://minio:9000 minioadmin minioadmin &&
       mc mb --ignore-existing local/portfolio &&
-      mc anonymous set download local/portfolio/public
+      mc anonymous set download local/portfolio
       "
     restart: "no"
 

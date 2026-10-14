@@ -16,15 +16,18 @@ export type RouteDecision =
   | { action: "next"; target: HostTarget["kind"] }
   | { action: "notFound" };
 
-/** API routes served on every host (infrastructure probes). */
-const GLOBAL_API_PATHS = ["/api/health"];
+/** Routes served on every host: infrastructure probes and locally stored media (dev storage). */
+const GLOBAL_PATHS = ["/api/health"];
+const GLOBAL_PREFIXES = ["/storage/"];
 
 function isApiPath(pathname: string) {
   return pathname === "/api" || pathname.startsWith("/api/");
 }
 
 export function resolveRoute(host: string | null, pathname: string, rootDomain: string): RouteDecision {
-  if (GLOBAL_API_PATHS.includes(pathname)) return { action: "next", target: "marketing" };
+  if (GLOBAL_PATHS.includes(pathname) || GLOBAL_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+    return { action: "next", target: "marketing" };
+  }
 
   const target = classifyHost(host, rootDomain);
   switch (target.kind) {

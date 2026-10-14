@@ -39,6 +39,23 @@ export const envSchema = z
     SMTP_USER: optionalString,
     SMTP_PASSWORD: optionalString,
     RESEND_API_KEY: optionalString,
+
+    // local: files on disk served by /storage/* (development); s3: MinIO / Cloudflare R2.
+    STORAGE_PROVIDER: z.enum(["local", "s3"]).default("local"),
+    STORAGE_LOCAL_DIR: z.string().min(1).default(".storage"),
+    S3_ENDPOINT: optionalString,
+    S3_REGION: z.string().min(1).default("auto"),
+    S3_BUCKET: optionalString,
+    S3_ACCESS_KEY_ID: optionalString,
+    S3_SECRET_ACCESS_KEY: optionalString,
+    S3_PUBLIC_URL: optionalString,
+    S3_FORCE_PATH_STYLE: z
+      .enum(["true", "false"])
+      .default("true")
+      .transform((value) => value === "true"),
+    UPLOAD_MAX_MB: z.coerce.number().positive().max(100).default(15),
+    // Per-client storage quota until plans define it (Phase 3).
+    STORAGE_DEFAULT_QUOTA_MB: z.coerce.number().int().positive().default(500),
   })
   .superRefine((env, ctx) => {
     if (env.MAIL_PROVIDER === "smtp" && !env.SMTP_HOST) {
@@ -56,6 +73,19 @@ export const envSchema = z
         code: "custom",
         path: ["AUTH_GOOGLE_SECRET"],
         message: "AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET must be set together",
+      });
+    }
+    if (env.STORAGE_PROVIDER === "s3") {
+      for (const key of ["S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_PUBLIC_URL"] as const) {
+        if (!env[key])
+          ctx.addIssue({ code: "custom", path: [key], message: "Required when STORAGE_PROVIDER=s3" });
+      }
+    }
+    if (env.APP_ENV === "production" && env.STORAGE_PROVIDER === "local") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["STORAGE_PROVIDER"],
+        message: "local storage is not allowed in production",
       });
     }
     if (env.APP_ENV === "production" && env.MAIL_PROVIDER === "mock") {
