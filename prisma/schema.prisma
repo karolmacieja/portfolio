@@ -1,5 +1,5 @@
-// Phase 0 schema: identity, roles, audit and settings.
-// Domain models (Site, Plan, Template, ...) are added in the phase that introduces them.
+// Models are added in the phase that introduces them (see SPEC.md / CLAUDE.md).
+// Phase 0: identity, roles, audit, settings. Phase 1: sites, pages, domains.
 
 generator client {
   provider = "prisma-client"
@@ -33,6 +33,7 @@ model User {
   accounts  Account[]
   sessions  Session[]
   auditLogs AuditLog[] @relation("AuditActor")
+  sites     Site[]
 
   @@index([role])
 }
@@ -101,4 +102,91 @@ model Setting {
   key       String   @id
   value     Json
   updatedAt DateTime @updatedAt
+}
+
+enum SiteStatus {
+  ACTIVE
+  // Content replaced by a notice (unpaid subscription, moderation).
+  SUSPENDED
+}
+
+enum SuspensionReason {
+  PAYMENT
+  MODERATION
+}
+
+/// A client's portfolio website, served at {slug}.{ROOT_DOMAIN} and on its connected domains.
+model Site {
+  id               String            @id @default(cuid())
+  ownerId          String
+  name             String
+  /// Subdomain label; unique platform-wide, validated against reserved slugs.
+  slug             String            @unique
+  /// Language of the published site (system messages, <html lang>).
+  locale           String            @default("pl")
+  status           SiteStatus        @default(ACTIVE)
+  suspensionReason SuspensionReason?
+  suspendedAt      DateTime?
+  /// Null until the first publication; unpublished sites are not served.
+  publishedAt      DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  owner   User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  pages   Page[]
+  domains Domain[]
+
+  @@index([ownerId])
+}
+
+/// One page of a site. Content is Puck JSON; editing always happens on the draft.
+model Page {
+  id               String    @id @default(cuid())
+  siteId           String
+  /// URL path without leading slash; "" is the home page.
+  path             String
+  title            String
+  position         Int       @default(0)
+  draftContent     Json
+  /// Copy of draftContent made on publish; null = never published (not served).
+  publishedContent Json?
+  publishedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, path])
+  @@index([siteId, position])
+}
+
+enum DomainType {
+  SUBDOMAIN
+  CONNECTED
+  PURCHASED
+}
+
+enum DomainStatus {
+  PENDING_DNS
+  PENDING_SSL
+  ACTIVE
+  ERROR
+}
+
+/// Custom domains attached to a site. Platform subdomains are derived from Site.slug and need no row.
+/// Provider fields (Cloudflare hostname id, registrar id, expiry) are added in Phase 7.
+model Domain {
+  id        String       @id @default(cuid())
+  siteId    String
+  /// Lowercase hostname without port, e.g. "www.jan-kowalski.pl".
+  hostname  String       @unique
+  type      DomainType   @default(CONNECTED)
+  status    DomainStatus @default(PENDING_DNS)
+  isPrimary Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId])
 }
