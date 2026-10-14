@@ -1,6 +1,7 @@
 // Models are added in the phase that introduces them (see SPEC.md / CLAUDE.md).
 // Phase 0: identity, roles, audit, settings. Phase 1: sites, pages, domains.
 // Phase 2: theme, SEO, page versions, media assets. Phase 3: plans, prices, subscriptions, block access.
+// Phase 4: templates, template versions/overrides/purchases, site backups.
 
 generator client {
   provider = "prisma-client"
@@ -34,9 +35,11 @@ model User {
   accounts  Account[]
   sessions  Session[]
   auditLogs AuditLog[] @relation("AuditActor")
-  sites         Site[]
-  assets        Asset[]
-  subscriptions Subscription[]
+  sites             Site[]
+  assets            Asset[]
+  subscriptions     Subscription[]
+  templateOverrides TemplateOverride[]
+  templatePurchases TemplatePurchase[]
 
   @@index([role])
 }
@@ -140,12 +143,18 @@ model Site {
   /// Theme being edited (src/themes/theme.ts); copied to themePublished on publish. Null = default theme.
   themeDraft       Json?
   themePublished   Json?
+  /// Template the site was created from / last switched to (statistics, upgrades).
+  templateId        String?
+  templateVersionId String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
-  owner   User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  pages   Page[]
-  domains Domain[]
+  owner           User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  pages           Page[]
+  domains         Domain[]
+  backups         SiteBackup[]
+  template        Template?        @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateVersion TemplateVersion? @relation(fields: [templateVersionId], references: [id], onDelete: SetNull)
 
   @@index([ownerId])
 }
@@ -168,6 +177,8 @@ model Page {
   seoTitle         String?
   seoDescription   String?
   ogImageUrl       String?
+  /// Template lock rules per block id: { [blockId]: { edit?: false, drag?: false, delete?: false } }.
+  lockRules        Json?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -274,8 +285,9 @@ model Plan {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  prices        PlanPrice[]
-  subscriptions Subscription[]
+  prices            PlanPrice[]
+  subscriptions     Subscription[]
+  templateOverrides TemplateOverride[]
 }
 
 model PlanPrice {
@@ -335,4 +347,107 @@ model BlockAccess {
   blockType    String   @id
   requiredTier String
   updatedAt    DateTime @updatedAt
+}
+
+enum TemplateStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// Site template authored by admins. `draft` is the working copy; publishing snapshots it into a TemplateVersion.
+model Template {
+  id                 String         @id @default(cuid())
+  slug               String         @unique
+  name               String
+  description        String?
+  category           String
+  tags               String[]
+  /// Access tier required to use the template (see src/server/entitlements).
+  accessTier         String         @default("basic")
+  status             TemplateStatus @default(DRAFT)
+  thumbnailUrl       String?
+  position           Int            @default(0)
+  isNew              Boolean        @default(false)
+  isFeatured         Boolean        @default(false)
+  /// One-time purchase (Stripe Checkout, Phase 5) in addition to the tier.
+  isPremium          Boolean        @default(false)
+  /// Gross price in grosze for premium templates.
+  priceAmount        Int?
+  /// Working copy: { pages: [{ key, path, title, content, lockRules }], theme } (src/server/templates/schema.ts).
+  draft              Json
+  publishedVersionId String?        @unique
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  publishedVersion TemplateVersion?   @relation("PublishedVersion", fields: [publishedVersionId], references: [id], onDelete: SetNull)
+  versions         TemplateVersion[]
+  overrides        TemplateOverride[]
+  purchases        TemplatePurchase[]
+  sites            Site[]
+
+  @@index([status, position])
+}
+
+model TemplateVersion {
+  id          String   @id @default(cuid())
+  templateId  String
+  number      Int
+  /// [{ key, path, title, content, lockRules }]
+  pages       Json
+  theme       Json
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  template    Template  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  publishedOf Template? @relation("PublishedVersion")
+  sites       Site[]
+
+  @@unique([templateId, number])
+}
+
+/// Grants access to a template beyond its tier, for a whole plan or a single user.
+model TemplateOverride {
+  id         String   @id @default(cuid())
+  templateId String
+  planId     String?
+  userId     String?
+  createdAt  DateTime @default(now())
+
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  plan     Plan?    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  user     User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+}
+
+/// One-time purchase of a premium template (Stripe Checkout, Phase 5).
+model TemplatePurchase {
+  id              String   @id @default(cuid())
+  templateId      String
+  userId          String
+  amount          Int
+  currency        String   @default("PLN")
+  stripeSessionId String?  @unique
+  createdAt       DateTime @default(now())
+
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, userId])
+}
+
+/// Full snapshot of a site (pages + theme) taken before destructive changes such as switching templates.
+model SiteBackup {
+  id          String   @id @default(cuid())
+  siteId      String
+  reason      String
+  /// { pages: [{ path, title, position, draftContent, publishedContent, seo..., lockRules }], themeDraft, templateId, templateVersionId }
+  data        Json
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId, createdAt])
 }
