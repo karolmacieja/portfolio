@@ -5,11 +5,9 @@ import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { saveThemeAction, type SiteFormState } from "@/server/sites/actions";
+import { FormMessage } from "@/components/form-message";
 import { SITE_FONT_IDS, SITE_FONTS } from "@/themes/fonts";
 import { THEME_PRESETS, themeToCssVars, type Theme } from "@/themes/theme";
-
-import { FormStatus } from "./form-status";
 
 const COLOR_KEYS = ["background", "foreground", "muted", "primary", "primaryForeground", "surface"] as const;
 
@@ -45,10 +43,18 @@ function Segmented<T extends string>({
   );
 }
 
-export function ThemeEditor({ siteId, initialTheme }: { siteId: string; initialTheme: Theme }) {
+/** Theme form with presets and live preview; `save` is a server action bound to the site or template. */
+export function ThemeEditor({
+  save,
+  initialTheme,
+}: {
+  /** Returns an error as a site error code ("notFound") or a full message key ("templates.errors.x"). */
+  save: (theme: Theme) => Promise<{ ok?: boolean; error?: string }>;
+  initialTheme: Theme;
+}) {
   const t = useTranslations("theme");
   const [theme, setTheme] = useState<Theme>(initialTheme);
-  const [state, setState] = useState<SiteFormState>({});
+  const [state, setState] = useState<{ ok?: boolean; error?: string }>({});
   const [pending, startTransition] = useTransition();
 
   const update = (patch: Partial<Theme>) => {
@@ -147,11 +153,17 @@ export function ThemeEditor({ siteId, initialTheme }: { siteId: string; initialT
           <Button
             type="button"
             disabled={pending}
-            onClick={() => startTransition(async () => setState(await saveThemeAction(siteId, theme)))}
+            onClick={() => startTransition(async () => setState(await save(theme)))}
           >
             {t("save")}
           </Button>
-          <FormStatus state={state} success={t("saved")} />
+          <FormMessage
+            state={{
+              ok: state.ok,
+              error: state.error && !state.error.includes(".") ? `sites.errors.${state.error}` : state.error,
+            }}
+            success={t("saved")}
+          />
         </div>
       </div>
 
