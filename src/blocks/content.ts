@@ -136,3 +136,20 @@ export function starterContent(params: { title: string; subtitle: string; body: 
     ],
   };
 }
+
+type AnyBlock = { type: string; props: Record<string, unknown> };
+
+/** Visits every block, including blocks nested in slot props. Works on unvalidated JSON. */
+export function walkBlocks(content: unknown, visit: (block: AnyBlock) => void, depth = 0): void {
+  const list = (content as { content?: unknown } | null)?.content ?? content;
+  if (!Array.isArray(list) || depth > MAX_DEPTH) return;
+  for (const item of list) {
+    if (!item || typeof item !== "object") continue;
+    const block = item as AnyBlock;
+    if (typeof block.type !== "string" || !block.props || typeof block.props !== "object") continue;
+    visit(block);
+    for (const slotProp of isBlockType(block.type) ? (SLOT_PROPS[block.type] ?? []) : []) {
+      walkBlocks(block.props[slotProp], visit, depth + 1);
+    }
+  }
+}
