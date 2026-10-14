@@ -1,0 +1,6 @@
+{
+  "$comment": "Development only (ignored when APP_ENV=production): custom domains mapped to site slugs, so connected domains can be tested without DNS. Hosts under *.localhost resolve to your machine without /etc/hosts changes. Keys are hostnames without port.",
+  "domains": {
+    "jan-kowalski.pl.localhost": "jan"
+  }
+}

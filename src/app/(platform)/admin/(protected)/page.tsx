@@ -10,9 +10,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("title") };
 }
 
-// Placeholder admin panel; served from admin.{ROOT_DOMAIN} once host routing lands (Phase 1).
+// Placeholder admin dashboard (Phase 8), served at admin.{ROOT_DOMAIN}/.
 export default async function AdminPage() {
-  const user = await requireRole(STAFF_ROLES, "/admin");
+  const user = await requireRole(STAFF_ROLES, "/");
   const t = await getTranslations("admin");
   return (
     <main className="mx-auto grid max-w-4xl gap-6 px-6 py-10">

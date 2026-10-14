@@ -4,7 +4,7 @@ import { getLocale } from "next-intl/server";
 
 import { getEnv } from "@/lib/env";
 
-import "./globals.css";
+import "../globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
   const brand = getEnv().BRAND_NAME;

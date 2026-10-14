@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default async function EmailVerifiedPage({ searchParams }: PageProps<"/email-verified">) {
+export default async function EmailVerifiedPage({ searchParams }: PageProps<"/panel/email-verified">) {
   const { status } = await searchParams;
   const ok = status === "ok";
   const t = await getTranslations();
