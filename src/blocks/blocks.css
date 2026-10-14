@@ -1,0 +1,109 @@
+/*
+ * Styles for content blocks, driven by theme CSS variables (src/themes/theme.ts).
+ * Loaded on published sites (src/app/sites/site.css) and inside the editor canvas.
+ */
+
+.site-root {
+  background: var(--site-bg, #ffffff);
+  color: var(--site-fg, #111111);
+  font-family: var(--site-font-body, ui-sans-serif, system-ui, sans-serif);
+  line-height: 1.6;
+}
+
+.site-section {
+  padding-block: calc(var(--site-section-space, 5rem) / 2);
+  padding-inline: 1.5rem;
+}
+
+.site-container {
+  margin-inline: auto;
+  max-width: 72rem;
+}
+
+.site-container-narrow {
+  margin-inline: auto;
+  max-width: 48rem;
+}
+
+.site-heading {
+  font-family: var(--site-font-heading, inherit);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.site-muted {
+  color: var(--site-muted, #6b7280);
+}
+
+.site-surface {
+  background: var(--site-surface, #f4f4f5);
+  border-radius: var(--site-radius, 0.5rem);
+}
+
+.site-rounded {
+  border-radius: var(--site-radius, 0.5rem);
+}
+
+.site-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.4rem;
+  border: 2px solid var(--site-primary, #111111);
+  border-radius: var(--site-btn-radius, 0.5rem);
+  background: var(--site-btn-bg, #111111);
+  color: var(--site-btn-fg, #ffffff);
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+
+.site-btn:hover {
+  opacity: 0.85;
+}
+
+.site-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.site-link {
+  color: var(--site-primary, #111111);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.site-input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--site-fg, #111111) 20%, transparent);
+  border-radius: var(--site-radius, 0.5rem);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.site-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 8rem;
+  border: 2px dashed color-mix(in srgb, var(--site-fg, #111111) 20%, transparent);
+  border-radius: var(--site-radius, 0.5rem);
+  color: var(--site-muted, #6b7280);
+  font-size: 0.875rem;
+}
+
+.site-carousel {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+
+.site-carousel > * {
+  flex: 0 0 min(85%, 40rem);
+  scroll-snap-align: center;
+}
