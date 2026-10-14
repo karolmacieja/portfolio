@@ -19,6 +19,8 @@ export type RouteDecision =
 /** Routes served on every host: infrastructure probes and locally stored media (dev storage). */
 const GLOBAL_PATHS = ["/api/health"];
 const GLOBAL_PREFIXES = ["/storage/"];
+/** Routes with their own root layout, served as-is on platform hosts (not on client hosts). */
+const PLATFORM_PREFIXES = ["/template-preview/"];
 
 function isApiPath(pathname: string) {
   return pathname === "/api" || pathname.startsWith("/api/");
@@ -35,7 +37,9 @@ export function resolveRoute(host: string | null, pathname: string, rootDomain: 
     case "app":
     case "admin": {
       // Platform APIs (Auth.js, email verification, ...) live under /api on platform hosts.
-      if (isApiPath(pathname)) return { action: "next", target: target.kind };
+      if (isApiPath(pathname) || PLATFORM_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+        return { action: "next", target: target.kind };
+      }
       const prefix = target.kind === "app" ? "/panel" : `/${target.kind}`;
       return {
         action: "rewrite",

@@ -13,6 +13,8 @@ import {
   FALLBACK_LIMITS,
   lockedBlocks,
   newDisallowedBlocks,
+  requiredTierForContent,
+  tierCovers,
   type PlanLike,
   type SubscriptionLike,
 } from "./rules";
@@ -106,6 +108,28 @@ describe("block and template access", () => {
     expect(canUseTemplate(startE, { accessTier: "pro", overrides: [{ planId: "plan-start" }] })).toBe(true);
     expect(canUseTemplate(startE, { accessTier: "pro", overrides: [{ userId: "u1" }] }, "u1")).toBe(true);
     expect(canUseTemplate(startE, { accessTier: "pro", overrides: [{ userId: "u1" }] }, "u2")).toBe(false);
+  });
+
+  it("requires a purchase for premium templates unless overridden", () => {
+    expect(canUseTemplate(proE, { accessTier: "basic", isPremium: true })).toBe(false);
+    expect(canUseTemplate(proE, { accessTier: "basic", isPremium: true }, "u1", true)).toBe(true);
+    expect(canUseTemplate(startE, { accessTier: "pro", isPremium: true }, "u1", true)).toBe(false);
+    expect(
+      canUseTemplate(proE, { accessTier: "basic", isPremium: true, overrides: [{ userId: "u1" }] }, "u1"),
+    ).toBe(true);
+  });
+
+  it("computes the tier a template's content requires", () => {
+    expect(requiredTierForContent([{ content: [block("Hero")] }], DEFAULT_BLOCK_TIERS)).toBe("basic");
+    expect(
+      requiredTierForContent(
+        [{ content: [block("Hero")] }, { content: [block("Columns", { col1: [block("Video")] })] }],
+        DEFAULT_BLOCK_TIERS,
+      ),
+    ).toBe("pro");
+    expect(tierCovers("pro", "basic")).toBe(true);
+    expect(tierCovers("basic", "pro")).toBe(false);
+    expect(tierCovers("gold", "basic")).toBe(false);
   });
 
   it("refuses only newly added locked blocks (downgrade keeps existing ones)", () => {

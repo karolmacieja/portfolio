@@ -167,15 +167,44 @@ export function lockedBlocks(entitlements: Entitlements, tiers: BlockTiers): Blo
   return BLOCK_TYPES.filter((type) => !canUseBlock(entitlements, type, tiers));
 }
 
-/** Template access: its tier, or an explicit override for the user's plan or the user (Phase 4). */
+/**
+ * Template access: an explicit override (for the user or their plan) always grants it; otherwise the
+ * plan must include the template's tier and premium templates must also be purchased.
+ */
 export function canUseTemplate(
   entitlements: Entitlements,
-  template: { accessTier: string; overrides?: { planId?: string | null; userId?: string | null }[] },
+  template: {
+    accessTier: string;
+    isPremium?: boolean;
+    overrides?: { planId?: string | null; userId?: string | null }[];
+  },
   userId?: string,
+  purchased = false,
 ): boolean {
-  if (canUseTier(entitlements, template.accessTier)) return true;
-  return (template.overrides ?? []).some(
+  const overridden = (template.overrides ?? []).some(
     (o) => (o.userId && o.userId === userId) || (o.planId && o.planId === entitlements.plan?.id),
+  );
+  if (overridden) return true;
+  return canUseTier(entitlements, template.accessTier) && (!template.isPremium || purchased);
+}
+
+/** Highest tier among the blocks used in the given contents (what a template using them must require). */
+export function requiredTierForContent(contents: unknown[], tiers: BlockTiers): AccessTier {
+  let max = 0;
+  for (const content of contents) {
+    walkBlocks(content, (block) => {
+      const tier = tiers[block.type as BlockType];
+      if (tier) max = Math.max(max, ACCESS_TIERS.indexOf(tier));
+    });
+  }
+  return ACCESS_TIERS[max]!;
+}
+
+/** True when tier `a` includes everything tier `b` does (basic < pro < business). */
+export function tierCovers(a: string, b: string): boolean {
+  return (
+    ACCESS_TIERS.indexOf(a as AccessTier) >= ACCESS_TIERS.indexOf(b as AccessTier) &&
+    ACCESS_TIERS.includes(a as AccessTier)
   );
 }
 

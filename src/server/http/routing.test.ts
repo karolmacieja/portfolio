@@ -30,6 +30,14 @@ describe("resolveRoute", () => {
     });
   });
 
+  it("serves template previews on platform hosts only", () => {
+    expect(resolveRoute("app.example.com", "/template-preview/fotograf", ROOT).action).toBe("next");
+    expect(resolveRoute("example.com", "/template-preview/fotograf", ROOT).action).toBe("next");
+    expect(resolveRoute("jan.example.com", "/template-preview/fotograf", ROOT)).toMatchObject({
+      action: "rewrite",
+    });
+  });
+
   it("serves the health check and local media on any host", () => {
     expect(resolveRoute("10.0.0.5:3000", "/api/health", ROOT).action).toBe("next");
     expect(resolveRoute("jan.example.com", "/storage/u/1/a.webp", ROOT).action).toBe("next");
