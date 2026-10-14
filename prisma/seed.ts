@@ -5,30 +5,117 @@ import sharp from "sharp";
 
 import { block, starterContent, type PageContent } from "../src/blocks/content";
 import {
+  BillingInterval,
   PrismaClient,
   Role,
   SiteStatus,
+  SubscriptionStatus,
   SuspensionReason,
   type Prisma,
 } from "../src/generated/prisma/client";
 import { parseEnv } from "../src/lib/env";
 import { hashPassword } from "../src/server/auth/password";
+import { DEFAULT_BLOCK_TIERS } from "../src/server/entitlements/rules";
 import { processImage } from "../src/server/media/image";
 import { createStorage } from "../src/server/storage";
 import { THEME_PRESETS } from "../src/themes/theme";
 
 /**
  * Development seed. Idempotent: safe to run repeatedly.
- * Plans, templates and per-plan test clients are added in Phases 3-4.
+ * Templates are added in Phase 4.
  */
 
 const DEV_PASSWORD = process.env.SEED_PASSWORD || "Password123!";
 
-const users: { email: string; name: string; role: Role }[] = [
+/** Seed plans (owner-approved defaults; editable in the admin panel). Prices are gross PLN in grosze. */
+const plans = [
+  {
+    slug: "start",
+    name: "Start",
+    description: "Portfolio na subdomenie — wszystko, czego potrzebujesz na start.",
+    maxSites: 1,
+    maxPagesPerSite: 5,
+    maxProjects: 30,
+    storageMb: 500,
+    features: {},
+    accessTiers: ["basic"],
+    prices: { MONTH: 1900, YEAR: 19000 },
+  },
+  {
+    slug: "pro",
+    name: "Pro",
+    description: "Własna domena, bez brandingu i więcej miejsca na projekty.",
+    maxSites: 3,
+    maxPagesPerSite: 20,
+    maxProjects: 150,
+    storageMb: 5120,
+    features: { customDomain: true, removeBranding: true, analytics: true },
+    accessTiers: ["basic", "pro"],
+    prices: { MONTH: 3900, YEAR: 39000 },
+  },
+  {
+    slug: "business",
+    name: "Business",
+    description: "Wszystkie funkcje, zakup domeny i bez limitu projektów.",
+    maxSites: 10,
+    maxPagesPerSite: 50,
+    maxProjects: null,
+    storageMb: 20480,
+    features: {
+      customDomain: true,
+      domainPurchase: true,
+      removeBranding: true,
+      analytics: true,
+      formsExport: true,
+    },
+    accessTiers: ["basic", "pro", "business"],
+    prices: { MONTH: 7900, YEAR: 79000 },
+  },
+] as const;
+
+/** One test client per plan plus one without a subscription; client@ (demo sites, E2E) is on Business. */
+const users: { email: string; name: string; role: Role; plan?: (typeof plans)[number]["slug"] }[] = [
   { email: "admin@example.com", name: "Admin", role: Role.ADMIN },
   { email: "support@example.com", name: "Support", role: Role.SUPPORT },
-  { email: "client@example.com", name: "Jan Kowalski", role: Role.CLIENT },
+  { email: "client@example.com", name: "Jan Kowalski", role: Role.CLIENT, plan: "business" },
+  { email: "start@example.com", name: "Klient Start", role: Role.CLIENT, plan: "start" },
+  { email: "pro@example.com", name: "Klient Pro", role: Role.CLIENT, plan: "pro" },
+  { email: "business@example.com", name: "Klient Business", role: Role.CLIENT, plan: "business" },
+  { email: "free@example.com", name: "Klient bez planu", role: Role.CLIENT },
 ];
+
+async function seedPlans(db: PrismaClient) {
+  for (const [position, { prices, features, ...plan }] of plans.entries()) {
+    const data = { ...plan, accessTiers: [...plan.accessTiers], features: json(features), position };
+    const saved = await db.plan.upsert({ where: { slug: plan.slug }, update: data, create: data });
+    for (const [interval, amount] of Object.entries(prices) as [BillingInterval, number][]) {
+      await db.planPrice.upsert({
+        where: { planId_interval_currency: { planId: saved.id, interval, currency: "PLN" } },
+        update: { amount, isActive: true },
+        create: { planId: saved.id, interval, amount, currency: "PLN" },
+      });
+    }
+  }
+  for (const [blockType, requiredTier] of Object.entries(DEFAULT_BLOCK_TIERS)) {
+    await db.blockAccess.upsert({ where: { blockType }, update: {}, create: { blockType, requiredTier } });
+  }
+}
+
+/** Gives the user a manual (non-Stripe) active monthly subscription to the plan, replacing earlier seed ones. */
+async function seedSubscription(db: PrismaClient, userId: string, planSlug: string) {
+  const plan = await db.plan.findUniqueOrThrow({ where: { slug: planSlug }, include: { prices: true } });
+  const price = plan.prices.find((p) => p.interval === BillingInterval.MONTH);
+  await db.subscription.deleteMany({ where: { userId, stripeSubscriptionId: null } });
+  await db.subscription.create({
+    data: {
+      userId,
+      planId: plan.id,
+      priceId: price?.id,
+      status: SubscriptionStatus.ACTIVE,
+      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    },
+  });
+}
 
 const json = (value: unknown) => value as Prisma.InputJsonObject;
 
@@ -205,13 +292,16 @@ async function main() {
 
   const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: env.DATABASE_URL }) });
   try {
+    await seedPlans(db);
     const passwordHash = await hashPassword(DEV_PASSWORD);
-    for (const user of users) {
-      await db.user.upsert({
+    for (const { plan, ...user } of users) {
+      const saved = await db.user.upsert({
         where: { email: user.email },
         update: { role: user.role, name: user.name, passwordHash },
         create: { ...user, passwordHash, emailVerified: new Date() },
       });
+      if (plan) await seedSubscription(db, saved.id, plan);
+      else await db.subscription.deleteMany({ where: { userId: saved.id, stripeSubscriptionId: null } });
     }
 
     const client = await db.user.findUniqueOrThrow({ where: { email: "client@example.com" } });
@@ -283,7 +373,7 @@ async function main() {
     }
 
     console.info(
-      `Seeded ${users.length} users (password: ${process.env.SEED_PASSWORD ? "<SEED_PASSWORD>" : DEV_PASSWORD}) ` +
+      `Seeded ${plans.length} plans, ${users.length} users (password: ${process.env.SEED_PASSWORD ? "<SEED_PASSWORD>" : DEV_PASSWORD}) ` +
         `and ${sites.length} demo sites (${sites.map((s) => s.slug).join(", ")})`,
     );
   } finally {
