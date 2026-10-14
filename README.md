@@ -49,6 +49,12 @@ Local services:
 With `MAIL_PROVIDER=smtp` (default in `.env.example`) all emails land in Mailpit; with `MAIL_PROVIDER=mock` they are
 printed to the dev server console.
 
+Uploads are stored on disk in `.storage/` by default (`STORAGE_PROVIDER=local`). To use MinIO from docker compose (like
+R2 in production) set `STORAGE_PROVIDER=s3`; the remaining `S3_*` values in `.env.example` already match it.
+
+Try it: sign in as the client at http://app.localhost:3000, open "Zarządzaj" on the demo site, edit a page in the
+editor, change the theme and publish; then reload http://jan.localhost:3000.
+
 ## Scripts
 
 | Command                                                              | Description                                                  |

@@ -76,3 +76,30 @@ Lightweight ADR log. Newest at the bottom. Business decisions confirmed by the o
 33. **CDN:** Next marks ISR pages `s-maxage=86400`. Cloudflare does not cache HTML by default; do not enable "Cache
     Everything" for client hosts unless publish also purges Cloudflare (document in operations, Phase 9).
 34. **"Made with {BRAND}" footer is always shown** until plans (Phase 3) can remove it.
+
+## Phase 2
+
+35. **Site-wide publish.** "Publish" makes all page drafts and the theme draft live at once (simple mental model, no
+    half-published sites). Page structure, SEO fields and site settings apply immediately.
+36. **Versions per page, created on publish only for changed pages**, keeping the last 20. Restore copies into the
+    draft (never straight to live), so it can be reviewed and published.
+37. **Strict validation on save, lenient on render.** The editor cannot store unknown blocks, invalid props,
+    `javascript:` links or non-storage image URLs; the renderer still drops anything invalid (old data, manual DB
+    edits) instead of failing the page.
+38. **Plain-text content only.** No rich-text/HTML fields (Puck's richtext produces HTML); paragraphs come from line
+    breaks. Revisit with a sanitized, structured rich-text format if needed.
+39. **Theme as CSS variables** consumed by block CSS classes (`blocks.css`); Tailwind is used only for layout. Fonts are
+    self-hosted (`@fontsource-variable`), so client sites keep a `'self'`-only CSP and make no third-party requests.
+40. **Images optimized at upload** (WebP, max 2400px, metadata/GPS stripped, thumbnail) instead of on-the-fly
+    `next/image`: published pages stay static, work behind any CDN and need no image-optimizer origin allowlist.
+    SVG uploads are refused (script vector). HEIC is not supported by the prebuilt sharp/libvips.
+41. **Local storage adapter for development** (`STORAGE_PROVIDER=local`, served via `/storage/*` on all hosts), so the
+    app runs without MinIO; S3 adapter for MinIO/R2. Production refuses local storage.
+42. **Storage quota counts optimized bytes** (main + thumbnail). Default quota from env until plans (Phase 3).
+43. **Contact form block is visual only** in Phase 2; submissions (storage, inbox, email, anti-spam) come in Phase 9.
+44. **Puck UI translated via its `dictionary`** (messages `puck.*`) and block/field labels from `blocks.*`;
+    `@puckeditor/core/no-external.css` avoids loading a font from rsms.me.
+45. **Video embeds** only for YouTube (via youtube-nocookie.com) and Vimeo (`dnt=1`), parsed from the URL into a
+    canonical embed URL; matching the site CSP `frame-src` allowlist.
+46. **Prisma script fix:** `pnpm db:migrate` forwards its arguments to `prisma migrate dev` (e.g. `--name x`) and then
+    runs `prisma generate`.

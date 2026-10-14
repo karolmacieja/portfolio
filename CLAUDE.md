@@ -10,8 +10,9 @@ Next.js 16 ships its own docs in `node_modules/next/dist/docs/` (see `AGENTS.md`
 | ----- | ---------------------------------------------------------------------- | ------- |
 | 0     | Foundation: Next.js, Docker Compose, Prisma, Auth.js + roles, i18n, CI | done    |
 | 1     | Multi-tenancy (host routing), Site/Page, renderer, cache               | done    |
-| 2     | Editor (Puck), blocks, themes, draft/publish, versions, media, SEO     | next    |
-| 3-9   | Plans, templates, payments, invoicing, domains, admin, polish          | pending |
+| 2     | Editor (Puck), blocks, themes, draft/publish, versions, media, SEO     | done    |
+| 3     | Plans & entitlements: limits, flags, block tiers, plan seed            | next    |
+| 4-9   | Templates, payments, invoicing, domains, admin, polish                 | pending |
 
 Work in phases; after each phase run lint/typecheck/tests, summarize and wait for the owner's approval.
 
@@ -24,6 +25,8 @@ Work in phases; after each phase run lint/typecheck/tests, summarize and wait fo
 - next-intl 4 (no locale in URL; cookie `NEXT_LOCALE`, default `pl`)
 - Tailwind CSS 4 + shadcn/ui (new-york, neutral) for panels
 - Redis (ioredis): rate limiting; BullMQ jobs from later phases
+- Media: `sharp` (validation + WebP optimization), storage adapter: local disk (dev) or S3 (`@aws-sdk/client-s3`: MinIO, R2)
+- Site fonts self-hosted via `@fontsource-variable/*` (no third-party requests from client sites)
 - Vitest 4 (unit), Playwright (E2E)
 - Production target: VPS + Coolify, BullMQ workers, Cloudflare in front (see `docs/decisions.md`)
 
@@ -32,8 +35,8 @@ Work in phases; after each phase run lint/typecheck/tests, summarize and wait fo
 ```bash
 docker compose up -d          # Postgres, Redis, MinIO (+bucket), Mailpit
 pnpm install                  # also runs `prisma generate`
-pnpm db:migrate               # create/apply migrations + regenerate the client (Prisma 7 no longer auto-generates)
-pnpm db:seed                  # admin/support/client users (password Password123!) + demo sites
+pnpm db:migrate --name x      # create/apply a migration + regenerate the client (Prisma 7 no longer auto-generates)
+pnpm db:seed                  # admin/support/client users (password Password123!) + demo sites with generated images
 pnpm dev                      # http://localhost:3000 (marketing), app./admin./jan.localhost:3000
 pnpm lint | pnpm format | pnpm typecheck | pnpm test | pnpm test:e2e | pnpm build
 pnpm db:reset                 # drop, migrate, seed
@@ -57,7 +60,7 @@ E2E against a preinstalled Chromium: `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/ch
 | `{slug}.{ROOT}`, custom domains | `/sites/{hostname}/*` | published sites; ISR; no `/api` (404); strict CSP |
 | reserved/malformed labels       | 404                   | `RESERVED_SLUGS` in `src/lib/slug.ts`             |
 
-- `/api/health` is served on every host. Internal prefixes are unreachable directly: every request is rewritten.
+- `/api/health` and `/storage/*` are served on every host. Internal prefixes are unreachable directly.
 - Links between hosts use absolute URLs: `platformUrl("app", "/path")`, `siteSubdomainUrl(slug)`.
 - Inside a host, use public paths (`/login`, `/dashboard`), never internal ones (`/panel/...`).
 - Custom domains: `Domain` rows with status `ACTIVE`; locally also `config/dev-domains.json`
@@ -65,12 +68,39 @@ E2E against a preinstalled Chromium: `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/ch
 - Two root layouts: `src/app/(platform)/layout.tsx` (panels, cookies, next-intl) and `src/app/sites/[host]/layout.tsx`
   (client sites: no cookies/session so pages stay static). `src/app/global-not-found.tsx` handles unmatched URLs.
 
+## Content, editor and publishing
+
+- Blocks live in `src/blocks/`: `schemas.ts` (Zod prop schemas = source of truth, link/image URL rules, slot props),
+  `defaults.ts`, `render/blocks.tsx` (server-safe renderers, plain text only, `editMode` placeholders),
+  `config.tsx` (render-only Puck config + categories), `content.ts` (document parsing: lenient for rendering,
+  strict `validatePageContent` for saving, recursive through slots), `blocks.css` (styles driven by theme CSS vars).
+- Adding a block: schema + defaults + renderer + category in `config.tsx` + fields in
+  `src/components/editor/editor-config.tsx` + `blocks.names/fields` messages + a test. Phase 3 adds `requiredTier`.
+- Editor: `/sites/{id}/editor/{pageId}` (app host) renders `<Puck>` (`src/components/editor/site-editor.tsx`) with a
+  Polish dictionary (`messages.puck`), autosave of the draft (server action, strict validation) and "Publish".
+  Uses `@puckeditor/core/no-external.css` (the default CSS loads a font from a third party).
+- Theme (`src/themes/`): Zod schema + presets -> CSS variables (`themeToCssVars`), fonts from `fonts.ts`.
+  Stored as `Site.themeDraft` / `themePublished`.
+- Draft vs live: page content and theme are drafts until "Publish" (site-wide: all pages + theme). Page structure
+  (title, path, order, delete), page SEO fields and site settings apply immediately (and invalidate the cache).
+- Every publish snapshots changed pages into `PageVersion` (last 20 kept); restore copies a version into the draft.
+- Site management UI (app host): `/sites/{id}` pages, `/theme`, `/settings`, `/history`; media library `/media`.
+
+## Media
+
+- Upload: `POST /api/media/upload` (app host, auth, rate limit, size limit) -> `src/server/media/service.ts`:
+  `sharp` checks the real format (JPEG/PNG/WebP/GIF/AVIF; never SVG), applies EXIF rotation, strips metadata,
+  bounds to 2400px and stores WebP + a 480px thumbnail under `u/{ownerId}/{random}.webp`; quota per owner
+  (`STORAGE_DEFAULT_QUOTA_MB` until plans).
+- Storage adapter (`src/server/storage`): `local` (files in `STORAGE_LOCAL_DIR`, served by `src/app/storage/[...key]`
+  on every host; refused in production) or `s3` (MinIO locally, R2 in production; public bucket URL `S3_PUBLIC_URL`).
+- Image props store `{ url, alt, width, height }`; deleting an asset does not rewrite pages that use it.
+
 ## Published sites and caching
 
-- Content: `Page.draftContent` (always edited) and `Page.publishedContent` (copied on publish). JSON in Puck format,
-  validated by `src/blocks/content.ts` (document shape) and `blockPropSchemas` in `src/blocks/config.tsx` (per block).
-  Unknown blocks or invalid props are dropped at render time instead of breaking the page.
-- Rendering: `src/app/sites/[host]/[[...path]]/page.tsx` is ISR (`generateStaticParams` returns `[]`).
+- Rendering: `src/app/sites/[host]/[[...path]]/page.tsx` is ISR (`generateStaticParams` returns `[]`); the layout applies
+  the published theme, navigation (when >1 page), metadata (description, favicon, noindex) and the branding footer.
+  `sitemap.xml` and `robots.txt` are route handlers per site (robots disallows everything for noindex/suspended sites).
 - Data: `src/server/sites/public.ts` wraps queries in `unstable_cache` with tags `host:{hostname}` and `site:{siteId}`
   (`cache-tags.ts`). Service mutations return the tags to invalidate; server actions call `invalidateTags()`
   (`revalidateTag(tag, { expire: 0 })`). Any change visible on a public site must invalidate `site:{id}`;
@@ -86,23 +116,28 @@ messages/{pl,en}.json       UI strings (pl is the source; a test enforces identi
 src/proxy.ts                host-based routing (see above)
 src/app/(platform)/         root layout for platform hosts
   marketing/                landing (root domain)
-  panel/                    client panel (app.): (auth)/login|register|..., dashboard, forbidden
+  panel/                    client panel (app.): (auth)/..., dashboard, media, sites/[siteId]/(manage)/..., editor
   admin/                    admin panel (admin.): login, forbidden, (protected)/ dashboard
 src/app/sites/[host]/       root layout + renderer for published client sites
-src/app/api/                auth (wrapped with withPublicOrigin), email/verify, health
+src/app/api/                auth (wrapped with withPublicOrigin), email/verify, media/upload, health
+src/app/storage/            local storage file server (dev)
 src/app/global-not-found.tsx
 src/auth.ts                 NextAuth instance (lazy config)
-src/blocks/                 Puck block config + prop schemas, content schema/parsing
+src/blocks/                 block schemas, defaults, renderers, render config, content parsing, blocks.css
+src/themes/                 theme schema/presets/CSS vars, site fonts
 src/components/ui/          shadcn/ui primitives (hand-maintained; add via `pnpm dlx shadcn add`)
-src/components/{auth,sites} feature components
+src/components/              auth, sites, site-manager, editor (Puck), media (picker, dialog, library)
 src/i18n/                   next-intl config, request config, typed messages, getTranslator(locale)
 src/lib/                    env (zod), db (lazy Prisma proxy), redis, hosts, slug, request helpers, utils
 src/server/                 server-only domain code
   auth/                     config, actions, session helpers, roles, password, schemas, email verification
   http/                     routing table, security headers
+  media/                    image processing, owner-scoped media service, actions
+  storage/                  StorageProvider: local | s3
   mail/                     Mailer adapter: mock | smtp | resend, templates
   rate-limit/               RateLimiter interface: Redis + in-memory
-  sites/                    service (owner-scoped), public (cached reads), actions, cache tags, urls
+  sites/                    service (owner-scoped: sites, pages, drafts, versions, theme), public (cached reads),
+                            actions, cache tags, urls
 tests/e2e/                  Playwright specs (+ hosts.ts URL helpers, global-setup cleanup)
 ```
 
