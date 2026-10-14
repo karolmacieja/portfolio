@@ -4,8 +4,9 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { parseRenderableContent } from "@/blocks/content";
-import { SiteEditor } from "@/components/editor/site-editor";
+import { PageEditor } from "@/components/editor/site-editor";
 import { requireUser } from "@/server/auth/session";
+import { publishFromEditorAction, savePageDraftAction } from "@/server/sites/actions";
 import { getBlockTiers, getEntitlements, lockedBlocks } from "@/server/entitlements";
 import { SiteError } from "@/server/sites/errors";
 import { getPageForEditing } from "@/server/sites/service";
@@ -39,16 +40,26 @@ export default async function EditorPage({ params }: PageProps<"/panel/sites/[si
   }) as Data;
 
   return (
-    <SiteEditor
-      pageId={editing.page.id}
+    <PageEditor
+      mode="site"
+      pageKey={editing.page.id}
       pageTitle={editing.page.title}
       pagePath={editing.page.path}
-      siteUrl={siteSubdomainUrl(editing.site.slug, `/${editing.page.path}`)}
+      previewUrl={siteSubdomainUrl(editing.site.slug, `/${editing.page.path}`)}
       backHref={`/sites/${siteId}`}
-      pages={editing.pages}
+      pages={editing.pages.map((p) => ({
+        key: p.id,
+        title: p.title,
+        path: p.path,
+        href: `/sites/${siteId}/editor/${p.id}`,
+      }))}
       theme={editing.theme}
       initialData={data}
+      initialLockRules={editing.lockRules}
       lockedBlocks={lockedBlocks(entitlements, tiers)}
+      save={savePageDraftAction.bind(null, editing.page.id)}
+      publish={publishFromEditorAction.bind(null, editing.page.id)}
+      errorNamespace="sites.errors"
     />
   );
 }

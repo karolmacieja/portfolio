@@ -3,6 +3,7 @@
 import { FieldLabel, type Config, type Field } from "@puckeditor/core";
 
 import { renderConfig, BLOCK_CATEGORIES } from "@/blocks/config";
+import type { LockRules } from "@/blocks/locks";
 import { blockDefaults } from "@/blocks/defaults";
 import { EMPTY_IMAGE, SOCIAL_PLATFORMS, type BlockType, type ImageValue } from "@/blocks/schemas";
 import { ImagePicker } from "@/components/media/image-picker";
@@ -15,7 +16,8 @@ import { themeToCssVars, type Theme } from "@/themes/theme";
 
 type Translate = (key: string) => string;
 
-export function createEditorConfig(t: Translate, theme: Theme): Config {
+/** `lockRules` (client sites created from templates) restrict editing, moving and removing blocks. */
+export function createEditorConfig(t: Translate, theme: Theme, lockRules: LockRules = {}): Config {
   const label = (key: string) => t(`fields.${key}`);
   const option = (value: string) => ({ label: t(`options.${value}`), value });
 
@@ -195,7 +197,24 @@ export function createEditorConfig(t: Translate, theme: Theme): Config {
   const components = Object.fromEntries(
     (Object.keys(blockDefaults) as BlockType[]).map((type) => [
       type,
-      { ...renderConfig.components[type], label: t(`names.${type}`), fields: fields[type] },
+      {
+        ...renderConfig.components[type],
+        label: t(`names.${type}`),
+        fields: fields[type],
+        resolvePermissions: (
+          data: { props: { id?: string } },
+          params: { permissions: Record<string, boolean> },
+        ) => {
+          const rule = data.props.id ? lockRules[data.props.id] : undefined;
+          if (!rule) return params.permissions;
+          return {
+            ...params.permissions,
+            ...(rule.edit === false ? { edit: false } : {}),
+            ...(rule.drag === false ? { drag: false } : {}),
+            ...(rule.delete === false ? { delete: false } : {}),
+          };
+        },
+      },
     ]),
   );
 

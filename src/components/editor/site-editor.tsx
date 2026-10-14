@@ -1,12 +1,12 @@
 "use client";
 
-import { Puck, type Data } from "@puckeditor/core";
+import { createUsePuck, Puck, type Data } from "@puckeditor/core";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMessages, useTranslations } from "next-intl";
 
+import type { LockRule, LockRules } from "@/blocks/locks";
 import { Button } from "@/components/ui/button";
-import { publishFromEditorAction, savePageDraftAction, type EditorResult } from "@/server/sites/actions";
 import type { Theme } from "@/themes/theme";
 
 import { createEditorConfig } from "./editor-config";
@@ -16,39 +16,102 @@ import "@puckeditor/core/no-external.css";
 
 type Status = "saved" | "unsaved" | "saving" | "error" | "publishing" | "published";
 
+export type EditorResult = { ok: true } | { ok: false; error: string; details?: unknown };
+export type EditorAction = (data: Data, lockRules: LockRules) => Promise<EditorResult>;
+
 type Props = {
-  pageId: string;
+  /** "site": a client's page (template locks are enforced); "template": admin authoring (locks are editable). */
+  mode: "site" | "template";
+  pageKey: string;
   pageTitle: string;
   pagePath: string;
-  siteUrl: string;
+  previewUrl: string;
   backHref: string;
-  pages: { id: string; title: string; path: string }[];
+  pages: { key: string; title: string; path: string; href: string }[];
   theme: Theme;
   initialData: Data;
+  initialLockRules: LockRules;
   /** Block types above the user's plan: shown locked in the drawer, cannot be inserted. */
   lockedBlocks: string[];
+  save: EditorAction;
+  publish: EditorAction;
+  /** Message namespace for error codes returned by the actions. */
+  errorNamespace: "sites.errors" | "templates.errors";
 };
 
 const AUTOSAVE_DELAY_MS = 1500;
+const usePuck = createUsePuck();
 
-export function SiteEditor({
-  pageId,
+function LockPanel({
+  rules,
+  onChange,
+}: {
+  rules: LockRules;
+  onChange: (id: string, rule: LockRule) => void;
+}) {
+  const t = useTranslations("adminTemplates");
+  const selected = usePuck((state) => state.selectedItem);
+  const id = selected?.props?.id as string | undefined;
+  const rule = (id && rules[id]) || {};
+  const toggle = (key: keyof LockRule, locked: boolean) => {
+    if (!id) return;
+    const next: LockRule = { ...rule };
+    if (locked) next[key] = false;
+    else delete next[key];
+    onChange(id, next);
+  };
+
+  return (
+    <div className="grid gap-2 border-b p-4 text-sm" data-testid="lock-panel">
+      <span className="font-medium">{t("lockPanel")}</span>
+      {id ? (
+        (["edit", "drag", "delete"] as const).map((key) => (
+          <label key={key} className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={rule[key] === false}
+              onChange={(event) => toggle(key, event.target.checked)}
+            />
+            {t(key === "edit" ? "lockEdit" : key === "drag" ? "lockDrag" : "lockDelete")}
+          </label>
+        ))
+      ) : (
+        <span className="text-muted-foreground">{t("lockHint")}</span>
+      )}
+    </div>
+  );
+}
+
+/** Puck editor shared by client sites and admin templates (autosave, publish, page switcher, locks). */
+export function PageEditor({
+  mode,
+  pageKey,
   pageTitle,
   pagePath,
-  siteUrl,
+  previewUrl,
   backHref,
   pages,
   theme,
   initialData,
+  initialLockRules,
   lockedBlocks,
+  save: saveAction,
+  publish: publishAction,
+  errorNamespace,
 }: Props) {
   const t = useTranslations("editor");
   const tBlocks = useTranslations("blocks");
-  const tErrors = useTranslations("sites.errors");
+  const tErrors = useTranslations(errorNamespace);
   const messages = useMessages();
   const router = useRouter();
 
-  const config = useMemo(() => createEditorConfig((key) => tBlocks(key as never), theme), [tBlocks, theme]);
+  const [lockRules, setLockRules] = useState<LockRules>(initialLockRules);
+  const lockRulesRef = useRef(lockRules);
+  // In site mode the template's locks restrict the editor; in template mode they are being authored.
+  const config = useMemo(
+    () => createEditorConfig((key) => tBlocks(key as never), theme, mode === "site" ? initialLockRules : {}),
+    [tBlocks, theme, mode, initialLockRules],
+  );
   const locked = useMemo(() => new Set(lockedBlocks), [lockedBlocks]);
   const dataRef = useRef<Data>(initialData);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -62,7 +125,12 @@ export function SiteEditor({
         setError(null);
       } else {
         setStatus("error");
-        setError(tErrors(result.error as "generic"));
+        // Only "tierTooLow" uses a value ({tier}); other messages ignore it.
+        setError(
+          (tErrors as (key: string, values?: Record<string, string>) => string)(result.error, {
+            tier: String(result.details ?? ""),
+          }),
+        );
       }
       return result.ok;
     },
@@ -72,23 +140,41 @@ export function SiteEditor({
   const save = useCallback(async () => {
     if (timer.current) clearTimeout(timer.current);
     setStatus("saving");
-    return handleResult(await savePageDraftAction(pageId, dataRef.current), "saved");
-  }, [pageId, handleResult]);
+    return handleResult(await saveAction(dataRef.current, lockRulesRef.current), "saved");
+  }, [saveAction, handleResult]);
 
   const publish = useCallback(async () => {
     if (timer.current) clearTimeout(timer.current);
     setStatus("publishing");
-    if (handleResult(await publishFromEditorAction(pageId, dataRef.current), "published")) router.refresh();
-  }, [pageId, handleResult, router]);
+    if (handleResult(await publishAction(dataRef.current, lockRulesRef.current), "published"))
+      router.refresh();
+  }, [publishAction, handleResult, router]);
+
+  const scheduleSave = useCallback(() => {
+    setStatus("unsaved");
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => void save(), AUTOSAVE_DELAY_MS);
+  }, [save]);
 
   const onChange = useCallback(
     (data: Data) => {
       dataRef.current = data;
-      setStatus("unsaved");
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(() => void save(), AUTOSAVE_DELAY_MS);
+      scheduleSave();
     },
-    [save],
+    [scheduleSave],
+  );
+
+  const onLockChange = useCallback(
+    (id: string, rule: LockRule) => {
+      setLockRules((current) => {
+        const next = { ...current, [id]: rule };
+        if (Object.keys(rule).length === 0) delete next[id];
+        lockRulesRef.current = next;
+        return next;
+      });
+      scheduleSave();
+    },
+    [scheduleSave],
   );
 
   // Warn before leaving with unsaved changes.
@@ -125,6 +211,12 @@ export function SiteEditor({
         { width: 1280, height: "auto", label: t("viewport.desktop"), icon: "Monitor" },
       ]}
       overrides={{
+        fields: ({ children }) => (
+          <>
+            {mode === "template" && <LockPanel rules={lockRules} onChange={onLockChange} />}
+            {children}
+          </>
+        ),
         // Locked blocks render as a non-draggable item with an upgrade link (the server refuses them anyway).
         drawerItem: ({ children, name }) =>
           locked.has(name) ? (
@@ -152,14 +244,15 @@ export function SiteEditor({
             <select
               aria-label={t("page")}
               className="h-8 rounded-md border bg-background px-2"
-              value={pageId}
+              value={pageKey}
               onChange={async (event) => {
                 if (status === "unsaved") await save();
-                router.push(`${backHref}/editor/${event.target.value}`);
+                const target = pages.find((p) => p.key === event.target.value);
+                if (target) router.push(target.href);
               }}
             >
               {pages.map((page) => (
-                <option key={page.id} value={page.id}>
+                <option key={page.key} value={page.key}>
                   {page.title} (/{page.path})
                 </option>
               ))}
@@ -185,7 +278,7 @@ export function SiteEditor({
               {t("publish")}
             </Button>
             <Button asChild variant="ghost" size="sm">
-              <a href={siteUrl} target="_blank" rel="noreferrer">
+              <a href={previewUrl} target="_blank" rel="noreferrer">
                 {t("preview")}
               </a>
             </Button>
