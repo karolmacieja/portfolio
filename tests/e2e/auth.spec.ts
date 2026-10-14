@@ -1,13 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// Seeded by prisma/seed.ts.
-const PASSWORD = process.env.SEED_PASSWORD || "Password123!";
+import { adminUrl, PASSWORD } from "./hosts";
 
-async function signIn(page: Page, email: string, password = PASSWORD) {
-  await page.goto("/login");
+async function fillSignIn(page: Page, email: string, password = PASSWORD) {
   await page.getByLabel("Adres e-mail").first().fill(email);
   await page.getByLabel("Hasło").fill(password);
   await page.getByRole("button", { name: "Zaloguj się", exact: true }).click();
+}
+
+async function signIn(page: Page, email: string, password = PASSWORD) {
+  await page.goto("/login");
+  await fillSignIn(page, email, password);
 }
 
 test("client signs in, sees the dashboard and signs out", async ({ page }) => {
@@ -27,9 +30,7 @@ test("wrong password shows an error", async ({ page }) => {
 test("protected pages redirect to login and back after signing in", async ({ page }) => {
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login\?callbackUrl=%2Fdashboard/);
-  await page.getByLabel("Adres e-mail").first().fill("client@example.com");
-  await page.getByLabel("Hasło").fill(PASSWORD);
-  await page.getByRole("button", { name: "Zaloguj się", exact: true }).click();
+  await fillSignIn(page, "client@example.com");
   await expect(page).toHaveURL(/\/dashboard$/);
 });
 
@@ -42,19 +43,24 @@ test("magic link request leads to the check-email page", async ({ page }) => {
 });
 
 test("client cannot open the admin panel", async ({ page }) => {
-  await signIn(page, "client@example.com");
-  await expect(page).toHaveURL(/\/dashboard$/);
-  await page.goto("/admin");
-  await expect(page).toHaveURL(/\/forbidden$/);
+  await page.goto(adminUrl("/login"));
+  await fillSignIn(page, "client@example.com");
+  await expect(page).toHaveURL(adminUrl("/forbidden"));
+  await expect(page.getByRole("heading", { name: "Brak dostępu" })).toBeVisible();
 });
 
-test("admin can open the admin panel", async ({ page }) => {
-  await page.goto("/admin");
-  await expect(page).toHaveURL(/callbackUrl=%2Fadmin/);
-  await page.getByLabel("Adres e-mail").first().fill("admin@example.com");
-  await page.getByLabel("Hasło").fill(PASSWORD);
-  await page.getByRole("button", { name: "Zaloguj się", exact: true }).click();
+test("admin signs in on the admin host", async ({ page }) => {
+  await page.goto(adminUrl());
+  await expect(page).toHaveURL(adminUrl("/login?callbackUrl=%2F"));
+  await fillSignIn(page, "admin@example.com");
   await expect(page.getByTestId("admin-title")).toBeVisible();
+});
+
+test("admin and client panels keep separate sessions", async ({ page }) => {
+  await signIn(page, "client@example.com");
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await page.goto(adminUrl());
+  await expect(page).toHaveURL(/admin\.localhost:\d+\/login/);
 });
 
 test("new user registers and lands on the dashboard", async ({ page }) => {

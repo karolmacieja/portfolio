@@ -1,8 +1,12 @@
 import "dotenv/config";
 
 import Redis from "ioredis";
+import pg from "pg";
 
-/** Clears rate-limit counters so repeated local runs don't lock out the test accounts. */
+/**
+ * Clears rate-limit counters and data left by previous E2E runs, so repeated local runs
+ * don't lock out the test accounts or accumulate test sites.
+ */
 export default async function globalSetup() {
   const redis = new Redis(process.env.REDIS_URL ?? "redis://localhost:6379");
   try {
@@ -10,5 +14,14 @@ export default async function globalSetup() {
     if (keys.length > 0) await redis.del(...keys);
   } finally {
     await redis.quit();
+  }
+
+  const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+  await client.connect();
+  try {
+    await client.query(`DELETE FROM "Site" WHERE slug LIKE 'e2e-%'`);
+    await client.query(`DELETE FROM "User" WHERE email LIKE 'e2e-%@example.com'`);
+  } finally {
+    await client.end();
   }
 }
