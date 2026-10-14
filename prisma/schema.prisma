@@ -1,5 +1,6 @@
 // Models are added in the phase that introduces them (see SPEC.md / CLAUDE.md).
 // Phase 0: identity, roles, audit, settings. Phase 1: sites, pages, domains.
+// Phase 2: theme, SEO, page versions, media assets.
 
 generator client {
   provider = "prisma-client"
@@ -34,6 +35,7 @@ model User {
   sessions  Session[]
   auditLogs AuditLog[] @relation("AuditActor")
   sites     Site[]
+  assets    Asset[]
 
   @@index([role])
 }
@@ -129,6 +131,14 @@ model Site {
   suspendedAt      DateTime?
   /// Null until the first publication; unpublished sites are not served.
   publishedAt      DateTime?
+  /// Default meta description for pages without their own.
+  description      String?
+  /// Asks search engines not to index the site (robots.txt + meta robots).
+  noIndex          Boolean           @default(false)
+  faviconUrl       String?
+  /// Theme being edited (src/themes/theme.ts); copied to themePublished on publish. Null = default theme.
+  themeDraft       Json?
+  themePublished   Json?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
@@ -151,10 +161,17 @@ model Page {
   /// Copy of draftContent made on publish; null = never published (not served).
   publishedContent Json?
   publishedAt      DateTime?
+  /// When the draft content was last saved; compared with publishedAt for "unpublished changes".
+  draftUpdatedAt   DateTime  @default(now())
+  /// SEO metadata is applied immediately (not part of draft/publish).
+  seoTitle         String?
+  seoDescription   String?
+  ogImageUrl       String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  site     Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  versions PageVersion[]
 
   @@unique([siteId, path])
   @@index([siteId, position])
@@ -189,4 +206,41 @@ model Domain {
   site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
   @@index([siteId])
+}
+
+/// Snapshot of a page's content taken on every publish (the last N are kept). Restoring copies it into the draft.
+model PageVersion {
+  id          String   @id @default(cuid())
+  pageId      String
+  /// Sequential per page, starting at 1.
+  number      Int
+  title       String
+  content     Json
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, number])
+}
+
+/// Uploaded media file (optimized image) in object storage, owned by a client.
+model Asset {
+  id           String   @id @default(cuid())
+  ownerId      String
+  /// Object key of the optimized file; the thumbnail lives at `{key}` with a `-thumb` suffix.
+  key          String   @unique
+  url          String
+  thumbUrl     String
+  contentType  String
+  /// Bytes of the stored files (optimized + thumbnail); counted against the storage quota.
+  sizeBytes    Int
+  width        Int?
+  height       Int?
+  originalName String
+  createdAt    DateTime @default(now())
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, createdAt])
 }
