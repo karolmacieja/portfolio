@@ -12,7 +12,8 @@ test("published demo site renders on its subdomain", async ({ page }) => {
   expect(response?.status()).toBe(200);
   await expect(page.getByRole("heading", { name: "Jan Kowalski", level: 1 })).toBeVisible();
   await expect(page.getByText("Fotograf · Warszawa")).toBeVisible();
-  await expect(page.getByText("Stworzone w")).toBeVisible();
+  // The demo site's owner is on Business (removeBranding).
+  await expect(page.getByTestId("site-branding")).toHaveCount(0);
   expect(response?.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
 });
 

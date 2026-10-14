@@ -9,7 +9,8 @@ test("edits content in the editor and publishes it", async ({ page }) => {
   const slug = await createSiteAndOpen(page, "Edytor E2E");
 
   await page.getByRole("link", { name: "Edytuj treść" }).click();
-  await expect(page).toHaveURL(/\/editor\//);
+  // The editor route is heavy; the first dev-server compile can take a while.
+  await expect(page).toHaveURL(/\/editor\//, { timeout: 30_000 });
 
   // Select the hero block inside the canvas iframe and edit its title in the fields panel.
   const canvas = page.frameLocator("iframe").first();

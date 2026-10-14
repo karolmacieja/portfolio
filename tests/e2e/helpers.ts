@@ -2,9 +2,9 @@ import { expect, type Page } from "@playwright/test";
 
 import { PASSWORD } from "./hosts";
 
-export async function signInAsClient(page: Page) {
+export async function signInAsClient(page: Page, email = "client@example.com") {
   await page.goto("/login");
-  await page.getByLabel("Adres e-mail").first().fill("client@example.com");
+  await page.getByLabel("Adres e-mail").first().fill(email);
   await page.getByLabel("Hasło").fill(PASSWORD);
   await page.getByRole("button", { name: "Zaloguj się", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
