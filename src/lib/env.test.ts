@@ -46,6 +46,7 @@ describe("parseEnv", () => {
   it("forbids the mock mailer and local storage when APP_ENV=production", () => {
     expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/MAIL_PROVIDER/);
     expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/STORAGE_PROVIDER/);
+    expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/THUMBNAIL_PROVIDER/);
   });
 
   it("requires bucket credentials for S3 storage", () => {

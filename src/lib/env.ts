@@ -54,6 +54,11 @@ export const envSchema = z
       .default("true")
       .transform((value) => value === "true"),
     UPLOAD_MAX_MB: z.coerce.number().positive().max(100).default(15),
+
+    // Template thumbnails (background worker): mock = generated image, playwright = screenshot of the preview.
+    THUMBNAIL_PROVIDER: z.enum(["mock", "playwright"]).default("mock"),
+    // Optional path to a Chromium binary for the playwright renderer (otherwise Playwright's bundled browser).
+    PLAYWRIGHT_CHROMIUM_EXECUTABLE: optionalString,
   })
   .superRefine((env, ctx) => {
     if (env.MAIL_PROVIDER === "smtp" && !env.SMTP_HOST) {
@@ -84,6 +89,13 @@ export const envSchema = z
         code: "custom",
         path: ["STORAGE_PROVIDER"],
         message: "local storage is not allowed in production",
+      });
+    }
+    if (env.APP_ENV === "production" && env.THUMBNAIL_PROVIDER === "mock") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["THUMBNAIL_PROVIDER"],
+        message: "mock thumbnails are not allowed in production",
       });
     }
     if (env.APP_ENV === "production" && env.MAIL_PROVIDER === "mock") {
