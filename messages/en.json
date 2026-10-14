@@ -1,0 +1,82 @@
+{
+  "common": {
+    "appName": "{brand}",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "register": "Create account",
+    "dashboard": "Dashboard",
+    "adminPanel": "Admin panel",
+    "or": "or"
+  },
+  "home": {
+    "title": "Your online portfolio in minutes",
+    "subtitle": "Pick a template, drag in blocks and publish your site at your own address.",
+    "cta": "Start for free"
+  },
+  "auth": {
+    "signInTitle": "Sign in",
+    "signInDescription": "Welcome back! Sign in to manage your portfolio.",
+    "registerTitle": "Create account",
+    "registerDescription": "Create an account and build your portfolio.",
+    "name": "Full name",
+    "email": "Email address",
+    "password": "Password",
+    "passwordHint": "At least 10 characters, including a letter and a digit.",
+    "submitSignIn": "Sign in",
+    "submitRegister": "Create account",
+    "magicLink": "Email me a sign-in link",
+    "magicLinkDescription": "Forgot your password? Sign in with a link sent to your email.",
+    "google": "Continue with Google",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "checkEmailTitle": "Check your inbox",
+    "checkEmailDescription": "We sent a sign-in link to your email address. The link is valid for 24 hours.",
+    "emailVerifiedTitle": "Email confirmed",
+    "emailVerifiedDescription": "Thank you! Your email address has been confirmed.",
+    "emailVerifyFailedTitle": "The link has expired or is invalid",
+    "emailVerifyFailedDescription": "Sign in and request a new verification link.",
+    "emailNotVerified": "Your email address is not confirmed yet. Check your inbox.",
+    "errors": {
+      "invalidCredentials": "Invalid email or password.",
+      "accountBlocked": "This account has been blocked. Please contact support.",
+      "rateLimited": "Too many attempts. Please try again in a few minutes.",
+      "emailTaken": "An account with this email already exists.",
+      "invalidInput": "Please check the highlighted fields.",
+      "generic": "Something went wrong. Please try again.",
+      "accessDenied": "Access denied.",
+      "oauthAccountNotLinked": "This email is already linked to a different sign-in method."
+    },
+    "passwordRules": {
+      "tooShort": "Password must be at least 10 characters long.",
+      "tooLong": "Password is too long.",
+      "needsLetter": "Password must contain a letter.",
+      "needsDigit": "Password must contain a digit."
+    }
+  },
+  "dashboard": {
+    "title": "Welcome, {name}!",
+    "description": "Your sites, stats and settings will appear here soon."
+  },
+  "admin": {
+    "title": "Admin panel",
+    "description": "Signed in as {email} (role: {role})."
+  },
+  "errors": {
+    "forbiddenTitle": "Access denied",
+    "forbiddenDescription": "You don't have permission to view this page."
+  },
+  "email": {
+    "magicLink": {
+      "subject": "Sign in to {brand}",
+      "intro": "Click the link below to sign in. The link is valid for 24 hours.",
+      "cta": "Sign in",
+      "ignore": "If you didn't request this link, you can ignore this email."
+    },
+    "verifyEmail": {
+      "subject": "Confirm your email for {brand}",
+      "intro": "Thanks for signing up! Please confirm your email address by clicking the link below.",
+      "cta": "Confirm email address",
+      "ignore": "If you didn't create an account, you can ignore this email."
+    }
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "common": {
+    "appName": "{brand}",
+    "signIn": "Zaloguj się",
+    "signOut": "Wyloguj się",
+    "register": "Załóż konto",
+    "dashboard": "Panel",
+    "adminPanel": "Panel administratora",
+    "or": "lub"
+  },
+  "home": {
+    "title": "Twoje portfolio online w kilka minut",
+    "subtitle": "Wybierz szablon, przeciągnij bloki i opublikuj stronę pod własnym adresem.",
+    "cta": "Zacznij za darmo"
+  },
+  "auth": {
+    "signInTitle": "Zaloguj się",
+    "signInDescription": "Witaj ponownie! Zaloguj się, aby zarządzać swoim portfolio.",
+    "registerTitle": "Załóż konto",
+    "registerDescription": "Utwórz konto i zbuduj swoje portfolio.",
+    "name": "Imię i nazwisko",
+    "email": "Adres e-mail",
+    "password": "Hasło",
+    "passwordHint": "Co najmniej 10 znaków, w tym litera i cyfra.",
+    "submitSignIn": "Zaloguj się",
+    "submitRegister": "Załóż konto",
+    "magicLink": "Wyślij link do logowania",
+    "magicLinkDescription": "Nie pamiętasz hasła? Zaloguj się linkiem wysłanym na e-mail.",
+    "google": "Kontynuuj z Google",
+    "noAccount": "Nie masz konta?",
+    "haveAccount": "Masz już konto?",
+    "checkEmailTitle": "Sprawdź skrzynkę",
+    "checkEmailDescription": "Wysłaliśmy link do logowania na podany adres e-mail. Link jest ważny przez 24 godziny.",
+    "emailVerifiedTitle": "Adres e-mail potwierdzony",
+    "emailVerifiedDescription": "Dziękujemy! Twój adres e-mail został potwierdzony.",
+    "emailVerifyFailedTitle": "Link wygasł lub jest nieprawidłowy",
+    "emailVerifyFailedDescription": "Zaloguj się i poproś o nowy link weryfikacyjny.",
+    "emailNotVerified": "Twój adres e-mail nie jest jeszcze potwierdzony. Sprawdź skrzynkę.",
+    "errors": {
+      "invalidCredentials": "Nieprawidłowy e-mail lub hasło.",
+      "accountBlocked": "Konto zostało zablokowane. Skontaktuj się z pomocą techniczną.",
+      "rateLimited": "Zbyt wiele prób. Spróbuj ponownie za kilka minut.",
+      "emailTaken": "Konto z tym adresem e-mail już istnieje.",
+      "invalidInput": "Sprawdź poprawność wypełnionych pól.",
+      "generic": "Coś poszło nie tak. Spróbuj ponownie.",
+      "accessDenied": "Brak dostępu.",
+      "oauthAccountNotLinked": "Ten e-mail jest już powiązany z innym sposobem logowania."
+    },
+    "passwordRules": {
+      "tooShort": "Hasło musi mieć co najmniej 10 znaków.",
+      "tooLong": "Hasło jest za długie.",
+      "needsLetter": "Hasło musi zawierać literę.",
+      "needsDigit": "Hasło musi zawierać cyfrę."
+    }
+  },
+  "dashboard": {
+    "title": "Witaj, {name}!",
+    "description": "Tu wkrótce pojawią się Twoje strony, statystyki i ustawienia."
+  },
+  "admin": {
+    "title": "Panel administratora",
+    "description": "Zalogowano jako {email} (rola: {role})."
+  },
+  "errors": {
+    "forbiddenTitle": "Brak dostępu",
+    "forbiddenDescription": "Nie masz uprawnień do tej strony."
+  },
+  "email": {
+    "magicLink": {
+      "subject": "Zaloguj się do {brand}",
+      "intro": "Kliknij poniższy link, aby się zalogować. Link jest ważny przez 24 godziny.",
+      "cta": "Zaloguj się",
+      "ignore": "Jeśli to nie Ty prosiłeś o link, zignoruj tę wiadomość."
+    },
+    "verifyEmail": {
+      "subject": "Potwierdź adres e-mail w {brand}",
+      "intro": "Dziękujemy za rejestrację! Potwierdź swój adres e-mail, klikając poniższy link.",
+      "cta": "Potwierdź adres e-mail",
+      "ignore": "Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość."
+    }
+  }
+}
