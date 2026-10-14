@@ -1,0 +1,10 @@
+/* Self-hosted variable fonts for client sites (see fonts.ts). Browsers only download the
+   font files a page actually uses. */
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/dm-sans";
+@import "@fontsource-variable/montserrat";
+@import "@fontsource-variable/space-grotesk";
+@import "@fontsource-variable/playfair-display";
+@import "@fontsource-variable/fraunces";
+@import "@fontsource-variable/lora";
+@import "@fontsource-variable/jetbrains-mono";
