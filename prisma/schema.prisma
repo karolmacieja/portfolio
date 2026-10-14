@@ -1,6 +1,6 @@
 // Models are added in the phase that introduces them (see SPEC.md / CLAUDE.md).
 // Phase 0: identity, roles, audit, settings. Phase 1: sites, pages, domains.
-// Phase 2: theme, SEO, page versions, media assets.
+// Phase 2: theme, SEO, page versions, media assets. Phase 3: plans, prices, subscriptions, block access.
 
 generator client {
   provider = "prisma-client"
@@ -34,8 +34,9 @@ model User {
   accounts  Account[]
   sessions  Session[]
   auditLogs AuditLog[] @relation("AuditActor")
-  sites     Site[]
-  assets    Asset[]
+  sites         Site[]
+  assets        Asset[]
+  subscriptions Subscription[]
 
   @@index([role])
 }
@@ -243,4 +244,95 @@ model Asset {
   owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@index([ownerId, createdAt])
+}
+
+enum BillingInterval {
+  MONTH
+  YEAR
+}
+
+/// Subscription plan. Editable by admins (no hard-coded plans); see src/server/entitlements.
+model Plan {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  name            String
+  description     String?
+  /// Order on the pricing page; the first active plan also defines limits for users without a subscription.
+  position        Int      @default(0)
+  /// Inactive plans are hidden and cannot be bought; existing subscribers keep them.
+  isActive        Boolean  @default(true)
+  trialDays       Int      @default(14)
+  maxSites        Int
+  maxPagesPerSite Int
+  /// Null = unlimited.
+  maxProjects     Int?
+  storageMb       Int
+  /// Feature flags, validated by `planFeaturesSchema` (missing = disabled).
+  features        Json     @default("{}")
+  /// Access tiers for blocks and templates, e.g. ["basic", "pro"].
+  accessTiers     String[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  prices        PlanPrice[]
+  subscriptions Subscription[]
+}
+
+model PlanPrice {
+  id            String          @id @default(cuid())
+  planId        String
+  interval      BillingInterval
+  /// Gross amount in the smallest currency unit (grosze), VAT included.
+  amount        Int
+  currency      String          @default("PLN")
+  /// Linked Stripe Price (Phase 5).
+  stripePriceId String?         @unique
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  plan          Plan           @relation(fields: [planId], references: [id], onDelete: Cascade)
+  subscriptions Subscription[]
+
+  @@unique([planId, interval, currency])
+}
+
+/// Mirrors Stripe subscription statuses.
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  UNPAID
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  CANCELED
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String
+  planId               String
+  priceId              String?
+  status               SubscriptionStatus
+  trialEndsAt          DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  canceledAt           DateTime?
+  /// Null for subscriptions granted manually (seed, admin).
+  stripeSubscriptionId String?            @unique
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan  Plan       @relation(fields: [planId], references: [id])
+  price PlanPrice? @relation(fields: [priceId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+}
+
+/// Required access tier per block type; rows override the defaults in src/server/entitlements/rules.ts.
+model BlockAccess {
+  blockType    String   @id
+  requiredTier String
+  updatedAt    DateTime @updatedAt
 }
