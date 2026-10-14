@@ -52,6 +52,9 @@ printed to the dev server console.
 Uploads are stored on disk in `.storage/` by default (`STORAGE_PROVIDER=local`). To use MinIO from docker compose (like
 R2 in production) set `STORAGE_PROVIDER=s3`; the remaining `S3_*` values in `.env.example` already match it.
 
+Background jobs (template thumbnails) run in a separate process: `pnpm worker`. With `THUMBNAIL_PROVIDER=mock`
+(default) no browser is needed; `playwright` takes real screenshots of the template preview.
+
 Try it: sign in as the client at http://app.localhost:3000, open "Zarządzaj" on the demo site, edit a page in the
 editor, change the theme and publish; then reload http://jan.localhost:3000.
 

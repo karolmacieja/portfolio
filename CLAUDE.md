@@ -12,8 +12,9 @@ Next.js 16 ships its own docs in `node_modules/next/dist/docs/` (see `AGENTS.md`
 | 1     | Multi-tenancy (host routing), Site/Page, renderer, cache               | done    |
 | 2     | Editor (Puck), blocks, themes, draft/publish, versions, media, SEO     | done    |
 | 3     | Plans & entitlements: limits, flags, block tiers, plan seed            | done    |
-| 4     | Templates: template mode, versions, gallery, copy, theme/layout change | next    |
-| 5-9   | Payments, invoicing, domains, admin, polish                            | pending |
+| 4     | Templates: template mode, versions, gallery, copy, theme/layout change | done    |
+| 5     | Payments (Stripe): checkout, webhooks, portal, dunning, coupons        | next    |
+| 6-9   | Invoicing, domains, admin, polish                                      | pending |
 
 Work in phases; after each phase run lint/typecheck/tests, summarize and wait for the owner's approval.
 
@@ -25,7 +26,7 @@ Work in phases; after each phase run lint/typecheck/tests, summarize and wait fo
 - Puck (`@puckeditor/core`, formerly `@measured/puck`): page content stored as Puck JSON, rendered with `Render` from `@puckeditor/core/rsc`
 - next-intl 4 (no locale in URL; cookie `NEXT_LOCALE`, default `pl`)
 - Tailwind CSS 4 + shadcn/ui (new-york, neutral) for panels
-- Redis (ioredis): rate limiting; BullMQ jobs from later phases
+- Redis (ioredis): rate limiting; BullMQ queues + a separate worker process (`pnpm worker`, `src/worker/index.ts`)
 - Media: `sharp` (validation + WebP optimization), storage adapter: local disk (dev) or S3 (`@aws-sdk/client-s3`: MinIO, R2)
 - Site fonts self-hosted via `@fontsource-variable/*` (no third-party requests from client sites)
 - Vitest 4 (unit), Playwright (E2E)
@@ -39,6 +40,7 @@ pnpm install                  # also runs `prisma generate`
 pnpm db:migrate --name x      # create/apply a migration + regenerate the client (Prisma 7 no longer auto-generates)
 pnpm db:seed                  # plans, users (password Password123!), demo sites with generated images
 pnpm dev                      # http://localhost:3000 (marketing), app./admin./jan.localhost:3000
+pnpm worker                   # background jobs (template thumbnails); needs Redis
 pnpm lint | pnpm format | pnpm typecheck | pnpm test | pnpm test:e2e | pnpm build
 pnpm db:reset                 # drop, migrate, seed
 ```
@@ -115,6 +117,26 @@ E2E against a preinstalled Chromium: `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/ch
 - Tests: `src/server/entitlements/test-utils.ts` creates inactive test plans and subscriptions (CI has no seed).
 - `getEntitlements` is intentionally not wrapped in React `cache` (outside a render it would memoize forever).
 
+## Templates
+
+- Authored by ADMIN on the admin host: `/templates` (list with uses + conversion), `/templates/{id}` (metadata, pages,
+  theme, access overrides, versions, publish/archive) and `/templates/{id}/edit/{key}` (the same `PageEditor` in
+  template mode, with a lock panel per block). Services: `src/server/templates/admin.ts` (not owner-scoped).
+- `Template.draft` is the working copy `{ pages: [{ key, path, title, content, lockRules }], theme }`
+  (`templates/schema.ts`); publishing validates every page, refuses blocks above the template tier (`tierTooLow`) and
+  snapshots a `TemplateVersion`. A thumbnail job is queued (BullMQ `thumbnails`; renderer `THUMBNAIL_PROVIDER`
+  mock | playwright screenshots `/template-preview/{slug}`).
+- Public preview `/template-preview/{slug}/[path]` (own root layout, ISR tag `template:{slug}`) on platform hosts.
+- Clients (`src/server/templates/client.ts`, owner-scoped): gallery `/templates` with `canUseTemplate` (tier, premium
+  purchase, `TemplateOverride` for a plan/user), new site from a template (copies the published version's pages, theme
+  and lock rules; site keeps `templateId`/`templateVersionId`), site tab `/sites/{id}/template`: theme only, or full
+  layout switch (`SiteBackup` first, `mapTemplateContent` fills template blocks with old blocks of the same type,
+  live content stays until publish). Backups are listed and restorable in History (restoring backs up again).
+- Lock rules (`src/blocks/locks.ts`): `{ [blockId]: { edit?, drag?, delete?: false } }` stored on `Page.lockRules`.
+  The editor applies them via Puck `resolvePermissions`; `savePageDraft` refuses deleting delete-locked and changing
+  edit-locked blocks (`blockLocked`). Drag locks are editor-only.
+- Premium templates: `isPremium` + `priceAmount`; purchase (`TemplatePurchase`) arrives with Stripe in Phase 5.
+
 ## Published sites and caching
 
 - Rendering: `src/app/sites/[host]/[[...path]]/page.tsx` is ISR (`generateStaticParams` returns `[]`); the layout applies
@@ -135,10 +157,12 @@ messages/{pl,en}.json       UI strings (pl is the source; a test enforces identi
 src/proxy.ts                host-based routing (see above)
 src/app/(platform)/         root layout for platform hosts
   marketing/                landing (root domain)
-  panel/                    client panel (app.): (auth)/..., dashboard, plans, media, sites/[siteId]/(manage)/..., editor
-  admin/                    admin panel (admin.): login, forbidden, (protected)/ dashboard
+  panel/                    client panel (app.): (auth)/..., dashboard, plans, templates, media,
+                            sites/[siteId]/(manage)/{pages,theme,template,settings,history}, editor
+  admin/                    admin panel (admin.): login, forbidden, (protected)/ dashboard + templates, (editor)/
 src/app/sites/[host]/       root layout + renderer for published client sites
 src/app/api/                auth (wrapped with withPublicOrigin), email/verify, media/upload, health
+src/app/template-preview/   public template preview (own root layout)
 src/app/storage/            local storage file server (dev)
 src/app/global-not-found.tsx
 src/auth.ts                 NextAuth instance (lazy config)
@@ -159,6 +183,10 @@ src/server/                 server-only domain code
                             actions, cache tags, urls
   entitlements/             plan rules (pure) + loader; test fixtures
   plans/                    plan listing for the pricing page
+  templates/                schema, admin + client services, content mapping, preview, thumbnail job, actions
+  jobs/                     BullMQ queues (enqueue helpers)
+  thumbnails/               ThumbnailRenderer: mock | playwright
+src/worker/                 background worker entry (`pnpm worker`)
 tests/e2e/                  Playwright specs (+ hosts.ts URL helpers, global-setup cleanup)
 ```
 

@@ -123,3 +123,27 @@ Lightweight ADR log. Newest at the bottom. Business decisions confirmed by the o
 54. **Seed accounts per plan** (`start@`, `pro@`, `business@`, `free@example.com`); `client@example.com` (demo sites,
     E2E) is on Business. Seed subscriptions are manual (no Stripe id).
 55. **`STORAGE_DEFAULT_QUOTA_MB` removed**: the quota comes from the plan.
+
+## Phase 4
+
+56. **Template working copy as JSON (`Template.draft`)** rather than template page rows: templates are small,
+    authored by admins only, and versions snapshot the same shape (`TemplateVersion.pages/theme`).
+57. **One editor component** (`PageEditor`) for client pages and template pages; actions are passed in as bound
+    server actions. Template mode adds a lock panel (Puck `fields` override + `createUsePuck`).
+58. **Lock rules keyed by block id**, copied with the template content into `Page.lockRules`. Enforced server-side for
+    delete/edit; drag locks only in the editor. Edits are compared structurally, ignoring key order (jsonb).
+59. **Template tier must cover its blocks**: publishing refuses templates that use blocks above their access tier, so a
+    client allowed to use a template can always keep editing it.
+60. **Layout switch = backup + mapping**: `SiteBackup` stores the full site (pages incl. live content, themes,
+    template refs); template blocks take the props of old blocks of the same type, pairing pages by path then order;
+    locked blocks keep template content. Page structure changes immediately (consistent with decision 35); live page
+    content stays until the next publish. Restoring a backup first backs up the current state.
+61. **Premium templates** are modelled now (`isPremium`, `priceAmount`, `TemplatePurchase`) and locked in the gallery
+    until Stripe Checkout (Phase 5). Overrides (per plan or user) bypass tier and premium.
+62. **Background jobs with BullMQ in a separate worker process** (`pnpm worker`): the worker runs outside Next.js and
+    must not rely on Next caching APIs. Jobs are idempotent (job id per template version), retried with backoff.
+63. **Thumbnails via a renderer adapter**: `playwright` screenshots the public preview (production; needs Chromium in
+    the worker image), `mock` draws a placeholder (dev/CI; refused in production). Seed thumbnails are composed with
+    sharp so the gallery looks reasonable without a browser.
+64. **Template statistics** computed on the fly: uses = sites with `templateId`; conversion = share of those sites'
+    owners who currently have an entitled subscription. Good enough until the admin dashboard (Phase 8).
