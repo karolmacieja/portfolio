@@ -19,10 +19,10 @@ import { DEFAULT_BLOCK_TIERS } from "../src/server/entitlements/rules";
 import { processImage } from "../src/server/media/image";
 import { createStorage } from "../src/server/storage";
 import { THEME_PRESETS } from "../src/themes/theme";
+import { seedTemplates } from "./seed-templates";
 
 /**
  * Development seed. Idempotent: safe to run repeatedly.
- * Templates are added in Phase 4.
  */
 
 const DEV_PASSWORD = process.env.SEED_PASSWORD || "Password123!";
@@ -304,6 +304,11 @@ async function main() {
       else await db.subscription.deleteMany({ where: { userId: saved.id, stripeSubscriptionId: null } });
     }
 
+    const admin = await db.user.findUniqueOrThrow({ where: { email: "admin@example.com" } });
+    const templateCount = await seedTemplates(db, env, admin.id, (name, colors, size) =>
+      demoImage(db, admin.id, name, colors, size),
+    );
+
     const client = await db.user.findUniqueOrThrow({ where: { email: "client@example.com" } });
     const now = new Date();
     const sites = [
@@ -374,7 +379,7 @@ async function main() {
 
     console.info(
       `Seeded ${plans.length} plans, ${users.length} users (password: ${process.env.SEED_PASSWORD ? "<SEED_PASSWORD>" : DEV_PASSWORD}) ` +
-        `and ${sites.length} demo sites (${sites.map((s) => s.slug).join(", ")})`,
+        `${templateCount} templates and ${sites.length} demo sites (${sites.map((s) => s.slug).join(", ")})`,
     );
   } finally {
     await db.$disconnect();
