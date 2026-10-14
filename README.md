@@ -20,7 +20,16 @@ pnpm db:seed
 pnpm dev
 ```
 
-Open http://app.localhost:3000 (any `*.localhost` host resolves to your machine in Chrome/Firefox/Safari).
+Any `*.localhost` host resolves to your machine in Chrome/Firefox/Safari, so every platform host works locally:
+
+| Host                                  | What                                                |
+| ------------------------------------- | --------------------------------------------------- |
+| http://localhost:3000                 | Marketing site                                      |
+| http://app.localhost:3000             | Client panel                                        |
+| http://admin.localhost:3000           | Admin panel (separate login)                        |
+| http://jan.localhost:3000             | Published demo site (seed)                          |
+| http://zawieszona.localhost:3000      | Suspended demo site (seed)                          |
+| http://jan-kowalski.pl.localhost:3000 | Demo "custom domain" from `config/dev-domains.json` |
 
 | Account | Email               | Password     |
 | ------- | ------------------- | ------------ |
@@ -53,5 +62,5 @@ printed to the dev server console.
 
 ## CI
 
-GitHub Actions (`.github/workflows/ci.yml`): lint, format check, typecheck, unit tests and build; a separate job runs
-the Playwright suite against Postgres and Redis service containers.
+GitHub Actions (`.github/workflows/ci.yml`): lint, format check, typecheck, unit + integration tests (Postgres and
+Redis service containers) and build; a separate job runs the Playwright suite against a production build.
