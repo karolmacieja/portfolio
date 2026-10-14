@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 
 import { db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
+import { getEntitlements } from "@/server/entitlements";
 import { getStorage } from "@/server/storage";
 
 import { MediaError } from "./errors";
@@ -40,9 +41,9 @@ function toDto(asset: {
   return { ...asset, createdAt: asset.createdAt.toISOString() };
 }
 
-/** Quota in bytes. Plans (Phase 3) will provide per-plan values. */
-export function getQuotaBytes(): number {
-  return getEnv().STORAGE_DEFAULT_QUOTA_MB * MB;
+/** Storage quota in bytes from the user's plan (or the entry plan without a subscription). */
+export async function getQuotaBytes(ownerId: string): Promise<number> {
+  return (await getEntitlements(ownerId)).limits.storageMb * MB;
 }
 
 export function getUploadLimitBytes(): number {
@@ -50,8 +51,11 @@ export function getUploadLimitBytes(): number {
 }
 
 export async function getStorageUsage(ownerId: string): Promise<{ usedBytes: number; quotaBytes: number }> {
-  const { _sum } = await db.asset.aggregate({ where: { ownerId }, _sum: { sizeBytes: true } });
-  return { usedBytes: _sum.sizeBytes ?? 0, quotaBytes: getQuotaBytes() };
+  const [{ _sum }, quotaBytes] = await Promise.all([
+    db.asset.aggregate({ where: { ownerId }, _sum: { sizeBytes: true } }),
+    getQuotaBytes(ownerId),
+  ]);
+  return { usedBytes: _sum.sizeBytes ?? 0, quotaBytes };
 }
 
 export async function listAssets(ownerId: string): Promise<AssetDto[]> {

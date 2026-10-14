@@ -8,6 +8,11 @@ export type SiteErrorCode =
   | "pathTaken"
   | "cannotDeleteHome"
   | "invalidContent"
+  | "subscriptionRequired"
+  | "blockNotAllowed"
+  | "limit.sites"
+  | "limit.pages"
+  | "limit.projects"
   | `path.${PagePathError}`;
 
 /** Expected, user-facing failures of site operations; mapped to `sites.errors.*` messages. */

@@ -7,6 +7,7 @@ import { getEnv } from "@/lib/env";
 import { normalizeHostname } from "@/lib/hosts";
 import { DomainStatus, SiteStatus, type SuspensionReason } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
+import { can, getEntitlements } from "@/server/entitlements";
 
 import { hostTag, siteTag } from "./cache-tags";
 
@@ -29,6 +30,8 @@ export type PublishedSite = {
   description: string | null;
   noIndex: boolean;
   faviconUrl: string | null;
+  /** "Made with {BRAND}" footer; hidden on plans with the removeBranding feature. */
+  showBranding: boolean;
   /** Published theme JSON; parse with parseTheme(). */
   theme: unknown;
   navigation: { path: string; title: string; updatedAt: string }[];
@@ -84,6 +87,7 @@ export function getPublishedSite(siteId: string): Promise<PublishedSite | null> 
         },
       });
       if (!site) return null;
+      const entitlements = await getEntitlements(site.ownerId);
       return {
         id: site.id,
         name: site.name,
@@ -94,6 +98,7 @@ export function getPublishedSite(siteId: string): Promise<PublishedSite | null> 
         description: site.description,
         noIndex: site.noIndex,
         faviconUrl: site.faviconUrl,
+        showBranding: !can(entitlements, "removeBranding"),
         theme: site.themePublished,
         navigation: site.pages.map((page) => ({
           path: page.path,

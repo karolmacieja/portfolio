@@ -11,6 +11,8 @@ import { SiteError } from "./errors";
 describe.skipIf(!process.env.DATABASE_URL)("site service (database)", async () => {
   const { db } = await import("@/lib/db");
   const service = await import("./service");
+  const { createPlanFixtures } = await import("@/server/entitlements/test-utils");
+  const plans = createPlanFixtures(db);
 
   const run = randomUUID().slice(0, 8);
   const userIds: string[] = [];
@@ -28,10 +30,14 @@ describe.skipIf(!process.env.DATABASE_URL)("site service (database)", async () =
   beforeAll(async () => {
     alice = await createUser("alice");
     bob = await createUser("bob");
+    const plan = await plans.createPlan();
+    await plans.subscribe(alice, plan.id);
+    await plans.subscribe(bob, plan.id);
   });
 
   afterAll(async () => {
     await db.user.deleteMany({ where: { id: { in: userIds } } });
+    await plans.cleanup();
   });
 
   it("creates a site with a home page draft and invalidates the host lookup", async () => {

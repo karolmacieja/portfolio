@@ -12,6 +12,8 @@ import { SiteError } from "./errors";
 describe.skipIf(!process.env.DATABASE_URL)("site pages, versions and settings (database)", async () => {
   const { db } = await import("@/lib/db");
   const service = await import("./service");
+  const { createPlanFixtures } = await import("@/server/entitlements/test-utils");
+  const plans = createPlanFixtures(db);
 
   const run = randomUUID().slice(0, 8);
   const userIds: string[] = [];
@@ -29,6 +31,7 @@ describe.skipIf(!process.env.DATABASE_URL)("site pages, versions and settings (d
   beforeAll(async () => {
     owner = await createUser("owner");
     stranger = await createUser("stranger");
+    await plans.subscribe(owner, (await plans.createPlan()).id);
     const { value } = await service.createSite(owner, { name: "Pages", slug: `t-pages-${run}` });
     siteId = value.id;
     homeId = (await db.page.findFirstOrThrow({ where: { siteId, path: "" } })).id;
@@ -36,6 +39,7 @@ describe.skipIf(!process.env.DATABASE_URL)("site pages, versions and settings (d
 
   afterAll(async () => {
     await db.user.deleteMany({ where: { id: { in: userIds } } });
+    await plans.cleanup();
   });
 
   it("saves valid drafts and rejects invalid content", async () => {

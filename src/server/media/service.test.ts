@@ -13,11 +13,12 @@ describe.skipIf(!process.env.DATABASE_URL)("media service (database)", async () 
   const dir = await mkdtemp(path.join(tmpdir(), "media-test-"));
   process.env.STORAGE_PROVIDER = "local";
   process.env.STORAGE_LOCAL_DIR = dir;
-  process.env.STORAGE_DEFAULT_QUOTA_MB = "1";
 
   const { db } = await import("@/lib/db");
   const media = await import("./service");
   const { LocalStorageProvider } = await import("@/server/storage/local");
+  const { createPlanFixtures } = await import("@/server/entitlements/test-utils");
+  const plans = createPlanFixtures(db);
   const storage = new LocalStorageProvider(dir);
 
   const run = randomUUID().slice(0, 8);
@@ -36,10 +37,13 @@ describe.skipIf(!process.env.DATABASE_URL)("media service (database)", async () 
       userIds.push(user.id);
     }
     [owner, stranger] = userIds as [string, string];
+    // 1 MB quota so a few uploads exceed it.
+    await plans.subscribe(owner, (await plans.createPlan({ storageMb: 1 })).id);
   });
 
   afterAll(async () => {
     await db.user.deleteMany({ where: { id: { in: userIds } } });
+    await plans.cleanup();
     await rm(dir, { recursive: true, force: true });
   });
 

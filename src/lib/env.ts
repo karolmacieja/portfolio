@@ -54,8 +54,6 @@ export const envSchema = z
       .default("true")
       .transform((value) => value === "true"),
     UPLOAD_MAX_MB: z.coerce.number().positive().max(100).default(15),
-    // Per-client storage quota until plans define it (Phase 3).
-    STORAGE_DEFAULT_QUOTA_MB: z.coerce.number().int().positive().default(500),
   })
   .superRefine((env, ctx) => {
     if (env.MAIL_PROVIDER === "smtp" && !env.SMTP_HOST) {

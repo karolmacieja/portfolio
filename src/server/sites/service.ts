@@ -5,6 +5,13 @@ import { isDeepStrictEqual } from "node:util";
 import { emptyContent, starterContent, validatePageContent, type PageContent } from "@/blocks/content";
 import { Prisma, SiteStatus, type SuspensionReason } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import {
+  canAddMore,
+  countProjects,
+  getBlockTiers,
+  getEntitlements,
+  newDisallowedBlocks,
+} from "@/server/entitlements";
 import { normalizePagePath, validatePagePath } from "@/lib/page-path";
 import { validateSlug } from "@/lib/slug";
 import { DEFAULT_THEME, parseTheme, themeSchema, type Theme } from "@/themes/theme";
@@ -20,6 +27,10 @@ import { siteSubdomainHostname } from "./urls";
  *
  * Draft vs live: page content and the theme are edited as drafts and go live on publish.
  * Page structure (title, path, order, deletion), SEO fields and site settings apply immediately.
+ *
+ * Plan entitlements (src/server/entitlements) are enforced here, so no caller can bypass them:
+ * site/page/project limits, block tiers and publishing. Existing data is never removed when a plan
+ * shrinks; only adding beyond the limits is refused.
  */
 
 export const MAX_VERSIONS_PER_PAGE = 20;
@@ -100,6 +111,10 @@ export async function createSite(
   input: { name: string; slug: string; locale?: string; content?: PageContent },
 ): Promise<MutationResult<{ id: string; slug: string }>> {
   if (!validateSlug(input.slug).ok) throw new SiteError("slugInvalid");
+  const entitlements = await getEntitlements(ownerId);
+  if (!canAddMore(entitlements.limits.maxSites, await db.site.count({ where: { ownerId } }))) {
+    throw new SiteError("limit.sites");
+  }
   try {
     const site = await db.site.create({
       data: {
@@ -194,7 +209,11 @@ export async function getPageForEditing(ownerId: string, pageId: string) {
   };
 }
 
-/** Saves the editor's draft. Content is strictly validated (unknown blocks, bad links, ...). */
+/**
+ * Saves the editor's draft. Content is strictly validated (unknown blocks, bad links, ...) and
+ * checked against the plan: no newly added blocks above the plan's tier, no growth past the
+ * project limit (counted across the site's drafts).
+ */
 export async function savePageDraft(
   ownerId: string,
   pageId: string,
@@ -203,6 +222,27 @@ export async function savePageDraft(
   const page = await getOwnedPage(ownerId, pageId);
   const validation = validatePageContent(content);
   if (!validation.ok) throw new SiteError("invalidContent", validation.issues);
+
+  const [entitlements, tiers] = await Promise.all([getEntitlements(ownerId), getBlockTiers()]);
+  const disallowed = newDisallowedBlocks(
+    validation.content,
+    [page.draftContent, page.publishedContent],
+    entitlements,
+    tiers,
+  );
+  if (disallowed.length > 0) throw new SiteError("blockNotAllowed", disallowed);
+
+  if (entitlements.limits.maxProjects !== null) {
+    const others = await db.page.findMany({
+      where: { siteId: page.siteId, id: { not: page.id } },
+      select: { draftContent: true },
+    });
+    const otherProjects = others.reduce((sum, p) => sum + countProjects(p.draftContent), 0);
+    const before = otherProjects + countProjects(page.draftContent);
+    const after = otherProjects + countProjects(validation.content);
+    if (after > entitlements.limits.maxProjects && after > before) throw new SiteError("limit.projects");
+  }
+
   await db.page.update({
     where: { id: page.id },
     data: { draftContent: toJson(validation.content), draftUpdatedAt: new Date() },
@@ -224,6 +264,10 @@ export async function createPage(
 ): Promise<MutationResult<{ id: string }>> {
   const site = await getSite(ownerId, siteId);
   const path = checkPath(input.path);
+  const entitlements = await getEntitlements(ownerId);
+  if (!canAddMore(entitlements.limits.maxPagesPerSite, await db.page.count({ where: { siteId: site.id } }))) {
+    throw new SiteError("limit.pages");
+  }
   const last = await db.page.aggregate({ where: { siteId: site.id }, _max: { position: true } });
   try {
     const page = await db.page.create({
@@ -313,6 +357,7 @@ export async function publishSite(
   actorId: string = ownerId,
 ): Promise<MutationResult<{ publishedAt: Date }>> {
   const site = await getSite(ownerId, siteId);
+  if (!(await getEntitlements(ownerId)).canPublish) throw new SiteError("subscriptionRequired");
   const pages = await db.page.findMany({
     where: { siteId: site.id },
     select: { id: true, title: true, draftContent: true, draftUpdatedAt: true, publishedAt: true },
@@ -392,6 +437,12 @@ export async function restoreVersion(
 }
 
 // --- Staff / billing -----------------------------------------------------------------------
+
+/** Cache tags of all of a user's sites; invalidate when their plan changes (branding, access). */
+export async function siteTagsForOwner(ownerId: string): Promise<string[]> {
+  const sites = await db.site.findMany({ where: { ownerId }, select: { id: true } });
+  return sites.map((site) => siteTag(site.id));
+}
 
 /** Staff/billing operation: replaces the public site with a notice. Not owner-scoped by design. */
 export async function suspendSite(siteId: string, reason: SuspensionReason): Promise<MutationResult<void>> {
