@@ -128,7 +128,8 @@
         "sites": "You've reached your plan's site limit.",
         "pages": "You've reached your plan's page limit.",
         "projects": "You've reached your plan's project limit."
-      }
+      },
+      "blockLocked": "This block is locked by the template and can't be removed or changed."
     },
     "slugErrors": {
       "tooShort": "The address must be at least 3 characters long.",
@@ -149,7 +150,8 @@
     "history": "History",
     "view": "View site",
     "media": "Media",
-    "unpublishedChanges": "You have unpublished changes."
+    "unpublishedChanges": "You have unpublished changes.",
+    "template": "Template"
   },
   "pages": {
     "title": "Pages",
@@ -464,5 +466,131 @@
       "sites": "Sites: {used} of {limit}",
       "storage": "Storage: {used} of {limit}"
     }
+  },
+  "templates": {
+    "title": "Templates",
+    "description": "Pick a template to start with — you can change content and design later in the editor.",
+    "all": "All",
+    "categories": {
+      "photography": "Photography",
+      "design": "Design & UX",
+      "development": "Development",
+      "architecture": "Architecture",
+      "other": "Other"
+    },
+    "badges": {
+      "new": "New",
+      "featured": "Featured",
+      "premium": "Premium {price}"
+    },
+    "preview": "Preview",
+    "use": "Use template",
+    "locked": "Available on a higher plan",
+    "premiumLocked": "Premium template — purchase coming soon",
+    "upgrade": "Upgrade plan",
+    "empty": "No templates in this category.",
+    "startFromTemplate": "Start from a template",
+    "useTitle": "New site from template “{name}”",
+    "create": "Create site",
+    "current": "Current template: {name}",
+    "noCurrent": "This site doesn't use a template.",
+    "applyTheme": "Theme only",
+    "applyThemeHint": "Colors, fonts and style from the template — your content stays as it is.",
+    "switchLayout": "Change layout",
+    "switchLayoutHint": "The template's pages and blocks, filled with your content. We back up your site first.",
+    "switchConfirm": "Switch this site to the “{name}” layout? A backup will be created that you can restore in History.",
+    "themeApplied": "Template theme saved to your draft. Publish the site to make it visible.",
+    "layoutSwitched": "Layout changed. Review your pages and publish the site.",
+    "backups": "Backups",
+    "backupsEmpty": "No backups yet.",
+    "backupReason": {
+      "templateSwitch": "Before template change",
+      "beforeRestore": "Before restoring a backup"
+    },
+    "restoreBackup": "Restore",
+    "restoreConfirm": "Restore this backup? The current state will be backed up too.",
+    "restored": "Backup restored.",
+    "errors": {
+      "notFound": "Template not found.",
+      "slugInvalid": "Invalid identifier (lowercase letters, digits, hyphens).",
+      "slugTaken": "This identifier is already taken.",
+      "accessDenied": "This template isn't available on your plan.",
+      "invalidContent": "The template content contains invalid data.",
+      "tierTooLow": "The template uses blocks from a higher access tier ({tier}). Raise the template tier or remove those blocks.",
+      "pathTaken": "A page with this address already exists.",
+      "cannotDeleteHome": "The home page cannot be deleted.",
+      "noPublishedVersion": "The template has no published version yet.",
+      "userNotFound": "No user with this email address.",
+      "path": {
+        "empty": "Please enter a page address.",
+        "tooLong": "The page address is too long.",
+        "invalidChars": "The address may only contain lowercase letters, digits and single hyphens.",
+        "tooDeep": "The address can have at most 3 levels.",
+        "reserved": "This address is reserved."
+      }
+    }
+  },
+  "adminNav": {
+    "dashboard": "Dashboard",
+    "templates": "Templates"
+  },
+  "adminTemplates": {
+    "title": "Templates",
+    "new": "New template",
+    "name": "Name",
+    "slug": "Identifier",
+    "category": "Category",
+    "create": "Create",
+    "status": {
+      "DRAFT": "Draft",
+      "PUBLISHED": "Published",
+      "ARCHIVED": "Archived"
+    },
+    "columns": {
+      "name": "Template",
+      "status": "Status",
+      "tier": "Tier",
+      "uses": "Uses",
+      "conversion": "Conversion",
+      "version": "Version"
+    },
+    "details": "Details",
+    "description": "Description",
+    "tags": "Tags (comma separated)",
+    "tier": "Access tier",
+    "position": "Order",
+    "isNew": "Mark as “New”",
+    "isFeatured": "Mark as “Featured”",
+    "isPremium": "Premium template (one-time purchase)",
+    "price": "Price (PLN, gross)",
+    "thumbnail": "Thumbnail",
+    "save": "Save",
+    "saved": "Saved.",
+    "pages": "Pages",
+    "editPage": "Edit",
+    "removePage": "Remove",
+    "addPage": "Add page",
+    "pageTitle": "Title",
+    "pagePath": "Address",
+    "theme": "Template theme",
+    "publish": "Publish new version",
+    "published": "Version published. The thumbnail will be generated in the background.",
+    "archive": "Archive",
+    "unarchive": "Publish again",
+    "preview": "Preview",
+    "versions": "Versions",
+    "versionLabel": "Version {number}",
+    "overrides": "Access exceptions",
+    "overridesHint": "Grant the template to a whole plan or a single user regardless of its tier.",
+    "overridePlan": "Plan",
+    "overrideUser": "User email",
+    "addOverride": "Add exception",
+    "removeOverride": "Remove",
+    "noOverrides": "No exceptions.",
+    "lockPanel": "Block locks (for clients)",
+    "lockEdit": "Lock editing",
+    "lockDrag": "Lock moving",
+    "lockDelete": "Lock removing",
+    "lockHint": "Select a block in the preview to set its locks."
   }
 }

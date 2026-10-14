@@ -128,7 +128,8 @@
         "sites": "Osiągnięto limit stron w Twoim planie.",
         "pages": "Osiągnięto limit podstron w Twoim planie.",
         "projects": "Osiągnięto limit projektów w Twoim planie."
-      }
+      },
+      "blockLocked": "Ten blok jest zablokowany przez szablon i nie może zostać usunięty ani zmieniony."
     },
     "slugErrors": {
       "tooShort": "Adres musi mieć co najmniej 3 znaki.",
@@ -149,7 +150,8 @@
     "history": "Historia",
     "view": "Podgląd strony",
     "media": "Media",
-    "unpublishedChanges": "Masz nieopublikowane zmiany."
+    "unpublishedChanges": "Masz nieopublikowane zmiany.",
+    "template": "Szablon"
   },
   "pages": {
     "title": "Podstrony",
@@ -464,5 +466,131 @@
       "sites": "Strony: {used} z {limit}",
       "storage": "Miejsce: {used} z {limit}"
     }
+  },
+  "templates": {
+    "title": "Szablony",
+    "description": "Wybierz szablon na start — treść i wygląd zmienisz później w edytorze.",
+    "all": "Wszystkie",
+    "categories": {
+      "photography": "Fotografia",
+      "design": "Grafika i UX",
+      "development": "Programowanie",
+      "architecture": "Architektura",
+      "other": "Inne"
+    },
+    "badges": {
+      "new": "Nowość",
+      "featured": "Polecany",
+      "premium": "Premium {price}"
+    },
+    "preview": "Podgląd",
+    "use": "Użyj szablonu",
+    "locked": "Dostępny w wyższym planie",
+    "premiumLocked": "Szablon premium — zakup będzie dostępny wkrótce",
+    "upgrade": "Ulepsz plan",
+    "empty": "Brak szablonów w tej kategorii.",
+    "startFromTemplate": "Zacznij od szablonu",
+    "useTitle": "Nowa strona z szablonu „{name}”",
+    "create": "Utwórz stronę",
+    "current": "Aktualny szablon: {name}",
+    "noCurrent": "Ta strona nie korzysta z szablonu.",
+    "applyTheme": "Tylko motyw",
+    "applyThemeHint": "Kolory, fonty i styl z szablonu — treść zostaje bez zmian.",
+    "switchLayout": "Zmień układ",
+    "switchLayoutHint": "Podstrony i bloki z szablonu, wypełnione Twoją treścią. Przed zmianą zapiszemy kopię zapasową.",
+    "switchConfirm": "Zmienić układ strony na szablon „{name}”? Utworzymy kopię zapasową, którą możesz przywrócić w Historii.",
+    "themeApplied": "Motyw szablonu zapisany w szkicu. Opublikuj stronę, aby był widoczny.",
+    "layoutSwitched": "Układ zmieniony. Sprawdź podstrony i opublikuj stronę.",
+    "backups": "Kopie zapasowe",
+    "backupsEmpty": "Brak kopii zapasowych.",
+    "backupReason": {
+      "templateSwitch": "Przed zmianą szablonu",
+      "beforeRestore": "Przed przywróceniem kopii"
+    },
+    "restoreBackup": "Przywróć",
+    "restoreConfirm": "Przywrócić tę kopię? Obecny stan strony też zostanie zapisany jako kopia.",
+    "restored": "Kopia przywrócona.",
+    "errors": {
+      "notFound": "Nie znaleziono szablonu.",
+      "slugInvalid": "Nieprawidłowy identyfikator (małe litery, cyfry, myślniki).",
+      "slugTaken": "Ten identyfikator jest już zajęty.",
+      "accessDenied": "Ten szablon nie jest dostępny w Twoim planie.",
+      "invalidContent": "Treść szablonu zawiera nieprawidłowe dane.",
+      "tierTooLow": "Szablon używa bloków z wyższego poziomu dostępu ({tier}). Podnieś poziom szablonu lub usuń te bloki.",
+      "pathTaken": "Podstrona o tym adresie już istnieje.",
+      "cannotDeleteHome": "Strony głównej nie można usunąć.",
+      "noPublishedVersion": "Szablon nie ma jeszcze opublikowanej wersji.",
+      "userNotFound": "Nie znaleziono użytkownika o tym adresie e-mail.",
+      "path": {
+        "empty": "Podaj adres podstrony.",
+        "tooLong": "Adres podstrony jest za długi.",
+        "invalidChars": "Adres może zawierać tylko małe litery, cyfry i pojedyncze myślniki.",
+        "tooDeep": "Adres może mieć najwyżej 3 poziomy.",
+        "reserved": "Ten adres jest zarezerwowany."
+      }
+    }
+  },
+  "adminNav": {
+    "dashboard": "Pulpit",
+    "templates": "Szablony"
+  },
+  "adminTemplates": {
+    "title": "Szablony",
+    "new": "Nowy szablon",
+    "name": "Nazwa",
+    "slug": "Identyfikator",
+    "category": "Kategoria",
+    "create": "Utwórz",
+    "status": {
+      "DRAFT": "Szkic",
+      "PUBLISHED": "Opublikowany",
+      "ARCHIVED": "Zarchiwizowany"
+    },
+    "columns": {
+      "name": "Szablon",
+      "status": "Status",
+      "tier": "Poziom",
+      "uses": "Użycia",
+      "conversion": "Konwersja",
+      "version": "Wersja"
+    },
+    "details": "Szczegóły",
+    "description": "Opis",
+    "tags": "Tagi (oddzielone przecinkami)",
+    "tier": "Poziom dostępu",
+    "position": "Kolejność",
+    "isNew": "Oznacz jako „Nowość”",
+    "isFeatured": "Oznacz jako „Polecany”",
+    "isPremium": "Szablon premium (zakup jednorazowy)",
+    "price": "Cena (zł brutto)",
+    "thumbnail": "Miniatura",
+    "save": "Zapisz",
+    "saved": "Zapisano.",
+    "pages": "Podstrony",
+    "editPage": "Edytuj",
+    "removePage": "Usuń",
+    "addPage": "Dodaj podstronę",
+    "pageTitle": "Tytuł",
+    "pagePath": "Adres",
+    "theme": "Motyw szablonu",
+    "publish": "Opublikuj nową wersję",
+    "published": "Opublikowano wersję. Miniatura zostanie wygenerowana w tle.",
+    "archive": "Archiwizuj",
+    "unarchive": "Przywróć publikację",
+    "preview": "Podgląd",
+    "versions": "Wersje",
+    "versionLabel": "Wersja {number}",
+    "overrides": "Wyjątki dostępu",
+    "overridesHint": "Udostępnij szablon całemu planowi lub konkretnemu użytkownikowi niezależnie od poziomu.",
+    "overridePlan": "Plan",
+    "overrideUser": "E-mail użytkownika",
+    "addOverride": "Dodaj wyjątek",
+    "removeOverride": "Usuń",
+    "noOverrides": "Brak wyjątków.",
+    "lockPanel": "Blokady bloku (dla klientów)",
+    "lockEdit": "Zablokuj edycję",
+    "lockDrag": "Zablokuj przesuwanie",
+    "lockDelete": "Zablokuj usuwanie",
+    "lockHint": "Zaznacz blok na podglądzie, aby ustawić blokady."
   }
 }
