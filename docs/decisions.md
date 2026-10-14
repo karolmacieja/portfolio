@@ -103,3 +103,23 @@ Lightweight ADR log. Newest at the bottom. Business decisions confirmed by the o
     canonical embed URL; matching the site CSP `frame-src` allowlist.
 46. **Prisma script fix:** `pnpm db:migrate` forwards its arguments to `prisma migrate dev` (e.g. `--name x`) and then
     runs `prisma generate`.
+
+## Phase 3
+
+47. **No plan = edit yes, publish no (owner).** Users without an entitled subscription build within the entry plan's
+    limits (first active plan, i.e. Start) but cannot publish; publishing starts with a trial or a paid plan.
+48. **Seed plans and prices (owner-approved, editable later in the admin panel):** Start 19 / 190 zł (1 site, 5 pages,
+    30 projects, 500 MB, basic blocks, branding), Pro 39 / 390 zł (3 sites, 20 pages, 150 projects, 5 GB, custom
+    domain, no branding, analytics, basic+pro), Business 79 / 790 zł (10 sites, 50 pages, unlimited projects, 20 GB,
+    everything incl. domain purchase and form export). Trial 14 days. Prices are gross (VAT included) in grosze.
+49. **Limits as columns, features as validated JSON, tiers as a string array.** Limits are queried/compared, features
+    evolve (new flags default to off), tiers are an ordered vocabulary `basic < pro < business` in code.
+50. **Enforcement inside the services**, not in actions/UI, so every entry point (actions, API, future jobs) is covered.
+51. **Projects** = `Project` blocks + `ProjectList` items, counted per site across page drafts; the limit blocks only
+    growth, so a downgraded site keeps working and existing projects stay editable.
+52. **Block tiers default in code, overridable via `BlockAccess`** (seeded with the defaults so admins can edit them).
+    Pro tier by default: Video, Testimonials, Timeline, Columns.
+53. **PAST_DUE keeps entitlements**; dunning, grace period and suspension come with payments (Phase 5).
+54. **Seed accounts per plan** (`start@`, `pro@`, `business@`, `free@example.com`); `client@example.com` (demo sites,
+    E2E) is on Business. Seed subscriptions are manual (no Stripe id).
+55. **`STORAGE_DEFAULT_QUOTA_MB` removed**: the quota comes from the plan.

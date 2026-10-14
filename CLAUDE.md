@@ -11,8 +11,9 @@ Next.js 16 ships its own docs in `node_modules/next/dist/docs/` (see `AGENTS.md`
 | 0     | Foundation: Next.js, Docker Compose, Prisma, Auth.js + roles, i18n, CI | done    |
 | 1     | Multi-tenancy (host routing), Site/Page, renderer, cache               | done    |
 | 2     | Editor (Puck), blocks, themes, draft/publish, versions, media, SEO     | done    |
-| 3     | Plans & entitlements: limits, flags, block tiers, plan seed            | next    |
-| 4-9   | Templates, payments, invoicing, domains, admin, polish                 | pending |
+| 3     | Plans & entitlements: limits, flags, block tiers, plan seed            | done    |
+| 4     | Templates: template mode, versions, gallery, copy, theme/layout change | next    |
+| 5-9   | Payments, invoicing, domains, admin, polish                            | pending |
 
 Work in phases; after each phase run lint/typecheck/tests, summarize and wait for the owner's approval.
 
@@ -36,7 +37,7 @@ Work in phases; after each phase run lint/typecheck/tests, summarize and wait fo
 docker compose up -d          # Postgres, Redis, MinIO (+bucket), Mailpit
 pnpm install                  # also runs `prisma generate`
 pnpm db:migrate --name x      # create/apply a migration + regenerate the client (Prisma 7 no longer auto-generates)
-pnpm db:seed                  # admin/support/client users (password Password123!) + demo sites with generated images
+pnpm db:seed                  # plans, users (password Password123!), demo sites with generated images
 pnpm dev                      # http://localhost:3000 (marketing), app./admin./jan.localhost:3000
 pnpm lint | pnpm format | pnpm typecheck | pnpm test | pnpm test:e2e | pnpm build
 pnpm db:reset                 # drop, migrate, seed
@@ -90,11 +91,29 @@ E2E against a preinstalled Chromium: `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/ch
 
 - Upload: `POST /api/media/upload` (app host, auth, rate limit, size limit) -> `src/server/media/service.ts`:
   `sharp` checks the real format (JPEG/PNG/WebP/GIF/AVIF; never SVG), applies EXIF rotation, strips metadata,
-  bounds to 2400px and stores WebP + a 480px thumbnail under `u/{ownerId}/{random}.webp`; quota per owner
-  (`STORAGE_DEFAULT_QUOTA_MB` until plans).
+  bounds to 2400px and stores WebP + a 480px thumbnail under `u/{ownerId}/{random}.webp`; quota from the plan
+  (`limits.storageMb`).
 - Storage adapter (`src/server/storage`): `local` (files in `STORAGE_LOCAL_DIR`, served by `src/app/storage/[...key]`
   on every host; refused in production) or `s3` (MinIO locally, R2 in production; public bucket URL `S3_PUBLIC_URL`).
 - Image props store `{ url, alt, width, height }`; deleting an asset does not rewrite pages that use it.
+
+## Plans and entitlements
+
+- Plans are data (`Plan`, `PlanPrice`, gross PLN in grosze), never hard-coded; `Subscription` mirrors Stripe statuses.
+  `BlockAccess` rows set the required tier per block (defaults: `DEFAULT_BLOCK_TIERS`).
+- One permission layer: `src/server/entitlements/` -- `rules.ts` (pure: `buildEntitlements`, `can`, `canUseBlock`,
+  `canUseTemplate`, `canAddMore`, `countProjects`, `newDisallowedBlocks`) and `index.ts` (`getEntitlements(userId)`,
+  `getBlockTiers()`, `getUsage()`). Use it in UI, API and services; never check plan slugs directly.
+- Entitled statuses: TRIALING, ACTIVE, PAST_DUE. Without one: limits/tiers of the first active plan (entry plan),
+  `canPublish = false`, no paid features (owner decision: "edit yes, publish no").
+- Enforcement lives in the services (cannot be bypassed): `createSite` (maxSites), `createPage` (maxPagesPerSite),
+  `savePageDraft` (new blocks above tier -> `blockNotAllowed`; project growth past `maxProjects`), `publishSite`
+  (`subscriptionRequired`), media upload (storage quota). Downgrade policy: existing data and blocks stay; only adding
+  beyond the plan is refused.
+- Public branding footer follows `removeBranding`; when a user's plan changes, invalidate `siteTagsForOwner(userId)`.
+- Editor shows locked blocks (`lockedBlocks()`) as non-draggable drawer items with an upgrade link to `/plans`.
+- Tests: `src/server/entitlements/test-utils.ts` creates inactive test plans and subscriptions (CI has no seed).
+- `getEntitlements` is intentionally not wrapped in React `cache` (outside a render it would memoize forever).
 
 ## Published sites and caching
 
@@ -116,7 +135,7 @@ messages/{pl,en}.json       UI strings (pl is the source; a test enforces identi
 src/proxy.ts                host-based routing (see above)
 src/app/(platform)/         root layout for platform hosts
   marketing/                landing (root domain)
-  panel/                    client panel (app.): (auth)/..., dashboard, media, sites/[siteId]/(manage)/..., editor
+  panel/                    client panel (app.): (auth)/..., dashboard, plans, media, sites/[siteId]/(manage)/..., editor
   admin/                    admin panel (admin.): login, forbidden, (protected)/ dashboard
 src/app/sites/[host]/       root layout + renderer for published client sites
 src/app/api/                auth (wrapped with withPublicOrigin), email/verify, media/upload, health
@@ -138,6 +157,8 @@ src/server/                 server-only domain code
   rate-limit/               RateLimiter interface: Redis + in-memory
   sites/                    service (owner-scoped: sites, pages, drafts, versions, theme), public (cached reads),
                             actions, cache tags, urls
+  entitlements/             plan rules (pure) + loader; test fixtures
+  plans/                    plan listing for the pricing page
 tests/e2e/                  Playwright specs (+ hosts.ts URL helpers, global-setup cleanup)
 ```
 
@@ -157,6 +178,7 @@ tests/e2e/                  Playwright specs (+ hosts.ts URL helpers, global-set
 - Unit/integration tests sit next to the code (`*.test.ts`); E2E in `tests/e2e`. DB/Redis tests use
   `describe.skipIf(!process.env.DATABASE_URL)` / `REDIS_URL`, create uniquely named data and clean up after themselves.
 - E2E: navigate subdomains with `page.goto` (Chromium resolves `*.localhost`; Node-based `request` does not).
+  If the dev server gets stuck in a reload loop ("Compiled in 1ms" on every request), delete `.next` and restart.
 - Conventional Commits; small logical commits.
 - Prisma enums for client code: import from `@/generated/prisma/enums` (no runtime client).
 
