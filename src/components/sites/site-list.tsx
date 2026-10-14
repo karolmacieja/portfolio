@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { PublishButton } from "@/components/sites/publish-button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SiteSummary } from "@/server/sites/service";
 import { siteSubdomainUrl } from "@/server/sites/urls";
@@ -46,7 +48,12 @@ export async function SiteList({ sites }: { sites: SiteSummary[] }) {
                 ) : (
                   <span className="text-sm text-muted-foreground">{url}</span>
                 )}
-                <PublishButton siteId={site.id} republish={published} />
+                <div className="flex items-center gap-2">
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/sites/${site.id}`}>{t("edit")}</Link>
+                  </Button>
+                  <PublishButton siteId={site.id} republish={published} />
+                </div>
               </CardContent>
             </Card>
           </li>

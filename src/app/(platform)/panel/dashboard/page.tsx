@@ -35,6 +35,9 @@ export default async function DashboardPage() {
           {t("dashboard.title", { name: user.name ?? user.email })}
         </h1>
         <div className="flex items-center gap-2">
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/media">{t("siteNav.media")}</Link>
+          </Button>
           {isStaff(user.role) && (
             <Button asChild variant="ghost" size="sm">
               <Link href={platformUrl("admin")}>{t("common.adminPanel")}</Link>

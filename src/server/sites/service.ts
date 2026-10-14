@@ -1,9 +1,13 @@
 import "server-only";
 
-import { emptyContent, starterContent, type PageContent } from "@/blocks/content";
+import { isDeepStrictEqual } from "node:util";
+
+import { emptyContent, starterContent, validatePageContent, type PageContent } from "@/blocks/content";
 import { Prisma, SiteStatus, type SuspensionReason } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { normalizePagePath, validatePagePath } from "@/lib/page-path";
 import { validateSlug } from "@/lib/slug";
+import { DEFAULT_THEME, parseTheme, themeSchema, type Theme } from "@/themes/theme";
 
 import { hostTag, siteTag } from "./cache-tags";
 import { SiteError } from "./errors";
@@ -13,7 +17,12 @@ import { siteSubdomainHostname } from "./urls";
  * Site operations. Every client-facing function takes `ownerId` and scopes its queries to it,
  * so a client can never read or change another client's site (tenant isolation).
  * Mutations return the cache tags to invalidate; callers (server actions) apply them.
+ *
+ * Draft vs live: page content and the theme are edited as drafts and go live on publish.
+ * Page structure (title, path, order, deletion), SEO fields and site settings apply immediately.
  */
+
+export const MAX_VERSIONS_PER_PAGE = 20;
 
 export type SiteSummary = {
   id: string;
@@ -28,15 +37,27 @@ export type SiteSummary = {
 export type MutationResult<T> = { value: T; invalidate: string[] };
 
 // Content is validated by zod (JSON-safe by construction); Prisma's Json input type can't express that.
-const toJson = (content: PageContent) => content as Prisma.InputJsonObject;
+const toJson = (value: unknown) => value as Prisma.InputJsonObject;
 
 const ownedSite = (ownerId: string, siteId: string) => ({ id: siteId, ownerId });
+
+type PageState = { draftUpdatedAt: Date; publishedAt: Date | null };
+const pageHasChanges = (page: PageState) => !page.publishedAt || page.draftUpdatedAt > page.publishedAt;
+const themeHasChanges = (site: { themeDraft: unknown; themePublished: unknown }) =>
+  site.themeDraft !== null && !isDeepStrictEqual(site.themeDraft, site.themePublished);
+
+async function siteHosts(siteId: string, slug: string): Promise<string[]> {
+  const domains = await db.domain.findMany({ where: { siteId }, select: { hostname: true } });
+  return [siteSubdomainHostname(slug), ...domains.map((d) => d.hostname)];
+}
+
+// --- Sites ---------------------------------------------------------------------------------
 
 export async function listSites(ownerId: string): Promise<SiteSummary[]> {
   const sites = await db.site.findMany({
     where: { ownerId },
     orderBy: { createdAt: "asc" },
-    include: { pages: { select: { updatedAt: true, publishedAt: true } } },
+    include: { pages: { select: { draftUpdatedAt: true, publishedAt: true } } },
   });
   return sites.map((site) => ({
     id: site.id,
@@ -45,7 +66,7 @@ export async function listSites(ownerId: string): Promise<SiteSummary[]> {
     status: site.status,
     publishedAt: site.publishedAt,
     pageCount: site.pages.length,
-    hasUnpublishedChanges: site.pages.some((p) => !p.publishedAt || p.updatedAt > p.publishedAt),
+    hasUnpublishedChanges: site.pages.some(pageHasChanges) || themeHasChanges(site),
   }));
 }
 
@@ -53,6 +74,20 @@ export async function getSite(ownerId: string, siteId: string) {
   const site = await db.site.findFirst({ where: ownedSite(ownerId, siteId) });
   if (!site) throw new SiteError("notFound");
   return site;
+}
+
+export async function getSiteWithPages(ownerId: string, siteId: string) {
+  const site = await db.site.findFirst({
+    where: ownedSite(ownerId, siteId),
+    include: { pages: { orderBy: [{ position: "asc" }, { createdAt: "asc" }] } },
+  });
+  if (!site) throw new SiteError("notFound");
+  return {
+    ...site,
+    theme: parseTheme(site.themeDraft ?? site.themePublished),
+    hasUnpublishedChanges: site.pages.some(pageHasChanges) || themeHasChanges(site),
+    pages: site.pages.map((page) => ({ ...page, hasUnpublishedChanges: pageHasChanges(page) })),
+  };
 }
 
 export async function isSlugAvailable(slug: string): Promise<boolean> {
@@ -65,20 +100,15 @@ export async function createSite(
   input: { name: string; slug: string; locale?: string; content?: PageContent },
 ): Promise<MutationResult<{ id: string; slug: string }>> {
   if (!validateSlug(input.slug).ok) throw new SiteError("slugInvalid");
-  const locale = input.locale ?? "pl";
   try {
     const site = await db.site.create({
       data: {
         ownerId,
         name: input.name,
         slug: input.slug,
-        locale,
+        locale: input.locale ?? "pl",
         pages: {
-          create: {
-            path: "",
-            title: input.name,
-            draftContent: toJson(input.content ?? emptyContent()),
-          },
+          create: { path: "", title: input.name, draftContent: toJson(input.content ?? emptyContent()) },
         },
       },
     });
@@ -100,31 +130,268 @@ export function defaultSiteContent(name: string, texts: { subtitle: string; body
   return starterContent({ title: name, subtitle: texts.subtitle, body: texts.body });
 }
 
-/** Copies every page's draft to its published content and marks the site as published. */
+export type SiteSettingsInput = {
+  name: string;
+  slug: string;
+  locale: "pl" | "en";
+  description: string | null;
+  noIndex: boolean;
+  faviconUrl: string | null;
+};
+
+export async function updateSiteSettings(
+  ownerId: string,
+  siteId: string,
+  input: SiteSettingsInput,
+): Promise<MutationResult<void>> {
+  const site = await getSite(ownerId, siteId);
+  if (!validateSlug(input.slug).ok) throw new SiteError("slugInvalid");
+
+  const hostsBefore = await siteHosts(site.id, site.slug);
+  try {
+    await db.site.update({ where: { id: site.id }, data: input });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new SiteError("slugTaken");
+    }
+    throw error;
+  }
+  const hosts = input.slug === site.slug ? [] : [...hostsBefore, siteSubdomainHostname(input.slug)];
+  return { value: undefined, invalidate: [siteTag(site.id), ...hosts.map(hostTag)] };
+}
+
+export async function saveThemeDraft(
+  ownerId: string,
+  siteId: string,
+  theme: Theme,
+): Promise<MutationResult<void>> {
+  const site = await getSite(ownerId, siteId);
+  const parsed = themeSchema.parse(theme);
+  await db.site.update({ where: { id: site.id }, data: { themeDraft: toJson(parsed) } });
+  return { value: undefined, invalidate: [] };
+}
+
+// --- Pages ---------------------------------------------------------------------------------
+
+async function getOwnedPage(ownerId: string, pageId: string) {
+  const page = await db.page.findFirst({ where: { id: pageId, site: { ownerId } }, include: { site: true } });
+  if (!page) throw new SiteError("notFound");
+  return page;
+}
+
+export async function getPageForEditing(ownerId: string, pageId: string) {
+  const page = await getOwnedPage(ownerId, pageId);
+  const pages = await db.page.findMany({
+    where: { siteId: page.siteId },
+    orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+    select: { id: true, title: true, path: true },
+  });
+  return {
+    page,
+    site: page.site,
+    pages,
+    theme: parseTheme(page.site.themeDraft ?? page.site.themePublished ?? DEFAULT_THEME),
+  };
+}
+
+/** Saves the editor's draft. Content is strictly validated (unknown blocks, bad links, ...). */
+export async function savePageDraft(
+  ownerId: string,
+  pageId: string,
+  content: unknown,
+): Promise<MutationResult<void>> {
+  const page = await getOwnedPage(ownerId, pageId);
+  const validation = validatePageContent(content);
+  if (!validation.ok) throw new SiteError("invalidContent", validation.issues);
+  await db.page.update({
+    where: { id: page.id },
+    data: { draftContent: toJson(validation.content), draftUpdatedAt: new Date() },
+  });
+  return { value: undefined, invalidate: [] };
+}
+
+function checkPath(input: string): string {
+  const path = normalizePagePath(input);
+  const result = validatePagePath(path);
+  if (!result.ok) throw new SiteError(`path.${result.error}`);
+  return path;
+}
+
+export async function createPage(
+  ownerId: string,
+  siteId: string,
+  input: { title: string; path: string },
+): Promise<MutationResult<{ id: string }>> {
+  const site = await getSite(ownerId, siteId);
+  const path = checkPath(input.path);
+  const last = await db.page.aggregate({ where: { siteId: site.id }, _max: { position: true } });
+  try {
+    const page = await db.page.create({
+      data: {
+        siteId: site.id,
+        title: input.title,
+        path,
+        position: (last._max.position ?? 0) + 1,
+        draftContent: toJson(emptyContent()),
+      },
+    });
+    // Unpublished pages are not visible, nothing to invalidate.
+    return { value: { id: page.id }, invalidate: [] };
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new SiteError("pathTaken");
+    }
+    throw error;
+  }
+}
+
+export type PageMetaInput = {
+  title: string;
+  path: string;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  ogImageUrl: string | null;
+};
+
+export async function updatePageMeta(
+  ownerId: string,
+  pageId: string,
+  input: PageMetaInput,
+): Promise<MutationResult<void>> {
+  const page = await getOwnedPage(ownerId, pageId);
+  // The home page always lives at "/".
+  const path = page.path === "" ? "" : checkPath(input.path);
+  try {
+    await db.page.update({ where: { id: page.id }, data: { ...input, path } });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new SiteError("pathTaken");
+    }
+    throw error;
+  }
+  return { value: undefined, invalidate: [siteTag(page.siteId)] };
+}
+
+export async function deletePage(ownerId: string, pageId: string): Promise<MutationResult<void>> {
+  const page = await getOwnedPage(ownerId, pageId);
+  if (page.path === "") throw new SiteError("cannotDeleteHome");
+  await db.page.delete({ where: { id: page.id } });
+  return { value: undefined, invalidate: [siteTag(page.siteId)] };
+}
+
+export async function movePage(
+  ownerId: string,
+  pageId: string,
+  direction: "up" | "down",
+): Promise<MutationResult<void>> {
+  const page = await getOwnedPage(ownerId, pageId);
+  const pages = await db.page.findMany({
+    where: { siteId: page.siteId },
+    orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+    select: { id: true },
+  });
+  const index = pages.findIndex((p) => p.id === page.id);
+  const target = direction === "up" ? index - 1 : index + 1;
+  if (target < 0 || target >= pages.length) return { value: undefined, invalidate: [] };
+
+  [pages[index], pages[target]] = [pages[target]!, pages[index]!];
+  await db.$transaction(
+    pages.map((p, position) => db.page.update({ where: { id: p.id }, data: { position } })),
+  );
+  return { value: undefined, invalidate: [siteTag(page.siteId)] };
+}
+
+// --- Publishing & versions -----------------------------------------------------------------
+
+/**
+ * Publishes the whole site: every page's draft and the theme draft go live. Pages whose draft
+ * changed get a new version (the last MAX_VERSIONS_PER_PAGE are kept).
+ */
 export async function publishSite(
   ownerId: string,
   siteId: string,
+  actorId: string = ownerId,
 ): Promise<MutationResult<{ publishedAt: Date }>> {
   const site = await getSite(ownerId, siteId);
   const pages = await db.page.findMany({
     where: { siteId: site.id },
-    select: { id: true, draftContent: true },
+    select: { id: true, title: true, draftContent: true, draftUpdatedAt: true, publishedAt: true },
   });
   if (pages.length === 0) throw new SiteError("nothingToPublish");
 
   const publishedAt = new Date();
-  await db.$transaction([
-    ...pages.map((page) =>
-      db.page.update({
+  await db.$transaction(async (tx) => {
+    for (const page of pages) {
+      const changed = pageHasChanges(page);
+      await tx.page.update({
         where: { id: page.id },
-        // updatedAt is set explicitly so "unpublished changes" compares equal right after publishing.
-        data: { publishedContent: page.draftContent ?? Prisma.JsonNull, publishedAt, updatedAt: publishedAt },
-      }),
-    ),
-    db.site.update({ where: { id: site.id }, data: { publishedAt } }),
-  ]);
+        data: {
+          publishedContent: page.draftContent ?? Prisma.JsonNull,
+          publishedAt,
+          // Keeps "unpublished changes" false right after publishing.
+          draftUpdatedAt: publishedAt,
+        },
+      });
+      if (!changed) continue;
+
+      const last = await tx.pageVersion.aggregate({ where: { pageId: page.id }, _max: { number: true } });
+      const number = (last._max.number ?? 0) + 1;
+      await tx.pageVersion.create({
+        data: {
+          pageId: page.id,
+          number,
+          title: page.title,
+          content: page.draftContent ?? Prisma.JsonNull,
+          createdById: actorId,
+        },
+      });
+      await tx.pageVersion.deleteMany({
+        where: { pageId: page.id, number: { lte: number - MAX_VERSIONS_PER_PAGE } },
+      });
+    }
+    await tx.site.update({
+      where: { id: site.id },
+      data: { publishedAt, ...(site.themeDraft !== null ? { themePublished: toJson(site.themeDraft) } : {}) },
+    });
+  });
   return { value: { publishedAt }, invalidate: [siteTag(site.id)] };
 }
+
+export async function listVersions(ownerId: string, siteId: string) {
+  const site = await getSite(ownerId, siteId);
+  return db.page.findMany({
+    where: { siteId: site.id },
+    orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+    select: {
+      id: true,
+      title: true,
+      path: true,
+      versions: {
+        orderBy: { number: "desc" },
+        select: { id: true, number: true, title: true, createdAt: true },
+      },
+    },
+  });
+}
+
+/** Copies a published version back into the page draft; it goes live with the next publish. */
+export async function restoreVersion(
+  ownerId: string,
+  versionId: string,
+): Promise<MutationResult<{ pageId: string }>> {
+  const version = await db.pageVersion.findFirst({
+    where: { id: versionId, page: { site: { ownerId } } },
+    select: { pageId: true, content: true },
+  });
+  if (!version) throw new SiteError("notFound");
+  await db.page.update({
+    where: { id: version.pageId },
+    data: { draftContent: version.content ?? Prisma.JsonNull, draftUpdatedAt: new Date() },
+  });
+  return { value: { pageId: version.pageId }, invalidate: [] };
+}
+
+// --- Staff / billing -----------------------------------------------------------------------
 
 /** Staff/billing operation: replaces the public site with a notice. Not owner-scoped by design. */
 export async function suspendSite(siteId: string, reason: SuspensionReason): Promise<MutationResult<void>> {

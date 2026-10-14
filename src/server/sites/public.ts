@@ -26,10 +26,22 @@ export type PublishedSite = {
   published: boolean;
   suspended: boolean;
   suspensionReason: SuspensionReason | null;
-  navigation: { path: string; title: string }[];
+  description: string | null;
+  noIndex: boolean;
+  faviconUrl: string | null;
+  /** Published theme JSON; parse with parseTheme(). */
+  theme: unknown;
+  navigation: { path: string; title: string; updatedAt: string }[];
 };
 
-export type PublishedPage = { path: string; title: string; content: unknown };
+export type PublishedPage = {
+  path: string;
+  title: string;
+  content: unknown;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  ogImageUrl: string | null;
+};
 
 async function findSiteIdByHost(hostname: string): Promise<string | null> {
   const env = getEnv();
@@ -67,7 +79,7 @@ export function getPublishedSite(siteId: string): Promise<PublishedSite | null> 
           pages: {
             where: { publishedAt: { not: null } },
             orderBy: [{ position: "asc" }, { createdAt: "asc" }],
-            select: { path: true, title: true },
+            select: { path: true, title: true, publishedAt: true },
           },
         },
       });
@@ -79,7 +91,15 @@ export function getPublishedSite(siteId: string): Promise<PublishedSite | null> 
         published: site.publishedAt !== null,
         suspended: site.status === SiteStatus.SUSPENDED,
         suspensionReason: site.suspensionReason,
-        navigation: site.pages,
+        description: site.description,
+        noIndex: site.noIndex,
+        faviconUrl: site.faviconUrl,
+        theme: site.themePublished,
+        navigation: site.pages.map((page) => ({
+          path: page.path,
+          title: page.title,
+          updatedAt: (page.publishedAt ?? site.updatedAt).toISOString(),
+        })),
       };
     },
     ["published-site", siteId],
@@ -92,10 +112,24 @@ export function getPublishedPage(siteId: string, path: string): Promise<Publishe
     async (): Promise<PublishedPage | null> => {
       const page = await db.page.findUnique({
         where: { siteId_path: { siteId, path } },
-        select: { path: true, title: true, publishedContent: true },
+        select: {
+          path: true,
+          title: true,
+          publishedContent: true,
+          seoTitle: true,
+          seoDescription: true,
+          ogImageUrl: true,
+        },
       });
       if (!page || page.publishedContent === null) return null;
-      return { path: page.path, title: page.title, content: page.publishedContent };
+      return {
+        path: page.path,
+        title: page.title,
+        content: page.publishedContent,
+        seoTitle: page.seoTitle,
+        seoDescription: page.seoDescription,
+        ogImageUrl: page.ogImageUrl,
+      };
     },
     ["published-page", siteId, path],
     { tags: [siteTag(siteId)], revalidate: CACHE_TTL_SECONDS },
