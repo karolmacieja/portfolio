@@ -14,6 +14,8 @@ import {
   saveMailTextAction,
 } from "@/server/admin/catalog-actions";
 import { getLegalDocument, LEGAL_KINDS } from "@/server/legal/service";
+import { saveSponsorSettingsAction } from "@/server/licenses/admin-actions";
+import { getSponsorSettings } from "@/server/licenses/settings";
 import { getBillingSettings } from "@/server/billing/settings";
 import { getDomainSettings } from "@/server/domains/settings";
 import { getMailOverrides } from "@/server/mail/overrides";
@@ -37,6 +39,7 @@ export default async function AdminSettingsPage() {
     getLegalDocument("privacy"),
     getTranslations("adminSettings"),
   ]);
+  const sponsor = await getSponsorSettings();
   const legal = { terms, privacy };
   const { seller } = settings;
   return (
@@ -101,6 +104,52 @@ export default async function AdminSettingsPage() {
           </ActionForm>
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("sponsor")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ActionForm
+            action={saveSponsorSettingsAction}
+            hidden={{}}
+            label={t("save")}
+            success={t("saved")}
+            className="grid gap-3"
+            testId="sponsor-settings-form"
+          >
+            <p className="text-sm text-muted-foreground">{t("sponsorHint")}</p>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="enabled" defaultChecked={sponsor.enabled} />
+              {t("sponsorEnabled")}
+            </label>
+            <div className="flex flex-wrap gap-3">
+              <div className="grid gap-1">
+                <Label htmlFor="sponsor-mode">{t("sponsorMode")}</Label>
+                <select
+                  id="sponsor-mode"
+                  name="mode"
+                  defaultValue={sponsor.mode}
+                  className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                >
+                  <option value="MONTHLY">{t("sponsorModes.MONTHLY")}</option>
+                  <option value="ONCE">{t("sponsorModes.ONCE")}</option>
+                </select>
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="sponsor-amount">{t("sponsorAmount")}</Label>
+                <Input
+                  id="sponsor-amount"
+                  name="amount"
+                  inputMode="decimal"
+                  defaultValue={(sponsor.amount / 100).toFixed(2)}
+                  className="w-28"
+                />
+              </div>
+            </div>
+          </ActionForm>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>{t("legal")}</CardTitle>

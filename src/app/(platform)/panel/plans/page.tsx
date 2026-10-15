@@ -28,7 +28,8 @@ export default async function PlansPage({ searchParams }: PageProps<"/panel/plan
   const t = await getTranslations();
   const locale = await getLocale();
   const { entitlements, managedByProvider, subscription } = overview;
-  const entitled = Boolean(entitlements.plan);
+  // A plan from a group license seat doesn't stop the member from buying a better plan for themselves.
+  const entitled = entitlements.source === "subscription";
   const ready = overview.emailVerified && overview.profile;
 
   return (
@@ -73,6 +74,11 @@ export default async function PlansPage({ searchParams }: PageProps<"/panel/plan
         </Alert>
       )}
       {entitled && !managedByProvider && <Alert>{t("billing.manualSubscription")}</Alert>}
+      {entitlements.license && (
+        <Alert data-testid="license-plan-note">
+          {t("plans.licenseNote", { organization: entitlements.license.name })}
+        </Alert>
+      )}
 
       <div className="grid gap-6 md:grid-cols-3">
         {plans.map((plan) => {

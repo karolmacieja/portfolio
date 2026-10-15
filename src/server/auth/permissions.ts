@@ -15,6 +15,7 @@ export const PERMISSIONS = [
   "sites.moderate",
   "coupons.manage",
   "templates.manage",
+  "licenses.manage",
   "audit.view",
   "plans.manage",
   "settings.manage",

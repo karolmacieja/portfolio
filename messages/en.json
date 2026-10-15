@@ -224,6 +224,18 @@
       "intro": "We deleted your account, sites and files. Subscriptions have ended. Domains you bought from us stay registered until the end of the paid period — below are the transfer codes to move them to another registrar.",
       "cta": "Go to the website",
       "ignore": "Invoices are kept for 5 years as required by tax law."
+    },
+    "licenseInvite": {
+      "subject": "Invitation to {domain} — {brand}",
+      "intro": "{name} invites you to the group license “{domain}”. Join to get the license plan and build your own portfolio. The invitation is valid for 14 days.",
+      "cta": "Join",
+      "ignore": "If you didn't expect this invitation, ignore this message."
+    },
+    "licenseEnded": {
+      "subject": "License {domain} has ended — {brand}",
+      "intro": "The group license “{domain}” you used has ended. Your sites have been paused — restore them by choosing your own plan.",
+      "cta": "Choose a plan",
+      "ignore": "Your site content is kept."
     }
   },
   "site": {
@@ -242,7 +254,8 @@
       "sent": "Thank you! Your message has been sent.",
       "error": "The message could not be sent. Check the fields and try again later.",
       "honeypot": "Leave this field empty"
-    }
+    },
+    "supportedBy": "Supported by <link>{name}</link>"
   },
   "sites": {
     "title": "Your sites",
@@ -625,7 +638,9 @@
       "title": "Usage",
       "sites": "Sites: {used} of {limit}",
       "storage": "Storage: {used} of {limit}"
-    }
+    },
+    "licenseNote": "You have a plan from the group license “{organization}”. A higher plan you choose here is paid by you and applies instead of the license plan.",
+    "fromLicense": "Plan from the group license “{organization}”."
   },
   "templates": {
     "title": "Templates",
@@ -701,7 +716,8 @@
     "reports": "Reports",
     "plans": "Plans",
     "staff": "Team",
-    "audit": "Audit log"
+    "audit": "Audit log",
+    "licenses": "Licenses"
   },
   "adminTemplates": {
     "title": "Templates",
@@ -1028,7 +1044,9 @@
       "contactMessage": "Contact form message",
       "passwordReset": "Password reset",
       "accountDeletionScheduled": "Account deletion scheduled",
-      "accountDeleted": "Account deleted"
+      "accountDeleted": "Account deleted",
+      "licenseInvite": "License invitation",
+      "licenseEnded": "License ended (members)"
     },
     "legal": "Terms and privacy policy",
     "legalHint": "A draft based on how the service works — have a lawyer review it before launch. Format: \"## \" heading, \"- \" list item, blank line between paragraphs. Placeholders '{company}', '{email}', '{brand}', '{domain}' are filled with the seller data from the invoicing settings. Every change to the terms is a new version: signed-in clients are asked to accept it.",
@@ -1037,7 +1055,16 @@
       "privacy": "Privacy policy"
     },
     "legalDraft": "default draft (not saved)",
-    "legalVersion": "version {version}"
+    "legalVersion": "version {version}",
+    "sponsor": "Sponsor footer (licenses)",
+    "sponsorHint": "License members can pay to remove the “Supported by …” footer. Choose the billing form and gross price. You can also switch the footer off for free for a whole license or a person under Licenses.",
+    "sponsorEnabled": "Clients can buy footer removal",
+    "sponsorMode": "Billing",
+    "sponsorModes": {
+      "MONTHLY": "Monthly add-on",
+      "ONCE": "One-time"
+    },
+    "sponsorAmount": "Price (PLN gross)"
   },
   "domains": {
     "title": "Domains",
@@ -1366,7 +1393,11 @@
       "storageMb": "Storage (MB)",
       "description": "Description",
       "isActive": "Active (for sale)"
-    }
+    },
+    "seatPriceMonthly": "Price per seat / month (PLN)",
+    "seatPriceYearly": "Price per seat / year (PLN)",
+    "saveSeatPrices": "Save license prices",
+    "seatPricesHint": "Group licenses: gross price for one seat. Empty = the plan isn't offered for self-service licenses."
   },
   "adminStaff": {
     "title": "Team",
@@ -1602,5 +1633,149 @@
       "title": "Add content and publish",
       "text": "Drag blocks in the editor, add projects and click “Publish”."
     }
+  },
+  "licenses": {
+    "back": "Dashboard",
+    "nav": "Organization",
+    "buyTitle": "Group license",
+    "buyDescription": "Buy a pool of seats for a school, university, agency or team. Every member has their own account and portfolio on the license plan and can still buy a higher plan or a domain individually.",
+    "buyCardTitle": "New license",
+    "buyCardDescription": "You pay per seat and can change the number any time (prorated).",
+    "noPlans": "Group licenses are not available yet. Contact us for a custom offer.",
+    "organizationName": "Organization name",
+    "plan": "Plan",
+    "interval": "Billing period",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "seats": "Seats",
+    "sponsorName": "Sponsor name in the footer (optional)",
+    "sponsorUrl": "Sponsor website (optional)",
+    "sponsorHint": "Members' sites show a “Supported by …” footer with the name and link. Leave empty for no footer.",
+    "totalMonthly": "Total {total} / month ({seats} × {unit})",
+    "totalYearly": "Total {total} / year ({seats} × {unit})",
+    "buy": "Continue to payment",
+    "billingProfile": "Add billing details",
+    "organizationTitle": "Organization",
+    "noOrganization": "You are not part of a group license. Buy one for your organization or join with an invitation.",
+    "status": {
+      "PENDING_PAYMENT": "Awaiting payment",
+      "ACTIVE": "Active",
+      "PAST_DUE": "Payment overdue",
+      "CANCELED": "Canceled",
+      "EXPIRED": "Expired"
+    },
+    "roles": {
+      "MANAGER": "Manager",
+      "MEMBER": "Member"
+    },
+    "pendingPayment": "Waiting for the payment confirmation — the license will start in a moment.",
+    "yourSeat": "Your seat",
+    "seatDescription": "Plan {plan} from the license · role: {role}.",
+    "sponsorShown": "Your sites show the footer “Supported by {name}”.",
+    "removeSponsorMonthly": "Remove the footer for {price} / month",
+    "removeSponsorOnce": "Remove the footer for {price} (one-time)",
+    "sponsorRemoved": "The sponsor footer is removed from your sites.",
+    "cancelSponsorRemoval": "Stop removing the footer",
+    "upgradeHint": "Need more? Buy a higher plan just for yourself — it applies instead of the license plan. Buy a domain on your site's Domains tab.",
+    "upgrade": "Higher plan for me",
+    "leave": "Leave organization",
+    "leaveConfirm": "Leave the organization? Without your own plan your sites will be paused.",
+    "licenseTitle": "License",
+    "seatsUsed": "Seats used: {used} of {total}",
+    "renewsOn": "Renews on {date}",
+    "endsOn": "License ends on {date}",
+    "pricePerSeatMonth": "{price} / seat / month",
+    "pricePerSeatYear": "{price} / seat / year",
+    "changeSeats": "Change seats",
+    "resume": "Resume renewal",
+    "cancel": "Cancel license",
+    "cancelConfirm": "Cancel the license? It works until the end of the paid period; then members without their own plan are paused.",
+    "manualLicense": "Custom-agreement license, valid until: {date}. Contact us to change the seats.",
+    "settingsTitle": "Organization settings",
+    "joinLinkEnabled": "Joining by link (anyone with the link can take a free seat)",
+    "save": "Save",
+    "saved": "Saved.",
+    "membersTitle": "Members",
+    "joinLink": "Join link",
+    "regenerate": "Generate a new link",
+    "copy": "Copy",
+    "copied": "Copied",
+    "inviteLabel": "Invite by email (comma-separated) — free seats: {free}",
+    "invite": "Send invitations",
+    "invited": "Invitations sent: {count}.",
+    "pendingInvites": "Pending invitations",
+    "expires": "valid until {date}",
+    "revoke": "Revoke",
+    "remove": "Remove",
+    "removeConfirm": "Remove {email} from the organization?",
+    "joinTitle": "Join the organization",
+    "joinDescription": "{organization} invites you to its group license (plan {plan}).",
+    "joinButton": "Join {organization}",
+    "errors": {
+      "invalid": "Check the fields.",
+      "invalidEmails": "Enter valid email addresses (up to 100 at once).",
+      "notFound": "Not found.",
+      "notManager": "Only the organization's manager can do this.",
+      "alreadyMember": "You already belong to an organization.",
+      "noSeats": "No free seats in the license.",
+      "seatsBelowMembers": "Seats can't be fewer than members.",
+      "planNotOffered": "This plan isn't offered for licenses.",
+      "licenseInactive": "The license is not active.",
+      "joinLinkDisabled": "Joining by link is off — ask for an invitation.",
+      "inviteInvalid": "The invitation is invalid or has expired.",
+      "inviteEmailMismatch": "The invitation is for another email address. Sign in with the invited account.",
+      "manualLicense": "This license is changed by an administrator.",
+      "managerCannotLeave": "The manager can't leave the organization.",
+      "managerNotFound": "No free account with this address (the manager needs an account and no other organization).",
+      "sponsorNotShown": "The sponsor footer is not shown.",
+      "sponsorRemovalUnavailable": "Footer removal is not available.",
+      "alreadyRemoved": "The footer is already removed.",
+      "emailNotVerified": "Confirm your email address to buy a license.",
+      "billingProfileRequired": "Add billing details to buy a license."
+    }
+  },
+  "adminLicenses": {
+    "title": "Group licenses",
+    "empty": "No licenses.",
+    "name": "Organization",
+    "plan": "Plan",
+    "seats": "Seats",
+    "source": "Type",
+    "status": "Status",
+    "manager": "Manager",
+    "created": "Created",
+    "sources": {
+      "STRIPE": "Self-service",
+      "MANUAL": "Custom agreement"
+    },
+    "intervals": {
+      "MONTH": "month",
+      "YEAR": "year"
+    },
+    "createManual": "New custom-agreement license",
+    "manualHint": "For negotiated deals invoiced outside Stripe. The manager needs an account and no other organization.",
+    "managerEmail": "Manager email",
+    "create": "Create license",
+    "validUntil": "Valid until (empty = no end)",
+    "sponsorName": "Sponsor in the footer",
+    "sponsorUrl": "Sponsor link",
+    "note": "Internal note (e.g. agreed price)",
+    "membersCanBuyDomains": "Members can connect and buy domains (they pay for the domain)",
+    "summary": "Manager: {manager} · seats {used}/{seats} · plan {plan}",
+    "periodEnd": "period ends {date}",
+    "edit": "License settings",
+    "save": "Save",
+    "saved": "Saved.",
+    "selfServiceHint": "Self-service license: the client pays for the plan, seats and period in Stripe — here you only change the name, sponsor and options.",
+    "sponsorFooter": "Sponsor footer on members' sites (switch off to remove it for the whole license)",
+    "members": "Members",
+    "paidRemoval": "paid footer removal",
+    "showSponsor": "Show footer",
+    "hideSponsor": "Hide footer",
+    "removeMember": "Remove",
+    "removeConfirm": "Remove the member from the license?",
+    "addMember": "Add member (account email)",
+    "pendingInvites": "Pending invitations: {emails}",
+    "payments": "Payments"
   }
 }

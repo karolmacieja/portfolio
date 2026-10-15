@@ -59,6 +59,11 @@ export default async function DashboardPage() {
             <Link href="/billing">{t("billing.nav")}</Link>
           </Button>
           <Button asChild variant="ghost" size="sm">
+            <Link href="/organization" data-testid="nav-organization">
+              {t("licenses.nav")}
+            </Link>
+          </Button>
+          <Button asChild variant="ghost" size="sm">
             <Link href="/account">{t("account.nav")}</Link>
           </Button>
           {isStaff(user.role) && (

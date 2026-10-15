@@ -9,6 +9,7 @@ import { requireRole } from "@/server/auth/session";
 const NAV: { href: string; key: string; permission: Permission }[] = [
   { href: "/", key: "dashboard", permission: "clients.view" },
   { href: "/clients", key: "clients", permission: "clients.view" },
+  { href: "/licenses", key: "licenses", permission: "licenses.manage" },
   { href: "/sites", key: "sites", permission: "sites.moderate" },
   { href: "/reports", key: "reports", permission: "sites.moderate" },
   { href: "/invoices", key: "invoices", permission: "invoices.manage" },

@@ -224,6 +224,18 @@
       "intro": "Usunęliśmy Twoje konto, strony i pliki. Subskrypcje zostały zakończone. Jeśli masz kupione u nas domeny, pozostają zarejestrowane do końca opłaconego okresu — poniżej kody transferu, którymi przeniesiesz je do innego rejestratora.",
       "cta": "Przejdź do serwisu",
       "ignore": "Faktury przechowujemy przez 5 lat, jak wymagają przepisy podatkowe."
+    },
+    "licenseInvite": {
+      "subject": "Zaproszenie do licencji {domain} — {brand}",
+      "intro": "{name} zaprasza Cię do licencji grupowej „{domain}”. Dołączając, otrzymasz plan z licencji i zbudujesz własne portfolio. Zaproszenie jest ważne 14 dni.",
+      "cta": "Dołącz",
+      "ignore": "Jeśli nie spodziewasz się zaproszenia, zignoruj tę wiadomość."
+    },
+    "licenseEnded": {
+      "subject": "Licencja {domain} wygasła — {brand}",
+      "intro": "Licencja grupowa „{domain}”, z której korzystałeś(-aś), wygasła. Twoje strony zostały wstrzymane — możesz je przywrócić, wybierając własny plan.",
+      "cta": "Wybierz plan",
+      "ignore": "Treści stron zostają zachowane."
     }
   },
   "site": {
@@ -242,7 +254,8 @@
       "sent": "Dziękujemy! Wiadomość została wysłana.",
       "error": "Nie udało się wysłać wiadomości. Sprawdź pola i spróbuj ponownie później.",
       "honeypot": "Nie wypełniaj tego pola"
-    }
+    },
+    "supportedBy": "Strona wspierana przez <link>{name}</link>"
   },
   "sites": {
     "title": "Twoje strony",
@@ -625,7 +638,9 @@
       "title": "Wykorzystanie",
       "sites": "Strony: {used} z {limit}",
       "storage": "Miejsce: {used} z {limit}"
-    }
+    },
+    "licenseNote": "Masz plan z licencji grupowej „{organization}”. Wybierając wyższy plan, płacisz za niego sam — będzie obowiązywał zamiast planu z licencji.",
+    "fromLicense": "Plan z licencji grupowej „{organization}”."
   },
   "templates": {
     "title": "Szablony",
@@ -701,7 +716,8 @@
     "reports": "Zgłoszenia",
     "plans": "Plany",
     "staff": "Zespół",
-    "audit": "Audit log"
+    "audit": "Audit log",
+    "licenses": "Licencje"
   },
   "adminTemplates": {
     "title": "Szablony",
@@ -1028,7 +1044,9 @@
       "contactMessage": "Wiadomość z formularza kontaktowego",
       "passwordReset": "Reset hasła",
       "accountDeletionScheduled": "Zaplanowane usunięcie konta",
-      "accountDeleted": "Konto usunięte"
+      "accountDeleted": "Konto usunięte",
+      "licenseInvite": "Zaproszenie do licencji",
+      "licenseEnded": "Licencja wygasła (członkowie)"
     },
     "legal": "Regulamin i polityka prywatności",
     "legalHint": "Szkic przygotowany na podstawie działania serwisu — przed startem zweryfikuj go z prawnikiem. Format: „## ” nagłówek, „- ” punkt listy, pusta linia między akapitami. Znaczniki '{company}', '{email}', '{brand}', '{domain}' wypełniamy danymi sprzedawcy z ustawień faktur. Każda zmiana regulaminu to nowa wersja: zalogowani klienci zobaczą prośbę o akceptację.",
@@ -1037,7 +1055,16 @@
       "privacy": "Polityka prywatności"
     },
     "legalDraft": "szkic domyślny (niezapisany)",
-    "legalVersion": "wersja {version}"
+    "legalVersion": "wersja {version}",
+    "sponsor": "Stopka sponsora (licencje)",
+    "sponsorHint": "Członkowie licencji mogą sami wykupić usunięcie stopki „Strona wspierana przez …”. Wybierz formę i cenę brutto. Stopkę możesz też wyłączyć bezpłatnie dla całej licencji lub osoby w Licencjach.",
+    "sponsorEnabled": "Klienci mogą wykupić usunięcie stopki",
+    "sponsorMode": "Forma opłaty",
+    "sponsorModes": {
+      "MONTHLY": "Miesięczny dodatek",
+      "ONCE": "Jednorazowo"
+    },
+    "sponsorAmount": "Cena (zł brutto)"
   },
   "domains": {
     "title": "Domeny",
@@ -1366,7 +1393,11 @@
       "storageMb": "Miejsce (MB)",
       "description": "Opis",
       "isActive": "Aktywny (w sprzedaży)"
-    }
+    },
+    "seatPriceMonthly": "Cena za miejsce / mies. (zł)",
+    "seatPriceYearly": "Cena za miejsce / rok (zł)",
+    "saveSeatPrices": "Zapisz ceny licencji",
+    "seatPricesHint": "Licencje grupowe: cena brutto za jedno miejsce. Puste = plan niedostępny w samoobsługowym zakupie licencji."
   },
   "adminStaff": {
     "title": "Zespół",
@@ -1602,5 +1633,149 @@
       "title": "Dodaj treści i opublikuj",
       "text": "W edytorze przeciągaj bloki, dodaj projekty i kliknij „Opublikuj”."
     }
+  },
+  "licenses": {
+    "back": "Pulpit",
+    "nav": "Organizacja",
+    "buyTitle": "Licencja grupowa",
+    "buyDescription": "Kup pulę miejsc dla szkoły, uczelni, agencji lub zespołu. Każdy członek ma własne konto i portfolio na planie z licencji, a może też indywidualnie wykupić wyższy plan lub domenę.",
+    "buyCardTitle": "Nowa licencja",
+    "buyCardDescription": "Płacisz za liczbę miejsc; zmienisz ją w każdej chwili (rozliczenie proporcjonalne).",
+    "noPlans": "Licencje grupowe nie są jeszcze dostępne. Skontaktuj się z nami w sprawie indywidualnej oferty.",
+    "organizationName": "Nazwa organizacji",
+    "plan": "Plan",
+    "interval": "Okres rozliczenia",
+    "monthly": "Miesięcznie",
+    "yearly": "Rocznie",
+    "seats": "Liczba miejsc",
+    "sponsorName": "Nazwa sponsora w stopce (opcjonalnie)",
+    "sponsorUrl": "Adres strony sponsora (opcjonalnie)",
+    "sponsorHint": "Na stronach członków pojawi się stopka „Strona wspierana przez …” z nazwą i linkiem. Zostaw puste, jeśli nie chcesz stopki.",
+    "totalMonthly": "Razem {total} / mies. ({seats} × {unit})",
+    "totalYearly": "Razem {total} / rok ({seats} × {unit})",
+    "buy": "Przejdź do płatności",
+    "billingProfile": "Uzupełnij dane do faktury",
+    "organizationTitle": "Organizacja",
+    "noOrganization": "Nie należysz do żadnej licencji grupowej. Możesz kupić licencję dla swojej organizacji albo dołączyć z zaproszenia.",
+    "status": {
+      "PENDING_PAYMENT": "Oczekuje na płatność",
+      "ACTIVE": "Aktywna",
+      "PAST_DUE": "Zaległa płatność",
+      "CANCELED": "Anulowana",
+      "EXPIRED": "Wygasła"
+    },
+    "roles": {
+      "MANAGER": "Opiekun",
+      "MEMBER": "Członek"
+    },
+    "pendingPayment": "Czekamy na potwierdzenie płatności — licencja włączy się za chwilę.",
+    "yourSeat": "Twoje miejsce",
+    "seatDescription": "Plan {plan} z licencji · rola: {role}.",
+    "sponsorShown": "Na Twoich stronach widnieje stopka „Strona wspierana przez {name}”.",
+    "removeSponsorMonthly": "Usuń stopkę za {price} / mies.",
+    "removeSponsorOnce": "Usuń stopkę za {price} (jednorazowo)",
+    "sponsorRemoved": "Stopka sponsora jest usunięta z Twoich stron.",
+    "cancelSponsorRemoval": "Zrezygnuj z usunięcia stopki",
+    "upgradeHint": "Potrzebujesz więcej? Możesz wykupić wyższy plan tylko dla siebie — będzie obowiązywał zamiast planu z licencji. Domenę dokupisz w zakładce Domeny swojej strony.",
+    "upgrade": "Wyższy plan dla mnie",
+    "leave": "Opuść organizację",
+    "leaveConfirm": "Opuścić organizację? Bez własnego planu Twoje strony zostaną wstrzymane.",
+    "licenseTitle": "Licencja",
+    "seatsUsed": "Zajęte miejsca: {used} z {total}",
+    "renewsOn": "Odnowienie {date}",
+    "endsOn": "Licencja wygaśnie {date}",
+    "pricePerSeatMonth": "{price} / miejsce / mies.",
+    "pricePerSeatYear": "{price} / miejsce / rok",
+    "changeSeats": "Zmień liczbę miejsc",
+    "resume": "Wznów odnawianie",
+    "cancel": "Anuluj licencję",
+    "cancelConfirm": "Anulować licencję? Działa do końca opłaconego okresu, potem strony członków bez własnego planu zostaną wstrzymane.",
+    "manualLicense": "Licencja na umowę indywidualną, ważna do: {date}. Zmiany liczby miejsc ustal z nami.",
+    "settingsTitle": "Ustawienia organizacji",
+    "joinLinkEnabled": "Dołączanie przez link (każdy z linkiem może zająć wolne miejsce)",
+    "save": "Zapisz",
+    "saved": "Zapisano.",
+    "membersTitle": "Członkowie",
+    "joinLink": "Link do dołączenia",
+    "regenerate": "Wygeneruj nowy link",
+    "copy": "Kopiuj",
+    "copied": "Skopiowano",
+    "inviteLabel": "Zaproś mailem (adresy oddzielone przecinkami) — wolne miejsca: {free}",
+    "invite": "Wyślij zaproszenia",
+    "invited": "Wysłano zaproszenia: {count}.",
+    "pendingInvites": "Oczekujące zaproszenia",
+    "expires": "ważne do {date}",
+    "revoke": "Cofnij",
+    "remove": "Usuń",
+    "removeConfirm": "Usunąć {email} z organizacji?",
+    "joinTitle": "Dołącz do organizacji",
+    "joinDescription": "{organization} zaprasza Cię do licencji grupowej (plan {plan}).",
+    "joinButton": "Dołącz do {organization}",
+    "errors": {
+      "invalid": "Sprawdź poprawność pól.",
+      "invalidEmails": "Podaj poprawne adresy e-mail (do 100 naraz).",
+      "notFound": "Nie znaleziono.",
+      "notManager": "Tylko opiekun organizacji może to zrobić.",
+      "alreadyMember": "Należysz już do organizacji.",
+      "noSeats": "Brak wolnych miejsc w licencji.",
+      "seatsBelowMembers": "Liczba miejsc nie może być mniejsza niż liczba członków.",
+      "planNotOffered": "Ten plan nie jest dostępny w licencjach.",
+      "licenseInactive": "Licencja nie jest aktywna.",
+      "joinLinkDisabled": "Dołączanie przez link jest wyłączone — poproś o zaproszenie.",
+      "inviteInvalid": "Zaproszenie jest nieprawidłowe lub wygasło.",
+      "inviteEmailMismatch": "Zaproszenie dotyczy innego adresu e-mail. Zaloguj się na zaproszone konto.",
+      "manualLicense": "Tę licencję zmienia administrator.",
+      "managerCannotLeave": "Opiekun nie może opuścić organizacji.",
+      "managerNotFound": "Nie znaleziono wolnego konta o tym adresie (opiekun musi mieć konto i nie należeć do innej organizacji).",
+      "sponsorNotShown": "Stopka sponsora nie jest wyświetlana.",
+      "sponsorRemovalUnavailable": "Usunięcie stopki nie jest dostępne.",
+      "alreadyRemoved": "Stopka jest już usunięta.",
+      "emailNotVerified": "Potwierdź adres e-mail, aby kupić licencję.",
+      "billingProfileRequired": "Uzupełnij dane do faktury, aby kupić licencję."
+    }
+  },
+  "adminLicenses": {
+    "title": "Licencje grupowe",
+    "empty": "Brak licencji.",
+    "name": "Organizacja",
+    "plan": "Plan",
+    "seats": "Miejsca",
+    "source": "Rodzaj",
+    "status": "Status",
+    "manager": "Opiekun",
+    "created": "Utworzona",
+    "sources": {
+      "STRIPE": "Samoobsługowa",
+      "MANUAL": "Na umowę"
+    },
+    "intervals": {
+      "MONTH": "mies.",
+      "YEAR": "rok"
+    },
+    "createManual": "Nowa licencja na umowę",
+    "manualHint": "Dla negocjowanych umów rozliczanych fakturą poza Stripe. Opiekun musi mieć konto w serwisie i nie należeć do innej organizacji.",
+    "managerEmail": "E-mail opiekuna",
+    "create": "Utwórz licencję",
+    "validUntil": "Ważna do (puste = bezterminowo)",
+    "sponsorName": "Sponsor w stopce",
+    "sponsorUrl": "Link sponsora",
+    "note": "Notatka wewnętrzna (np. uzgodniona cena)",
+    "membersCanBuyDomains": "Członkowie mogą podpinać i kupować domeny (płacą za domenę sami)",
+    "summary": "Opiekun: {manager} · miejsca {used}/{seats} · plan {plan}",
+    "periodEnd": "okres do {date}",
+    "edit": "Ustawienia licencji",
+    "save": "Zapisz",
+    "saved": "Zapisano.",
+    "selfServiceHint": "Licencja samoobsługowa: plan, liczbę miejsc i okres opłaca klient w Stripe — tu zmienisz tylko nazwę, sponsora i opcje.",
+    "sponsorFooter": "Stopka sponsora na stronach członków (wyłącz, aby usunąć ją dla całej licencji)",
+    "members": "Członkowie",
+    "paidRemoval": "wykupił usunięcie stopki",
+    "showSponsor": "Pokaż stopkę",
+    "hideSponsor": "Ukryj stopkę",
+    "removeMember": "Usuń",
+    "removeConfirm": "Usunąć członka z licencji?",
+    "addMember": "Dodaj członka (e-mail konta)",
+    "pendingInvites": "Oczekujące zaproszenia: {emails}",
+    "payments": "Płatności"
   }
 }

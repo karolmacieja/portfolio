@@ -15,6 +15,7 @@ import {
   syncPricesAction,
 } from "@/server/admin/catalog-actions";
 import { listPlansAdmin } from "@/server/admin/plans";
+import { setSeatPricesAction } from "@/server/licenses/admin-actions";
 import { requirePermission } from "@/server/auth/session";
 import { ACCESS_TIERS, getBlockTiers, PLAN_FEATURES, parseFeatures } from "@/server/entitlements";
 
@@ -154,6 +155,28 @@ export default async function AdminPlansPage() {
                 );
               })}
             </div>
+            <ActionForm
+              action={setSeatPricesAction}
+              hidden={{ planId: plan.id }}
+              label={t("saveSeatPrices")}
+              success={t("saved")}
+              className="flex flex-wrap items-end gap-2 rounded-md border p-3 text-sm"
+              testId={`seat-prices-${plan.slug}`}
+            >
+              <p className="w-full text-xs text-muted-foreground">{t("seatPricesHint")}</p>
+              {(["seatPriceMonthly", "seatPriceYearly"] as const).map((field) => (
+                <div key={field} className="grid gap-1">
+                  <Label htmlFor={`${plan.id}-${field}`}>{t(field)}</Label>
+                  <Input
+                    id={`${plan.id}-${field}`}
+                    name={field}
+                    inputMode="decimal"
+                    defaultValue={plan[field] ? (plan[field] / 100).toFixed(2) : ""}
+                    className="h-8 w-28"
+                  />
+                </div>
+              ))}
+            </ActionForm>
           </CardContent>
         </Card>
       ))}

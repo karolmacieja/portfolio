@@ -42,6 +42,11 @@ export async function PlanSummary({ userId }: { userId: string }) {
       </CardHeader>
       <CardContent className="grid gap-4">
         {!entitlements.plan && <p className="text-sm text-muted-foreground">{t("noPlanHint")}</p>}
+        {entitlements.source === "license" && entitlements.license && (
+          <p className="text-sm text-muted-foreground" data-testid="plan-from-license">
+            {t("fromLicense", { organization: entitlements.license.name })}
+          </p>
+        )}
         {sub && (
           <p className="text-sm text-muted-foreground">
             {sub.cancelAtPeriodEnd

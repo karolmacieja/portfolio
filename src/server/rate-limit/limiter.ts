@@ -24,6 +24,7 @@ export const RATE_LIMITS = {
   domainAuthCodePerUser: { limit: 5, windowMs: 60 * 60_000 },
   abuseReportPerIp: { limit: 5, windowMs: 60 * 60_000 },
   contactPerSender: { limit: 5, windowMs: 60 * 60_000 },
+  licenseInvitesPerUser: { limit: 300, windowMs: 24 * 60 * 60_000 },
   contactPerSite: { limit: 100, windowMs: 24 * 60 * 60_000 },
   passwordResetPerEmail: { limit: 3, windowMs: 60 * 60_000 },
   passwordResetPerIp: { limit: 10, windowMs: 60 * 60_000 },
