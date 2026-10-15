@@ -19,9 +19,12 @@ type Props = {
   googleEnabled: boolean;
   /** Error key passed back by Auth.js redirects (e.g. OAuth failures). */
   initialError?: "accessDenied" | "oauthAccountNotLinked" | "generic";
+  /** Password reset lives on the client panel host (staff accounts use it too). */
+  forgotPasswordUrl: string;
 };
 
-export function LoginForm({ callbackUrl, googleEnabled, initialError }: Props) {
+export function LoginForm({ callbackUrl, googleEnabled, initialError, forgotPasswordUrl }: Props) {
+  const tAccount = useTranslations("account");
   const t = useTranslations("auth");
   const [passwordState, passwordAction, passwordPending] = useActionState<AuthFormState, FormData>(
     signInWithPasswordAction,
@@ -52,7 +55,15 @@ export function LoginForm({ callbackUrl, googleEnabled, initialError }: Props) {
           />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="password">{t("password")}</Label>
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor="password">{t("password")}</Label>
+            <a
+              href={forgotPasswordUrl}
+              className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+            >
+              {tAccount("forgotLink")}
+            </a>
+          </div>
           <Input id="password" name="password" type="password" autoComplete="current-password" required />
         </div>
         <Button type="submit" disabled={passwordPending}>

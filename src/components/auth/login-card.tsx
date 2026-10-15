@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 
 import { LoginForm } from "@/components/auth/login-form";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { platformUrl } from "@/lib/env";
 import { safeCallbackUrl } from "@/lib/safe-redirect";
 import { isGoogleEnabled } from "@/server/auth/config";
 import { getCurrentUser } from "@/server/auth/session";
@@ -40,6 +41,7 @@ export async function LoginCard({ searchParams, defaultRedirect, showRegisterLin
           callbackUrl={callbackUrl}
           googleEnabled={isGoogleEnabled()}
           initialError={mapAuthJsError(searchParams.error)}
+          forgotPasswordUrl={platformUrl("app", "/forgot-password")}
         />
       </CardContent>
       {showRegisterLink && (

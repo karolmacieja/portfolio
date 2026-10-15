@@ -241,6 +241,16 @@ export class StripePaymentProvider implements PaymentProvider {
     await this.stripe.subscriptions.update(input.subscriptionId, { cancel_at_period_end: input.cancel });
   }
 
+  async cancelSubscription(input: { subscriptionId: string }) {
+    try {
+      await this.stripe.subscriptions.cancel(input.subscriptionId, { prorate: false, invoice_now: false });
+    } catch (error) {
+      // Already canceled at Stripe: nothing left to do.
+      if ((error as { code?: string }).code === "resource_missing") return;
+      throw error;
+    }
+  }
+
   async refund(input: { paymentRef: string; amount: number }) {
     await this.stripe.refunds.create(
       { payment_intent: input.paymentRef, amount: input.amount },

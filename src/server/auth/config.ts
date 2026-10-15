@@ -153,6 +153,7 @@ export function buildAuthConfig(): NextAuthConfig {
         const now = Date.now();
         // Impersonation: set on that sign-in only, cleared by any other sign-in, ends at its expiry.
         if (user) {
+          token.issuedAt = now;
           if (user.impersonation) token.impersonation = user.impersonation;
           else delete token.impersonation;
         }
@@ -163,10 +164,26 @@ export function buildAuthConfig(): NextAuthConfig {
 
         const dbUser = await db.user.findUnique({
           where: { id: userId },
-          select: { id: true, role: true, blockedAt: true, name: true, email: true, locale: true },
+          select: {
+            id: true,
+            role: true,
+            blockedAt: true,
+            name: true,
+            email: true,
+            locale: true,
+            passwordChangedAt: true,
+          },
         });
         // Deleted or blocked users lose their session on the next refresh.
         if (!dbUser || dbUser.blockedAt) return null;
+        // A password change or reset ends sessions signed in before it (impersonation is separate).
+        if (
+          !token.impersonation &&
+          dbUser.passwordChangedAt &&
+          (token.issuedAt ?? 0) < dbUser.passwordChangedAt.getTime()
+        ) {
+          return null;
+        }
         if (token.impersonation && !(await isImpersonationActive(token.impersonation.sessionId))) return null;
 
         token.sub = dbUser.id;

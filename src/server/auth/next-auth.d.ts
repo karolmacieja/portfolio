@@ -24,6 +24,8 @@ declare module "@auth/core/jwt" {
     role?: Role;
     locale?: string;
     refreshedAt?: number;
+    /** Sign-in time (ms); sessions older than User.passwordChangedAt end. */
+    issuedAt?: number;
     impersonation?: ImpersonationClaim;
   }
 }

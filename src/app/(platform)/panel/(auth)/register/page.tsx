@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 
 import { RegisterForm } from "@/components/auth/register-form";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { platformUrl } from "@/lib/env";
 import { getCurrentUser } from "@/server/auth/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -22,7 +23,10 @@ export default async function RegisterPage() {
         <CardDescription>{t("registerDescription")}</CardDescription>
       </CardHeader>
       <CardContent>
-        <RegisterForm />
+        <RegisterForm
+          termsUrl={platformUrl(undefined, "/regulamin")}
+          privacyUrl={platformUrl(undefined, "/polityka-prywatnosci")}
+        />
       </CardContent>
       <CardFooter className="justify-center gap-1 text-sm text-muted-foreground">
         {t("haveAccount")}

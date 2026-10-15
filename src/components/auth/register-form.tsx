@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { registerAction, type AuthFormState } from "@/server/auth/actions";
 
-export function RegisterForm() {
+/** `termsUrl`/`privacyUrl`: the documents on the marketing domain. */
+export function RegisterForm({ termsUrl, privacyUrl }: { termsUrl: string; privacyUrl: string }) {
   const t = useTranslations("auth");
   const [state, action, pending] = useActionState<AuthFormState, FormData>(registerAction, {});
   const fieldError = (field: string) => {
@@ -24,7 +25,7 @@ export function RegisterForm() {
 
       <div className="grid gap-2">
         <Label htmlFor="name">{t("name")}</Label>
-        <Input id="name" name="name" autoComplete="name" required maxLength={100} />
+        <Input id="name" name="name" autoComplete="name" required maxLength={100} defaultValue={state.name} />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="email">{t("email")}</Label>
@@ -56,6 +57,34 @@ export function RegisterForm() {
         >
           {fieldError("password") ?? t("passwordHint")}
         </p>
+      </div>
+
+      <div className="grid gap-1">
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="terms"
+            required
+            className="mt-1"
+            aria-invalid={Boolean(state.fieldErrors?.terms)}
+            data-testid="terms-checkbox"
+          />
+          <span>
+            {t.rich("acceptTerms", {
+              terms: (chunks) => (
+                <a href={termsUrl} target="_blank" rel="noreferrer" className="underline">
+                  {chunks}
+                </a>
+              ),
+              privacy: (chunks) => (
+                <a href={privacyUrl} target="_blank" rel="noreferrer" className="underline">
+                  {chunks}
+                </a>
+              ),
+            })}
+          </span>
+        </label>
+        {fieldError("terms") && <p className="text-sm text-destructive">{fieldError("terms")}</p>}
       </div>
 
       {/* Honeypot for bots; hidden from people and assistive tech. */}

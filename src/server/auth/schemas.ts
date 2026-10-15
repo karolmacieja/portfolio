@@ -20,6 +20,8 @@ export const registerSchema = z.object({
   name: z.string().trim().min(1).max(100),
   email: emailSchema,
   password: passwordSchema,
+  /** Terms of service and privacy policy accepted (checkbox). */
+  terms: z.literal("on"),
   // Honeypot: real users never fill it.
   website: z.string().max(0).optional(),
 });

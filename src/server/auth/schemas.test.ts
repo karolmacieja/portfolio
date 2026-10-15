@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { registerSchema, signInSchema } from "./schemas";
 
-const valid = { name: "Jan Kowalski", email: "  Jan@Example.COM ", password: "abcdefgh12" };
+const valid = { name: "Jan Kowalski", email: "  Jan@Example.COM ", password: "abcdefgh12", terms: "on" };
 
 describe("registerSchema", () => {
   it("normalizes email to trimmed lowercase", () => {
@@ -21,6 +21,11 @@ describe("registerSchema", () => {
 
   it("rejects a filled honeypot", () => {
     expect(registerSchema.safeParse({ ...valid, website: "spam.example" }).success).toBe(false);
+  });
+
+  it("requires accepting the terms", () => {
+    const { terms: _terms, ...withoutTerms } = valid;
+    expect(registerSchema.safeParse(withoutTerms).success).toBe(false);
   });
 
   it("rejects an invalid email", () => {

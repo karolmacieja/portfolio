@@ -130,6 +130,10 @@ export class MockPaymentProvider implements PaymentProvider {
     });
   }
 
+  async cancelSubscription(input: { subscriptionId: string }) {
+    await this.simulateEnd(input.subscriptionId);
+  }
+
   async refund(input: { paymentRef: string; amount: number }) {
     await this.simulateRefund(input.paymentRef, input.amount);
   }

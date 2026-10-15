@@ -120,6 +120,8 @@ export interface PaymentProvider {
     metadata: Record<string, string>;
   }): Promise<void>;
   setCancelAtPeriodEnd(input: { subscriptionId: string; cancel: boolean }): Promise<void>;
+  /** Ends a subscription right away, without proration or refund (account erasure). */
+  cancelSubscription(input: { subscriptionId: string }): Promise<void>;
   /** Refunds (part of) a charge; the provider then reports it as a payment.refunded event. */
   refund(input: { paymentRef: string; amount: number }): Promise<void>;
   /** Price reference for a plan price (null when the price isn't synced to the provider yet). */

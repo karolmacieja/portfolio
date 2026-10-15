@@ -10,6 +10,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { getClientIp } from "@/lib/request";
 import { safeCallbackUrl } from "@/lib/safe-redirect";
+import { currentTermsVersion } from "@/server/legal/service";
 import { getRateLimiter, RATE_LIMITS } from "@/server/rate-limit/limiter";
 
 import { sendEmailVerification } from "./email-verification";
@@ -22,6 +23,8 @@ export type AuthFormState = {
   error?: AuthErrorKey;
   fieldErrors?: Partial<Record<string, string>>;
   email?: string;
+  /** Registration: the name, kept when the form comes back with an error. */
+  name?: string;
 };
 
 export type AuthErrorKey =
@@ -90,30 +93,43 @@ export async function registerAction(_prev: AuthFormState, formData: FormData): 
   const raw = Object.fromEntries(formData);
   const parsed = registerSchema.safeParse(raw);
   const email = typeof raw.email === "string" ? raw.email : "";
+  const name = typeof raw.name === "string" ? raw.name : "";
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {};
     for (const issue of parsed.error.issues) {
       const field = String(issue.path[0]);
-      fieldErrors[field] ??= field === "password" ? issue.message : "errors.invalidInput";
+      fieldErrors[field] ??=
+        field === "password"
+          ? issue.message
+          : field === "terms"
+            ? "errors.termsRequired"
+            : "errors.invalidInput";
     }
-    return { error: "invalidInput", fieldErrors, email };
+    return { error: "invalidInput", fieldErrors, email, name };
   }
 
   const ip = getClientIp(await headers());
   const { limit, windowMs } = RATE_LIMITS.registerPerIp;
   if (!(await getRateLimiter().hit(`register:ip:${ip}`, limit, windowMs)).allowed) {
-    return { error: "rateLimited", email };
+    return { error: "rateLimited", email, name };
   }
 
-  const { name, password } = parsed.data;
+  const { password } = parsed.data;
   const locale = await getLocale();
   try {
     await db.user.create({
-      data: { name, email: parsed.data.email, passwordHash: await hashPassword(password), locale },
+      data: {
+        name: parsed.data.name,
+        email: parsed.data.email,
+        passwordHash: await hashPassword(password),
+        locale,
+        termsVersion: await currentTermsVersion(),
+        termsAcceptedAt: new Date(),
+      },
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      return { error: "emailTaken", fieldErrors: { email: "errors.emailTaken" }, email };
+      return { error: "emailTaken", fieldErrors: { email: "errors.emailTaken" }, email, name };
     }
     throw error;
   }

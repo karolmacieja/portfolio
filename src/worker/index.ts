@@ -5,8 +5,10 @@ import { createServer } from "node:http";
 import { Queue, Worker } from "bullmq";
 
 import { getEnv, platformUrl } from "@/lib/env";
+import { eraseDueAccounts } from "@/server/account/deletion";
 import { purgeAuditLog } from "@/server/audit/retention";
 import { runDunning } from "@/server/billing/dunning";
+import { handleBillingEvent } from "@/server/billing/events";
 import { expireManualPlans } from "@/server/billing/manual";
 import { createHostnameProvider, createRegistrar } from "@/server/domains/providers";
 import {
@@ -35,7 +37,11 @@ import {
   type InvoiceJob,
   type ThumbnailJob,
 } from "@/server/jobs/queues";
+import { purgeContactMessages } from "@/server/contact/retention";
 import { createMailer } from "@/server/mail";
+import { createPaymentProvider } from "@/server/payments";
+import { rollupStats } from "@/server/stats/rollup";
+import { createStorage } from "@/server/storage";
 import { renderTemplateThumbnail } from "@/server/templates/thumbnail";
 
 /**
@@ -67,6 +73,9 @@ const billing = new Worker(
   async (job) => {
     if (job.name === "retention") {
       console.info(`[worker] retention: ${await purgeAuditLog()} audit entries removed`);
+      console.info(`[worker] retention: ${await purgeContactMessages()} contact messages removed`);
+      const stats = await rollupStats();
+      console.info(`[worker] stats: ${stats.days} site-days rolled up, ${stats.purged} old rows removed`);
       return;
     }
     if (job.name !== "dunning") return;
@@ -81,6 +90,20 @@ const billing = new Worker(
     const result = await runDunning(deps);
     const expired = await expireManualPlans(deps);
     if (expired) console.info(`[worker] ${expired} manual plan(s) ended`);
+    const erased = await eraseDueAccounts({
+      // Mock provider events are handled in-process, as in the app.
+      payments: createPaymentProvider(env, async (event) => {
+        await handleBillingEvent(event, "mock", deps);
+      }),
+      hostnames: createHostnameProvider(env),
+      registrar: createRegistrar(env),
+      storage: createStorage(env),
+      mailer,
+      invalidate: remoteInvalidate,
+      brand: env.BRAND_NAME,
+      accountUrl: platformUrl("app", "/account"),
+    });
+    if (erased) console.info(`[worker] ${erased} account(s) erased after the deletion grace period`);
     console.info(`[worker] dunning: ${result.reminders} reminders, ${result.suspended} suspended`);
   },
   { connection, concurrency: 1 },
@@ -143,7 +166,7 @@ const invoices = new Worker<InvoiceJob>(
 // Schedulers are idempotent: re-registering on restart doesn't duplicate them.
 const billingQueue = new Queue(QUEUES.billing, { connection });
 await billingQueue.upsertJobScheduler("dunning-hourly", { pattern: "7 * * * *" }, { name: "dunning" });
-// Daily: data retention (audit log older than two years).
+// Daily (after midnight in Poland): retention (audit log, contact messages) and statistics roll-up.
 await billingQueue.upsertJobScheduler("retention-daily", { pattern: "41 3 * * *" }, { name: "retention" });
 await new Queue(QUEUES.invoices, { connection }).upsertJobScheduler(
   "invoices-sweep",
