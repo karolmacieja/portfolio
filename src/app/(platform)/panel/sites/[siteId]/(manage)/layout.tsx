@@ -55,6 +55,7 @@ export default async function SiteManageLayout({ children, params }: LayoutProps
           { href: "", label: t("pages") },
           { href: "/theme", label: t("theme") },
           { href: "/template", label: t("template") },
+          { href: "/domains", label: t("domains") },
           { href: "/settings", label: t("settings") },
           { href: "/history", label: t("history") },
         ]}

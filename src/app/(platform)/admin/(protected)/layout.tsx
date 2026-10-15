@@ -21,6 +21,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               </>
             )}
             <Link href="/invoices">{t("invoices")}</Link>
+            <Link href="/domains">{t("domains")}</Link>
             {user.role === "ADMIN" && <Link href="/settings">{t("settings")}</Link>}
           </nav>
           <div className="ml-auto flex items-center gap-3 text-sm text-muted-foreground">

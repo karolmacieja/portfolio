@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
+import { DomainSettingsForm } from "@/components/admin/domain-admin-forms";
 import { InvoicingSettingsForm } from "@/components/admin/invoice-forms";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Role } from "@/generated/prisma/enums";
 import { requireRole } from "@/server/auth/session";
+import { getDomainSettings } from "@/server/domains/settings";
 import { getInvoicingSettings, VAT_RATES } from "@/server/invoicing/settings";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -15,7 +17,11 @@ export async function generateMetadata(): Promise<Metadata> {
 /** Platform settings (ADMIN). Phase 6: invoicing (VAT rate, seller data); more in Phase 8. */
 export default async function AdminSettingsPage() {
   await requireRole([Role.ADMIN], "/settings");
-  const [settings, t] = await Promise.all([getInvoicingSettings(), getTranslations("adminSettings")]);
+  const [settings, domainSettings, t] = await Promise.all([
+    getInvoicingSettings(),
+    getDomainSettings(),
+    getTranslations("adminSettings"),
+  ]);
   const { seller } = settings;
   return (
     <main className="mx-auto grid max-w-4xl gap-6 px-6 py-8">
@@ -39,6 +45,23 @@ export default async function AdminSettingsPage() {
               sellerCountry: seller.country,
               sellerEmail: seller.email,
               sellerBankAccount: seller.bankAccount,
+            }}
+          />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("domains")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DomainSettingsForm
+            initial={{
+              tlds: domainSettings.tlds.join(", "),
+              markupPercent: String(domainSettings.markupPercent),
+              minMarkup: (domainSettings.minMarkup / 100).toFixed(2),
+              eurRate: String(domainSettings.exchangeRates.EUR ?? 4.3),
+              usdRate: String(domainSettings.exchangeRates.USD ?? 4),
+              maxHostnamesPerSite: String(domainSettings.maxHostnamesPerSite),
             }}
           />
         </CardContent>

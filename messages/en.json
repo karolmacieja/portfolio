@@ -112,6 +112,48 @@
       "intro": "We refunded part or all of your payment. The corrective invoice {number} is attached.",
       "cta": "Go to billing",
       "ignore": "This message was generated automatically — please do not reply."
+    },
+    "domainActive": {
+      "subject": "Domain {domain} is live — {brand}",
+      "intro": "Domain {domain} is ready: your site is available on it over a secure connection (HTTPS).",
+      "cta": "Go to your account",
+      "ignore": "This message was generated automatically."
+    },
+    "domainsDisabledSoon": {
+      "subject": "Your plan doesn't include custom domains — {brand}",
+      "intro": "Your current plan doesn't include custom domains. In {days} days, {domain} will stop pointing to your site (the subdomain keeps working). Change your plan to keep them.",
+      "cta": "See plans",
+      "ignore": "If you already changed your plan, ignore this message."
+    },
+    "domainsDisabled": {
+      "subject": "Domains were switched off — {brand}",
+      "intro": "{domain} were disconnected from your site because your plan doesn't include custom domains. Your site is still available on its subdomain. You can switch them on again after changing your plan.",
+      "cta": "Go to your account",
+      "ignore": "Purchased domains still belong to you."
+    },
+    "domainRegistered": {
+      "subject": "Domain {domain} is registered — {brand}",
+      "intro": "Thank you! Domain {domain} is registered in your name. We're setting it up for your site — it usually takes a few minutes.",
+      "cta": "Go to your account",
+      "ignore": "This message was generated automatically."
+    },
+    "domainRenewalReminder": {
+      "subject": "Domain {domain} expires in {days} days — {brand}",
+      "intro": "Domain {domain} expires in {days} days. With automatic renewal on, we'll charge your card — nothing to do. Check the settings in your account.",
+      "cta": "Manage domain",
+      "ignore": "This message was generated automatically."
+    },
+    "domainRenewalFailed": {
+      "subject": "Renewing {domain} failed — {brand}",
+      "intro": "We couldn't charge the renewal of {domain}. Update your payment method so the domain doesn't expire.",
+      "cta": "Update payment",
+      "ignore": "If you already updated your payment method, ignore this message."
+    },
+    "domainExpired": {
+      "subject": "Domain {domain} has expired — {brand}",
+      "intro": "Domain {domain} has expired and is no longer renewed. Contact us if you want it back (the registry may still allow it for a short time).",
+      "cta": "Go to your account",
+      "ignore": "This message was generated automatically."
     }
   },
   "site": {
@@ -187,7 +229,8 @@
     "view": "View site",
     "media": "Media",
     "unpublishedChanges": "You have unpublished changes.",
-    "template": "Template"
+    "template": "Template",
+    "domains": "Domains"
   },
   "pages": {
     "title": "Pages",
@@ -568,7 +611,8 @@
     "templates": "Templates",
     "coupons": "Coupons",
     "invoices": "Invoices",
-    "settings": "Settings"
+    "settings": "Settings",
+    "domains": "Domains"
   },
   "adminTemplates": {
     "title": "Templates",
@@ -852,6 +896,144 @@
     },
     "errors": {
       "invalid": "Please check the fields."
+    },
+    "domains": "Domains",
+    "domainFields": {
+      "tlds": "Offered extensions (e.g. pl, com, com.pl)",
+      "markupPercent": "Markup (%)",
+      "minMarkup": "Minimum net markup (PLN / year)",
+      "eurRate": "EUR → PLN rate",
+      "usdRate": "USD → PLN rate",
+      "maxHostnamesPerSite": "Domains per site"
     }
+  },
+  "domains": {
+    "title": "Domains",
+    "mainAddress": "Main address of the site: {address}",
+    "featureRequired": "Custom domains are available on the Pro and Business plans.",
+    "upgrade": "See plans",
+    "hostname": "Your domain",
+    "add": "Connect domain",
+    "includeCompanion": "Also add the version with/without \"www\" (redirects to the main one)",
+    "added": "Domain added. Set the DNS records below.",
+    "removeConfirm": "Disconnect the domain from the site?",
+    "actions": {
+      "check": "Check now",
+      "primary": "Make main",
+      "remove": "Disconnect",
+      "reenable": "Switch on again"
+    },
+    "useSubdomain": "Use the subdomain as the main address",
+    "status": {
+      "PENDING_DNS": "Waiting for DNS",
+      "PENDING_SSL": "Issuing certificate",
+      "ACTIVE": "Active",
+      "ERROR": "Error",
+      "DISABLED": "Switched off"
+    },
+    "type": {
+      "SUBDOMAIN": "Subdomain",
+      "CONNECTED": "Connected",
+      "PURCHASED": "Purchased"
+    },
+    "primary": "Main",
+    "purchasedBadge": "Bought here",
+    "dnsIntro": "At your domain provider (DNS settings) add the record:",
+    "dnsOptional": "Verification records (optional — speed up moving a live domain)",
+    "dnsApexHint": "A domain without \"www\" needs CNAME/ALIAS support for the root domain (CNAME flattening) at your DNS provider. Without it, use the \"www\" address.",
+    "willBeDisabled": "Your plan doesn't include custom domains — this domain will be switched off soon.",
+    "buyTitle": "Buy a domain",
+    "buyDescription": "We register the domain in your name and set it up automatically. It renews yearly from your card.",
+    "purchaseNotAllowed": "Buying domains is available on the Business plan.",
+    "ordersTitle": "Purchased domains",
+    "orderStatus": {
+      "PENDING_PAYMENT": "Waiting for payment",
+      "REGISTERING": "Registering",
+      "ACTIVE": "Active",
+      "FAILED": "Registration on hold — we'll contact you",
+      "EXPIRED": "Expired",
+      "CANCELED": "Canceled"
+    },
+    "perYear": "{price} / year",
+    "expires": "valid until {date}",
+    "autoRenewIsOn": "renews automatically",
+    "autoRenewIsOff": "doesn't renew",
+    "autoRenewOn": "Turn on automatic renewal",
+    "autoRenewOff": "Turn off automatic renewal",
+    "authCode": "Show transfer code",
+    "purchasedNotice": "Thank you! We're registering the domain — it will appear below in a few minutes.",
+    "searchPlaceholder": "e.g. jan-kowalski",
+    "search": "Check availability",
+    "choose": "Choose",
+    "unavailable": "taken",
+    "buying": "You're buying {domain} for {price} / year.",
+    "registrantHint": "Enter the registrant (domain owner) details — they go to the domain registry.",
+    "registrant": {
+      "PERSON": "Private person",
+      "COMPANY": "Company",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "companyName": "Company name",
+      "taxId": "Tax id / EU VAT",
+      "email": "Email",
+      "phoneCountryCode": "Country code",
+      "phoneNumber": "Phone",
+      "street": "Street and number",
+      "postalCode": "Postal code",
+      "city": "City",
+      "country": "Country"
+    },
+    "payAndRegister": "Pay {price} and register",
+    "cancel": "Back",
+    "errors": {
+      "notFound": "Not found.",
+      "featureRequired": "Your plan doesn't include custom domains.",
+      "purchaseNotAllowed": "Your plan doesn't include buying domains.",
+      "hostname": {
+        "invalid": "Invalid domain name.",
+        "tooLong": "The domain name is too long.",
+        "ipAddress": "Enter a domain name, not an IP address.",
+        "platformDomain": "This domain can't be connected.",
+        "missingTld": "Enter the full domain name, e.g. jan-kowalski.pl.",
+        "wildcard": "Wildcard domains (*) are not supported."
+      },
+      "hostnameTaken": "This domain is already connected.",
+      "limitReached": "The domain limit for this site is reached.",
+      "providerError": "The domain service is unavailable. Try again shortly.",
+      "notDisabled": "This domain isn't switched off.",
+      "tldNotOffered": "We don't offer this extension.",
+      "notAvailable": "This domain is taken.",
+      "priceUnavailable": "The price of this domain is unavailable.",
+      "emailNotVerified": "Confirm your email address before buying.",
+      "orderNotActive": "This domain isn't active yet.",
+      "rateLimited": "Too many attempts. Try again in a few minutes.",
+      "registrantInvalid": "Check the registrant details (all fields are required, phone like 600100200)."
+    }
+  },
+  "adminDomains": {
+    "title": "Domains",
+    "all": "All",
+    "search": "Domain",
+    "searchButton": "Search",
+    "columns": {
+      "hostname": "Domain",
+      "site": "Site",
+      "status": "Status",
+      "checked": "Checked",
+      "actions": "Actions"
+    },
+    "ordersTitle": "Domain registrations",
+    "orderColumns": {
+      "domain": "Domain",
+      "client": "Client",
+      "status": "Status",
+      "price": "Price / year",
+      "expires": "Expires",
+      "actions": "Actions"
+    },
+    "cost": "cost: {cost}",
+    "check": "Check",
+    "retry": "Retry registration",
+    "queued": "Queued."
   }
 }

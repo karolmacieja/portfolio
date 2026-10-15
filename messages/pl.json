@@ -112,6 +112,48 @@
       "intro": "Zwróciliśmy część lub całość płatności. W załączniku przesyłamy fakturę korygującą {number}.",
       "cta": "Przejdź do płatności",
       "ignore": "Wiadomość wygenerowana automatycznie — nie odpowiadaj na nią."
+    },
+    "domainActive": {
+      "subject": "Domena {domain} działa — {brand}",
+      "intro": "Domena {domain} jest gotowa: Twoja strona jest pod nią dostępna z bezpiecznym połączeniem (HTTPS).",
+      "cta": "Przejdź do panelu",
+      "ignore": "Wiadomość wygenerowana automatycznie."
+    },
+    "domainsDisabledSoon": {
+      "subject": "Twój plan nie obejmuje własnych domen — {brand}",
+      "intro": "Twój obecny plan nie obejmuje własnych domen. Za {days} dni domeny {domain} przestaną wskazywać na Twoją stronę (subdomena będzie działać dalej). Zmień plan, aby je zachować.",
+      "cta": "Zobacz plany",
+      "ignore": "Jeśli już zmieniłeś plan, zignoruj tę wiadomość."
+    },
+    "domainsDisabled": {
+      "subject": "Domeny zostały wyłączone — {brand}",
+      "intro": "Domeny {domain} zostały odłączone od Twojej strony, bo Twój plan nie obejmuje własnych domen. Strona działa nadal pod subdomeną. Po zmianie planu możesz je włączyć ponownie.",
+      "cta": "Przejdź do panelu",
+      "ignore": "Kupione domeny nadal należą do Ciebie."
+    },
+    "domainRegistered": {
+      "subject": "Domena {domain} została zarejestrowana — {brand}",
+      "intro": "Dziękujemy! Domena {domain} jest zarejestrowana na Ciebie. Konfigurujemy ją dla Twojej strony — zwykle trwa to kilka minut.",
+      "cta": "Przejdź do panelu",
+      "ignore": "Wiadomość wygenerowana automatycznie."
+    },
+    "domainRenewalReminder": {
+      "subject": "Domena {domain} wygasa za {days} dni — {brand}",
+      "intro": "Domena {domain} wygasa za {days} dni. Jeśli masz włączone automatyczne odnowienie, pobierzemy opłatę z Twojej karty — nic nie musisz robić. Sprawdź ustawienia w panelu.",
+      "cta": "Zarządzaj domeną",
+      "ignore": "Wiadomość wygenerowana automatycznie."
+    },
+    "domainRenewalFailed": {
+      "subject": "Nie udało się odnowić domeny {domain} — {brand}",
+      "intro": "Nie udało się pobrać opłaty za odnowienie domeny {domain}. Zaktualizuj metodę płatności, aby domena nie wygasła.",
+      "cta": "Zaktualizuj płatność",
+      "ignore": "Jeśli już zaktualizowałeś płatność, zignoruj tę wiadomość."
+    },
+    "domainExpired": {
+      "subject": "Domena {domain} wygasła — {brand}",
+      "intro": "Domena {domain} wygasła i nie jest już odnawiana. Skontaktuj się z nami, jeśli chcesz ją przywrócić (rejestr może pozwalać na to jeszcze przez krótki czas).",
+      "cta": "Przejdź do panelu",
+      "ignore": "Wiadomość wygenerowana automatycznie."
     }
   },
   "site": {
@@ -187,7 +229,8 @@
     "view": "Podgląd strony",
     "media": "Media",
     "unpublishedChanges": "Masz nieopublikowane zmiany.",
-    "template": "Szablon"
+    "template": "Szablon",
+    "domains": "Domeny"
   },
   "pages": {
     "title": "Podstrony",
@@ -568,7 +611,8 @@
     "templates": "Szablony",
     "coupons": "Kupony",
     "invoices": "Faktury",
-    "settings": "Ustawienia"
+    "settings": "Ustawienia",
+    "domains": "Domeny"
   },
   "adminTemplates": {
     "title": "Szablony",
@@ -852,6 +896,144 @@
     },
     "errors": {
       "invalid": "Sprawdź poprawność pól."
+    },
+    "domains": "Domeny",
+    "domainFields": {
+      "tlds": "Oferowane końcówki (np. pl, com, com.pl)",
+      "markupPercent": "Narzut (%)",
+      "minMarkup": "Minimalny narzut netto (zł / rok)",
+      "eurRate": "Kurs EUR → PLN",
+      "usdRate": "Kurs USD → PLN",
+      "maxHostnamesPerSite": "Domen na stronę"
     }
+  },
+  "domains": {
+    "title": "Domeny",
+    "mainAddress": "Adres główny strony: {address}",
+    "featureRequired": "Własna domena jest dostępna w planach Pro i Business.",
+    "upgrade": "Zobacz plany",
+    "hostname": "Twoja domena",
+    "add": "Podłącz domenę",
+    "includeCompanion": "Dodaj też wersję z „www” / bez „www” (przekierowanie na główną)",
+    "added": "Domena dodana. Ustaw rekordy DNS poniżej.",
+    "removeConfirm": "Odłączyć domenę od strony?",
+    "actions": {
+      "check": "Sprawdź teraz",
+      "primary": "Ustaw jako główną",
+      "remove": "Odłącz",
+      "reenable": "Włącz ponownie"
+    },
+    "useSubdomain": "Ustaw subdomenę jako adres główny",
+    "status": {
+      "PENDING_DNS": "Czeka na DNS",
+      "PENDING_SSL": "Wystawianie certyfikatu",
+      "ACTIVE": "Aktywna",
+      "ERROR": "Błąd",
+      "DISABLED": "Wyłączona"
+    },
+    "type": {
+      "SUBDOMAIN": "Subdomena",
+      "CONNECTED": "Podłączona",
+      "PURCHASED": "Kupiona"
+    },
+    "primary": "Główna",
+    "purchasedBadge": "Kupiona u nas",
+    "dnsIntro": "U swojego dostawcy domeny (w panelu DNS) dodaj rekord:",
+    "dnsOptional": "Rekordy weryfikacyjne (opcjonalne — przyspieszają przeniesienie działającej domeny)",
+    "dnsApexHint": "Domena bez „www” wymaga u dostawcy DNS obsługi rekordu CNAME/ALIAS dla domeny głównej (tzw. CNAME flattening). Jeśli jej nie ma, użyj adresu z „www”.",
+    "willBeDisabled": "Twój plan nie obejmuje własnych domen — ta domena zostanie wkrótce wyłączona.",
+    "buyTitle": "Kup domenę",
+    "buyDescription": "Zarejestrujemy domenę na Ciebie i skonfigurujemy ją automatycznie. Odnawia się co roku z Twojej karty.",
+    "purchaseNotAllowed": "Zakup domeny jest dostępny w planie Business.",
+    "ordersTitle": "Kupione domeny",
+    "orderStatus": {
+      "PENDING_PAYMENT": "Czeka na płatność",
+      "REGISTERING": "Rejestracja w toku",
+      "ACTIVE": "Aktywna",
+      "FAILED": "Rejestracja wstrzymana — skontaktujemy się z Tobą",
+      "EXPIRED": "Wygasła",
+      "CANCELED": "Anulowana"
+    },
+    "perYear": "{price} / rok",
+    "expires": "ważna do {date}",
+    "autoRenewIsOn": "odnawia się automatycznie",
+    "autoRenewIsOff": "nie odnawia się",
+    "autoRenewOn": "Włącz automatyczne odnowienie",
+    "autoRenewOff": "Wyłącz automatyczne odnowienie",
+    "authCode": "Pokaż kod transferu",
+    "purchasedNotice": "Dziękujemy! Rejestrujemy domenę — za kilka minut pojawi się poniżej.",
+    "searchPlaceholder": "np. jan-kowalski",
+    "search": "Sprawdź dostępność",
+    "choose": "Wybierz",
+    "unavailable": "zajęta",
+    "buying": "Kupujesz {domain} za {price} / rok.",
+    "registrantHint": "Podaj dane abonenta (właściciela domeny) — trafią do rejestru domen.",
+    "registrant": {
+      "PERSON": "Osoba prywatna",
+      "COMPANY": "Firma",
+      "firstName": "Imię",
+      "lastName": "Nazwisko",
+      "companyName": "Nazwa firmy",
+      "taxId": "NIP / VAT UE",
+      "email": "E-mail",
+      "phoneCountryCode": "Kierunkowy",
+      "phoneNumber": "Telefon",
+      "street": "Ulica i numer",
+      "postalCode": "Kod pocztowy",
+      "city": "Miejscowość",
+      "country": "Kraj"
+    },
+    "payAndRegister": "Zapłać {price} i zarejestruj",
+    "cancel": "Wróć",
+    "errors": {
+      "notFound": "Nie znaleziono.",
+      "featureRequired": "Twój plan nie obejmuje własnych domen.",
+      "purchaseNotAllowed": "Twój plan nie obejmuje zakupu domen.",
+      "hostname": {
+        "invalid": "Nieprawidłowa nazwa domeny.",
+        "tooLong": "Nazwa domeny jest za długa.",
+        "ipAddress": "Podaj nazwę domeny, nie adres IP.",
+        "platformDomain": "Tej domeny nie można podłączyć.",
+        "missingTld": "Podaj pełną nazwę domeny, np. jan-kowalski.pl.",
+        "wildcard": "Domeny z gwiazdką (*) nie są obsługiwane."
+      },
+      "hostnameTaken": "Ta domena jest już podłączona.",
+      "limitReached": "Osiągnięto limit domen dla tej strony.",
+      "providerError": "Nie udało się połączyć z usługą domen. Spróbuj ponownie za chwilę.",
+      "notDisabled": "Ta domena nie jest wyłączona.",
+      "tldNotOffered": "Tej końcówki nie oferujemy.",
+      "notAvailable": "Ta domena jest już zajęta.",
+      "priceUnavailable": "Cena tej domeny jest niedostępna.",
+      "emailNotVerified": "Potwierdź adres e-mail przed zakupem.",
+      "orderNotActive": "Ta domena nie jest jeszcze aktywna.",
+      "rateLimited": "Zbyt wiele prób. Spróbuj ponownie za kilka minut.",
+      "registrantInvalid": "Sprawdź dane abonenta (wszystkie pola są wymagane, telefon w formacie 600100200)."
+    }
+  },
+  "adminDomains": {
+    "title": "Domeny",
+    "all": "Wszystkie",
+    "search": "Domena",
+    "searchButton": "Szukaj",
+    "columns": {
+      "hostname": "Domena",
+      "site": "Strona",
+      "status": "Status",
+      "checked": "Sprawdzono",
+      "actions": "Akcje"
+    },
+    "ordersTitle": "Rejestracje domen",
+    "orderColumns": {
+      "domain": "Domena",
+      "client": "Klient",
+      "status": "Status",
+      "price": "Cena / rok",
+      "expires": "Wygasa",
+      "actions": "Akcje"
+    },
+    "cost": "koszt: {cost}",
+    "check": "Sprawdź",
+    "retry": "Ponów rejestrację",
+    "queued": "Zlecono."
   }
 }
