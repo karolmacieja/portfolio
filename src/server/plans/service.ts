@@ -18,6 +18,8 @@ export type PlanCard = {
   storageMb: number;
   features: PlanFeatures;
   accessTiers: AccessTier[];
+  highlights: string[];
+  isFeatured: boolean;
   monthly: PlanPriceCard | null;
   yearly: PlanPriceCard | null;
 };
@@ -46,6 +48,8 @@ export async function listActivePlans(): Promise<PlanCard[]> {
       storageMb: plan.storageMb,
       features: parseFeatures(plan.features),
       accessTiers: plan.accessTiers as AccessTier[],
+      highlights: plan.highlights,
+      isFeatured: plan.isFeatured,
       monthly: price(BillingInterval.MONTH),
       yearly: price(BillingInterval.YEAR),
     };

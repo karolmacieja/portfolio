@@ -54,12 +54,23 @@ const planSchema = z.object({
     .transform((v) => (v === "" ? null : Number(v)))
     .pipe(z.number().int().min(0).max(100_000).nullable()),
   storageMb: int(10, 1_000_000),
+  highlights: z
+    .string()
+    .max(4000)
+    .transform((v) =>
+      v
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .slice(0, 20),
+    )
+    .pipe(z.array(z.string().max(160))),
 });
 
 export async function savePlanAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const actor = await requirePermission("plans.manage");
   const values = formValues(formData);
-  const parsed = planSchema.safeParse({ description: "", maxProjects: "", ...values });
+  const parsed = planSchema.safeParse({ description: "", maxProjects: "", highlights: "", ...values });
   if (!parsed.success) return { error: "adminClients.errors.invalid", values };
   const { planId, ...rest } = parsed.data;
   const features = Object.fromEntries(PLAN_FEATURES.map((f) => [f, formData.get(`feature.${f}`) === "on"]));
@@ -68,6 +79,7 @@ export async function savePlanAction(_prev: ActionState, formData: FormData): Pr
     const saved = await savePlan(planId || null, {
       ...rest,
       isActive: formData.get("isActive") === "on",
+      isFeatured: formData.get("isFeatured") === "on",
       features: features as never,
       accessTiers,
     });

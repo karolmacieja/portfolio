@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { ActionForm } from "@/components/action-form";
+import { PriceInput } from "@/components/finance/price-input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import {
   syncPricesAction,
 } from "@/server/admin/catalog-actions";
 import { listPlansAdmin } from "@/server/admin/plans";
+import { getCostInputs } from "@/server/finance/costs";
 import { setSeatPricesAction } from "@/server/licenses/admin-actions";
 import { requirePermission } from "@/server/auth/session";
 import { ACCESS_TIERS, getBlockTiers, PLAN_FEATURES, parseFeatures } from "@/server/entitlements";
@@ -63,10 +65,25 @@ async function PlanForm({ plan }: { plan: PlanRow | null }) {
         {field("storageMb", plan?.storageMb ?? 500, { type: "number", min: 10 })}
       </div>
       {field("description", plan?.description, { maxLength: 300 })}
+      <div className="grid gap-1">
+        <Label htmlFor={`${plan?.id ?? "new"}-highlights`}>{t("fields.highlights")}</Label>
+        <textarea
+          id={`${plan?.id ?? "new"}-highlights`}
+          name="highlights"
+          rows={4}
+          defaultValue={(plan?.highlights ?? []).join("\n")}
+          placeholder={t("highlightsPlaceholder")}
+          className="rounded-md border bg-background p-2 text-sm"
+        />
+      </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
         <label className="flex items-center gap-2">
           <input type="checkbox" name="isActive" defaultChecked={plan?.isActive ?? true} />
           {t("fields.isActive")}
+        </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" name="isFeatured" defaultChecked={plan?.isFeatured ?? false} />
+          {t("fields.isFeatured")}
         </label>
         {PLAN_FEATURES.map((feature) => (
           <label key={feature} className="flex items-center gap-2">
@@ -93,13 +110,15 @@ async function PlanForm({ plan }: { plan: PlanRow | null }) {
 /** Plan catalog (ADMIN): limits, flags, tiers and prices; block tiers. */
 export default async function AdminPlansPage() {
   await requirePermission("plans.manage", "/plans");
-  const [plans, tiers, t, tBlocks, locale] = await Promise.all([
+  const [plans, tiers, t, tBlocks, locale, costInputs] = await Promise.all([
     listPlansAdmin(),
     getBlockTiers(),
     getTranslations("adminPlans"),
     getTranslations("blocks"),
     getLocale(),
+    getCostInputs(),
   ]);
+  const { activeClients, ...costs } = costInputs;
 
   return (
     <main className="mx-auto grid max-w-6xl gap-6 px-6 py-8">
@@ -113,6 +132,15 @@ export default async function AdminPlansPage() {
           className="flex items-center gap-2"
         />
       </div>
+      <p className="text-sm text-muted-foreground" data-testid="cost-basis">
+        {t("costBasis", {
+          clients: activeClients,
+          vat: Math.round(costs.vatRate * 100),
+          fee: costs.feePercent,
+          fixed: (costs.feeFixed / 100).toFixed(2),
+          cost: (costs.clientCostMonthly / 100).toFixed(2),
+        })}
+      </p>
       {plans.map((plan) => (
         <Card key={plan.id} data-testid={`admin-plan-${plan.slug}`}>
           <CardHeader className="flex flex-row flex-wrap items-center gap-2">
@@ -135,16 +163,16 @@ export default async function AdminPlansPage() {
                       success={t("saved")}
                       className="flex flex-wrap items-end gap-2"
                     >
-                      <div className="grid gap-1">
-                        <Label htmlFor={`${plan.id}-${interval}`}>{t(`interval.${interval}`)}</Label>
-                        <Input
-                          id={`${plan.id}-${interval}`}
-                          name="amount"
-                          inputMode="decimal"
-                          defaultValue={active ? (active.amount / 100).toFixed(2) : ""}
-                          className="h-8 w-28"
-                        />
-                      </div>
+                      <PriceInput
+                        id={`${plan.id}-${interval}`}
+                        name="amount"
+                        label={t(`interval.${interval}`)}
+                        defaultValue={active ? (active.amount / 100).toFixed(2) : ""}
+                        months={interval === "YEAR" ? 12 : 1}
+                        costs={costs}
+                        locale={locale}
+                        testId={`profit-${plan.slug}-${interval}`}
+                      />
                     </ActionForm>
                     <span className="text-xs text-muted-foreground">
                       {active?.stripePriceId ? `Stripe: ${active.stripePriceId}` : t("notSynced")}
@@ -165,16 +193,16 @@ export default async function AdminPlansPage() {
             >
               <p className="w-full text-xs text-muted-foreground">{t("seatPricesHint")}</p>
               {(["seatPriceMonthly", "seatPriceYearly"] as const).map((field) => (
-                <div key={field} className="grid gap-1">
-                  <Label htmlFor={`${plan.id}-${field}`}>{t(field)}</Label>
-                  <Input
-                    id={`${plan.id}-${field}`}
-                    name={field}
-                    inputMode="decimal"
-                    defaultValue={plan[field] ? (plan[field] / 100).toFixed(2) : ""}
-                    className="h-8 w-28"
-                  />
-                </div>
+                <PriceInput
+                  key={field}
+                  id={`${plan.id}-${field}`}
+                  name={field}
+                  label={t(field)}
+                  defaultValue={plan[field] ? (plan[field] / 100).toFixed(2) : ""}
+                  months={field === "seatPriceYearly" ? 12 : 1}
+                  costs={costs}
+                  locale={locale}
+                />
               ))}
             </ActionForm>
           </CardContent>

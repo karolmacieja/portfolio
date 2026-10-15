@@ -16,6 +16,9 @@ import {
 import { getLegalDocument, LEGAL_KINDS } from "@/server/legal/service";
 import { saveSponsorSettingsAction } from "@/server/licenses/admin-actions";
 import { getSponsorSettings } from "@/server/licenses/settings";
+import { saveCapacitySettingsAction, saveFinanceSettingsAction } from "@/server/finance/actions";
+import { getCapacitySettings } from "@/server/finance/capacity";
+import { getFinanceSettings } from "@/server/finance/settings";
 import { getBillingSettings } from "@/server/billing/settings";
 import { getDomainSettings } from "@/server/domains/settings";
 import { getMailOverrides } from "@/server/mail/overrides";
@@ -39,7 +42,12 @@ export default async function AdminSettingsPage() {
     getLegalDocument("privacy"),
     getTranslations("adminSettings"),
   ]);
-  const sponsor = await getSponsorSettings();
+  const [sponsor, finance, capacity] = await Promise.all([
+    getSponsorSettings(),
+    getFinanceSettings(),
+    getCapacitySettings(),
+  ]);
+  const zl = (grosze: number) => (grosze / 100).toFixed(2);
   const legal = { terms, privacy };
   const { seller } = settings;
   return (
@@ -104,6 +112,129 @@ export default async function AdminSettingsPage() {
           </ActionForm>
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("finance")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ActionForm
+            action={saveFinanceSettingsAction}
+            hidden={{}}
+            label={t("save")}
+            success={t("saved")}
+            className="grid gap-3"
+            testId="finance-settings-form"
+          >
+            <p className="text-sm text-muted-foreground">{t("financeHint")}</p>
+            <div className="flex flex-wrap gap-3">
+              <div className="grid gap-1">
+                <Label htmlFor="fin-fee">{t("feePercent")}</Label>
+                <Input
+                  id="fin-fee"
+                  name="feePercent"
+                  inputMode="decimal"
+                  defaultValue={finance.feePercent}
+                  className="w-24"
+                />
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="fin-fixed">{t("feeFixed")}</Label>
+                <Input
+                  id="fin-fixed"
+                  name="feeFixed"
+                  inputMode="decimal"
+                  defaultValue={zl(finance.feeFixed)}
+                  className="w-24"
+                />
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="fin-infra">{t("infrastructureMonthly")}</Label>
+                <Input
+                  id="fin-infra"
+                  name="infrastructureMonthly"
+                  inputMode="decimal"
+                  defaultValue={zl(finance.infrastructureMonthly)}
+                  className="w-28"
+                />
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="fin-mode">{t("infrastructureMode")}</Label>
+                <select
+                  id="fin-mode"
+                  name="infrastructureMode"
+                  defaultValue={finance.infrastructureMode}
+                  className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                >
+                  <option value="perClient">{t("infrastructureModes.perClient")}</option>
+                  <option value="fixed">{t("infrastructureModes.fixed")}</option>
+                </select>
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="fin-per-client">{t("costPerClientMonthly")}</Label>
+                <Input
+                  id="fin-per-client"
+                  name="costPerClientMonthly"
+                  inputMode="decimal"
+                  defaultValue={zl(finance.costPerClientMonthly)}
+                  className="w-24"
+                />
+              </div>
+            </div>
+            <div className="grid gap-1">
+              <Label htmlFor="fin-other">{t("otherCosts")}</Label>
+              <textarea
+                id="fin-other"
+                name="otherCosts"
+                rows={4}
+                defaultValue={finance.otherCosts.map((c) => `${c.name}; ${zl(c.monthly)}`).join("\n")}
+                placeholder={t("otherCostsPlaceholder")}
+                className="rounded-md border bg-background p-2 font-mono text-xs"
+              />
+            </div>
+          </ActionForm>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("capacity")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ActionForm
+            action={saveCapacitySettingsAction}
+            hidden={{}}
+            label={t("save")}
+            success={t("saved")}
+            className="grid gap-3"
+            testId="capacity-settings-form"
+          >
+            <p className="text-sm text-muted-foreground">{t("capacityHint")}</p>
+            <div className="flex flex-wrap gap-3">
+              {(
+                [
+                  ["databaseGb", capacity.databaseGb],
+                  ["storageGb", capacity.storageGb],
+                  ["monthlyPageViews", capacity.monthlyPageViews],
+                  ["activeSites", capacity.activeSites],
+                  ["warnAtPercent", capacity.warnAtPercent],
+                ] as const
+              ).map(([name, value]) => (
+                <div key={name} className="grid gap-1">
+                  <Label htmlFor={`cap-${name}`}>{t(`capacityFields.${name}`)}</Label>
+                  <Input
+                    id={`cap-${name}`}
+                    name={name}
+                    inputMode="decimal"
+                    defaultValue={value}
+                    className="w-32"
+                  />
+                </div>
+              ))}
+            </div>
+          </ActionForm>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>{t("sponsor")}</CardTitle>

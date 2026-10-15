@@ -30,6 +30,8 @@ describe.skipIf(!process.env.DATABASE_URL)("plan catalog and team (database)", a
       storageMb: 100,
       features: { customDomain: true } as never,
       accessTiers: ["pro"],
+      highlights: ["Pomoc przy starcie"],
+      isFeatured: true,
     });
     planIds.push(id);
     expect((await db.plan.findUniqueOrThrow({ where: { id } })).accessTiers).toEqual(["basic", "pro"]);

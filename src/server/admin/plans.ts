@@ -33,6 +33,9 @@ export type PlanInput = {
   storageMb: number;
   features: PlanFeatures;
   accessTiers: AccessTier[];
+  /** "What's in the plan" bullets for the pricing page, in order. */
+  highlights: string[];
+  isFeatured: boolean;
 };
 
 export async function listPlansAdmin() {

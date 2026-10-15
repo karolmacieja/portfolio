@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { PlanFeatureList } from "@/components/plans/plan-features";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { platformUrl } from "@/lib/env";
@@ -45,9 +46,16 @@ export async function PricingTable({
         {plans.map((plan) => {
           const price = plan[interval];
           return (
-            <Card key={plan.id} data-testid={`pricing-${plan.slug}`} className="flex flex-col">
+            <Card
+              key={plan.id}
+              data-testid={`pricing-${plan.slug}`}
+              className={cn("flex flex-col", plan.isFeatured && "border-primary shadow-md")}
+            >
               <CardHeader>
-                <CardTitle className="text-xl">{plan.name}</CardTitle>
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="text-xl">{plan.name}</CardTitle>
+                  {plan.isFeatured && <Badge>{t("plans.featured")}</Badge>}
+                </div>
                 {plan.description && <CardDescription>{plan.description}</CardDescription>}
               </CardHeader>
               <CardContent className="grid gap-4">

@@ -9,6 +9,11 @@ export async function PlanFeatureList({ plan }: { plan: PlanCard }) {
   const [t, locale] = await Promise.all([getTranslations("plans"), getLocale()]);
   return (
     <ul className="grid gap-1 text-sm">
+      {plan.highlights.map((item) => (
+        <li key={item} className="font-medium">
+          ★ {item}
+        </li>
+      ))}
       <li>{t("limits.maxSites", { count: plan.maxSites })}</li>
       <li>{t("limits.maxPagesPerSite", { count: plan.maxPagesPerSite })}</li>
       <li>
