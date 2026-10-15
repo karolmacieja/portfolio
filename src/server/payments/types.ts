@@ -16,6 +16,8 @@ export type ProviderSubscription = {
   currentPeriodEnd: Date | null;
   trialEnd: Date | null;
   metadata: Record<string, string>;
+  /** Units of the subscription item (seats of a group license); 1 for plans. */
+  quantity?: number;
 };
 
 export type ProviderInvoice = {
@@ -84,6 +86,15 @@ export type PaymentCheckoutInput = {
 /** Yearly subscription for a purchased domain, priced inline (gross, renews automatically). */
 export type DomainCheckoutInput = PaymentCheckoutInput;
 
+/**
+ * A subscription priced inline (no catalog price): `amount` is the gross unit price per `interval`,
+ * charged `quantity` times (group license seats; 1 for add-ons).
+ */
+export type InlineSubscriptionCheckoutInput = PaymentCheckoutInput & {
+  interval: BillingInterval;
+  quantity: number;
+};
+
 export type PriceSyncInput = {
   planId: string;
   planName: string;
@@ -112,6 +123,9 @@ export interface PaymentProvider {
   createSubscriptionCheckout(input: SubscriptionCheckoutInput): Promise<CheckoutResult>;
   createPaymentCheckout(input: PaymentCheckoutInput): Promise<CheckoutResult>;
   createDomainCheckout(input: DomainCheckoutInput): Promise<CheckoutResult>;
+  createInlineSubscriptionCheckout(input: InlineSubscriptionCheckoutInput): Promise<CheckoutResult>;
+  /** Changes the units of a subscription (license seats), prorated by the provider. */
+  setSubscriptionQuantity(input: { subscriptionId: string; quantity: number }): Promise<void>;
   createPortalSession(input: { customerId: string; returnUrl: string }): Promise<{ url: string }>;
   /** Switches the plan price immediately with proration. */
   changeSubscriptionPrice(input: {

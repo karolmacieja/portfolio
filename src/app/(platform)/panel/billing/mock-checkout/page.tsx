@@ -28,6 +28,9 @@ export default async function MockCheckoutPage({ searchParams }: PageProps<"/pan
     item = price.plan.name;
     amount = formatMoney(price.amount, price.currency, locale);
     trialDays = token.trialDays;
+  } else if (token.kind === "inline") {
+    item = token.quantity > 1 ? `${token.name} × ${token.quantity}` : token.name;
+    amount = formatMoney(token.amount * token.quantity, token.currency, locale);
   } else {
     item = token.name;
     amount = formatMoney(token.amount, token.currency, locale);

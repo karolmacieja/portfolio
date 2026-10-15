@@ -63,6 +63,7 @@ describe("StripePaymentProvider webhooks", () => {
         customerId: "cus_1",
         status: "PAST_DUE",
         priceRef: "price_1",
+        quantity: 1,
         cancelAtPeriodEnd: false,
         currentPeriodEnd: new Date(1_790_000_000 * 1000),
         trialEnd: null,

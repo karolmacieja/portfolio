@@ -10,6 +10,7 @@ import { purgeAuditLog } from "@/server/audit/retention";
 import { runDunning } from "@/server/billing/dunning";
 import { handleBillingEvent } from "@/server/billing/events";
 import { expireManualPlans } from "@/server/billing/manual";
+import { expireManualLicenses } from "@/server/licenses/maintenance";
 import { createHostnameProvider, createRegistrar } from "@/server/domains/providers";
 import {
   domainMaintenance,
@@ -90,6 +91,8 @@ const billing = new Worker(
     const result = await runDunning(deps);
     const expired = await expireManualPlans(deps);
     if (expired) console.info(`[worker] ${expired} manual plan(s) ended`);
+    const licenses = await expireManualLicenses(deps);
+    if (licenses) console.info(`[worker] ${licenses} manual license(s) expired`);
     const erased = await eraseDueAccounts({
       // Mock provider events are handled in-process, as in the app.
       payments: createPaymentProvider(env, async (event) => {

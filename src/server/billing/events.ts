@@ -1,6 +1,7 @@
 import { isLocale } from "@/i18n/config";
 import { Prisma, PaymentKind, PaymentStatus, SubscriptionStatus } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { getEntitlements } from "@/server/entitlements/load";
 import { ENTITLED_STATUSES } from "@/server/entitlements/rules";
 import { buildLinkMail } from "@/server/mail/templates";
 import { queueCorrectionForRefund, queueInvoiceForPayment } from "@/server/invoicing/service";
@@ -10,6 +11,7 @@ import type { BillingDeps } from "./deps";
 import { allSiteTags, restoreSitesAfterPayment, suspendSitesForPayment } from "./sites";
 import { billingSnapshot } from "./snapshot";
 import * as domainBilling from "@/server/domains/billing";
+import * as licenseBilling from "@/server/licenses/billing";
 import { sendDomainMail } from "@/server/domains/status";
 
 /** Creates the invoice row for a paid payment and hands it to the worker. */
@@ -73,6 +75,17 @@ async function onCheckoutCompleted(
   }
   if (domainBilling.isDomainMetadata(event.metadata)) {
     await domainBilling.onDomainCheckoutCompleted(event.subscriptionId, event.metadata);
+    return;
+  }
+  if (licenseBilling.isSponsorRemovalMetadata(event.metadata) && event.mode === "payment") {
+    await licenseBilling.onSponsorRemovalPaid(event, userId, deps);
+    return;
+  }
+  if (
+    licenseBilling.isLicenseMetadata(event.metadata) ||
+    licenseBilling.isSponsorRemovalMetadata(event.metadata)
+  ) {
+    await licenseBilling.onInlineCheckoutCompleted(event.subscriptionId, event.metadata);
     return;
   }
   if (event.metadata.couponCode) {
@@ -159,10 +172,8 @@ async function onSubscriptionChanged(
     });
     if (healthy) tags.push(...(await restoreSitesAfterPayment(userId)));
   } else if (deleted) {
-    const stillEntitled = await db.subscription.count({
-      where: { userId, status: { in: [...ENTITLED_STATUSES] } },
-    });
-    if (stillEntitled === 0) {
+    // A license seat keeps the sites running when the member's own plan ends.
+    if (!(await getEntitlements(userId)).canPublish) {
       tags.push(...(await suspendSitesForPayment(userId)));
       await sendMail(deps, userId, "subscriptionEnded");
     }
@@ -263,6 +274,11 @@ async function onPaymentRefunded(
   if (fullyRefunded && payment.kind === PaymentKind.TEMPLATE) {
     await db.templatePurchase.deleteMany({ where: { providerSessionId: payment.providerPaymentId } });
   }
+  // A fully refunded one-time footer removal brings the sponsor footer back.
+  if (fullyRefunded && payment.kind === PaymentKind.ADDON && !payment.subscriptionId) {
+    const removal = await db.sponsorRemoval.findUnique({ where: { userId: payment.userId } });
+    if (removal?.mode === "ONCE") await licenseBilling.onAddonRefunded(payment.userId, deps);
+  }
   const correctionId = await queueCorrectionForRefund(payment.id);
   if (correctionId) await deps.enqueueInvoice(correctionId);
 }
@@ -310,6 +326,15 @@ export async function handleBillingEvent(
             event.subscription,
             event.type === "subscription.deleted",
           );
+        } else if (
+          licenseBilling.isLicenseMetadata(event.subscription.metadata) ||
+          licenseBilling.isSponsorRemovalMetadata(event.subscription.metadata)
+        ) {
+          await licenseBilling.onInlineSubscriptionChanged(
+            event.subscription,
+            event.type === "subscription.deleted",
+            deps,
+          );
         } else {
           await onSubscriptionChanged(event.subscription, event.type === "subscription.deleted", deps);
         }
@@ -317,6 +342,8 @@ export async function handleBillingEvent(
       case "invoice.paid":
         if (await domainBilling.isDomainInvoice(event.invoice)) {
           await domainBilling.onDomainInvoicePaid(event.invoice, domainDeps(deps));
+        } else if (await licenseBilling.inlineInvoiceKind(event.invoice)) {
+          await licenseBilling.onInlineInvoice(event.invoice, true, deps);
         } else {
           await onInvoicePaid(event.invoice, deps);
         }
@@ -324,6 +351,8 @@ export async function handleBillingEvent(
       case "invoice.payment_failed":
         if (await domainBilling.isDomainInvoice(event.invoice)) {
           await domainBilling.onDomainInvoiceFailed(event.invoice, domainDeps(deps));
+        } else if (await licenseBilling.inlineInvoiceKind(event.invoice)) {
+          await licenseBilling.onInlineInvoice(event.invoice, false, deps);
         } else {
           await onInvoiceFailed(event.invoice, deps);
         }

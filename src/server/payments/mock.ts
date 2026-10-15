@@ -9,6 +9,7 @@ import {
   PaymentProviderError,
   type BillingEvent,
   type CheckoutResult,
+  type InlineSubscriptionCheckoutInput,
   type PaymentCheckoutInput,
   type PaymentProvider,
   type ProviderSubscription,
@@ -27,7 +28,8 @@ const eventId = () => id("mock_evt");
 export type MockCheckoutToken =
   | ({ kind: "subscription"; sessionId: string } & SubscriptionCheckoutInput)
   | ({ kind: "payment"; sessionId: string } & PaymentCheckoutInput)
-  | ({ kind: "domain"; sessionId: string } & PaymentCheckoutInput);
+  | ({ kind: "domain"; sessionId: string } & PaymentCheckoutInput)
+  | ({ kind: "inline"; sessionId: string } & InlineSubscriptionCheckoutInput);
 
 type Emit = (event: BillingEvent) => Promise<void>;
 
@@ -38,7 +40,54 @@ function addInterval(date: Date, interval: BillingInterval | undefined): Date {
   return next;
 }
 
+const LICENSE_STATUS: Record<string, SubscriptionStatus> = {
+  PENDING_PAYMENT: SubscriptionStatus.INCOMPLETE,
+  ACTIVE: SubscriptionStatus.ACTIVE,
+  PAST_DUE: SubscriptionStatus.PAST_DUE,
+  CANCELED: SubscriptionStatus.CANCELED,
+  EXPIRED: SubscriptionStatus.CANCELED,
+};
+
+/** Inline-priced subscriptions: group licenses and sponsor footer removal add-ons. */
+async function inlineSubscription(subscriptionId: string): Promise<ProviderSubscription | null> {
+  const organization = await db.organization.findUnique({
+    where: { providerSubscriptionId: subscriptionId },
+    include: { manager: { select: { id: true, billingCustomerId: true } } },
+  });
+  if (organization) {
+    return {
+      id: subscriptionId,
+      customerId: organization.manager?.billingCustomerId ?? "",
+      status: LICENSE_STATUS[organization.status] ?? SubscriptionStatus.ACTIVE,
+      priceRef: null,
+      cancelAtPeriodEnd: organization.cancelAtPeriodEnd,
+      currentPeriodEnd: organization.currentPeriodEnd,
+      trialEnd: null,
+      metadata: { kind: "license", organizationId: organization.id, userId: organization.managerId ?? "" },
+      quantity: organization.seats,
+    };
+  }
+  const removal = await db.sponsorRemoval.findUnique({
+    where: { providerSubscriptionId: subscriptionId },
+    include: { user: { select: { billingCustomerId: true } } },
+  });
+  if (!removal) return null;
+  return {
+    id: subscriptionId,
+    customerId: removal.user.billingCustomerId ?? "",
+    status: removal.status === "CANCELED" ? SubscriptionStatus.CANCELED : SubscriptionStatus.ACTIVE,
+    priceRef: null,
+    cancelAtPeriodEnd: false,
+    currentPeriodEnd: null,
+    trialEnd: null,
+    metadata: { kind: "sponsor-removal", userId: removal.userId },
+    quantity: 1,
+  };
+}
+
 async function currentSubscription(subscriptionId: string): Promise<ProviderSubscription> {
+  const inline = await inlineSubscription(subscriptionId);
+  if (inline) return inline;
   const sub = await db.subscription.findUnique({
     where: { providerSubscriptionId: subscriptionId },
     include: { user: { select: { billingCustomerId: true } } },
@@ -98,6 +147,19 @@ export class MockPaymentProvider implements PaymentProvider {
 
   async createDomainCheckout(input: PaymentCheckoutInput) {
     return this.checkout({ kind: "domain", sessionId: id("mock_cs"), ...input });
+  }
+
+  async createInlineSubscriptionCheckout(input: InlineSubscriptionCheckoutInput) {
+    return this.checkout({ kind: "inline", sessionId: id("mock_cs"), ...input });
+  }
+
+  async setSubscriptionQuantity(input: { subscriptionId: string; quantity: number }) {
+    const subscription = await currentSubscription(input.subscriptionId);
+    await this.emit({
+      id: eventId(),
+      type: "subscription.updated",
+      subscription: { ...subscription, quantity: input.quantity },
+    });
   }
 
   async createPortalSession(input: { returnUrl: string }) {
@@ -182,6 +244,7 @@ export class MockPaymentProvider implements PaymentProvider {
     }
 
     if (token.kind === "domain") return this.completeDomainCheckout(token);
+    if (token.kind === "inline") return this.completeInlineCheckout(token);
 
     const price = await db.planPrice.findUnique({ where: { id: token.priceRef }, include: { plan: true } });
     if (!price) throw new PaymentProviderError("providerError", "Unknown price");
@@ -270,8 +333,76 @@ export class MockPaymentProvider implements PaymentProvider {
     });
   }
 
+  private async completeInlineCheckout(token: Extract<MockCheckoutToken, { kind: "inline" }>) {
+    const total = token.amount * token.quantity;
+    const subscription: ProviderSubscription = {
+      id: id("mock_sub"),
+      customerId: token.customerId,
+      status: SubscriptionStatus.ACTIVE,
+      priceRef: null,
+      cancelAtPeriodEnd: false,
+      currentPeriodEnd: addInterval(new Date(), token.interval),
+      trialEnd: null,
+      metadata: token.metadata,
+      quantity: token.quantity,
+    };
+    await this.emit({
+      id: eventId(),
+      type: "checkout.completed",
+      sessionId: token.sessionId,
+      mode: "subscription",
+      customerId: token.customerId,
+      subscriptionId: subscription.id,
+      amountTotal: total,
+      currency: token.currency,
+      paymentRef: null,
+      metadata: token.metadata,
+    });
+    await this.emit({ id: eventId(), type: "subscription.updated", subscription });
+    await this.emit({
+      id: eventId(),
+      type: "invoice.paid",
+      invoice: {
+        id: id("mock_in"),
+        customerId: token.customerId,
+        subscriptionId: subscription.id,
+        amountPaid: total,
+        amountDue: total,
+        currency: token.currency,
+        description: token.name,
+        paymentRef: id("mock_pi"),
+        subscriptionMetadata: token.metadata,
+      },
+    });
+  }
+
   /** What a renewal of the subscription charges: its plan price, or the domain order's yearly price. */
   private async renewalCharge(subscription: ProviderSubscription) {
+    if (subscription.metadata.kind === "license") {
+      const org = await db.organization.findUnique({
+        where: { id: subscription.metadata.organizationId ?? "" },
+        include: { plan: { select: { name: true } } },
+      });
+      if (!org?.seatPrice) throw new PaymentProviderError("providerError", "Unknown license");
+      return {
+        amount: org.seatPrice * org.seats,
+        currency: "PLN",
+        description: `Licencja grupowa ${org.plan.name} × ${org.seats}`,
+        interval: org.interval ?? BillingInterval.MONTH,
+      };
+    }
+    if (subscription.metadata.kind === "sponsor-removal") {
+      const removal = await db.sponsorRemoval.findUnique({
+        where: { userId: subscription.metadata.userId ?? "" },
+      });
+      if (!removal) throw new PaymentProviderError("providerError", "Unknown add-on");
+      return {
+        amount: removal.amount,
+        currency: "PLN",
+        description: "Usunięcie stopki sponsora (1 mies.)",
+        interval: BillingInterval.MONTH,
+      };
+    }
     if (subscription.metadata.kind === "domain") {
       const order = await db.domainOrder.findUnique({ where: { id: subscription.metadata.orderId ?? "" } });
       if (!order) throw new PaymentProviderError("providerError", "Unknown domain order");

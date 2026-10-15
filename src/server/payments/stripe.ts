@@ -7,6 +7,7 @@ import {
   type BillingEvent,
   type CheckoutResult,
   type CouponSyncInput,
+  type InlineSubscriptionCheckoutInput,
   type PaymentCheckoutInput,
   type PaymentProvider,
   type PriceSyncInput,
@@ -43,6 +44,7 @@ export function mapStripeSubscription(subscription: Stripe.Subscription): Provid
     currentPeriodEnd: toDate(item?.current_period_end),
     trialEnd: toDate(subscription.trial_end),
     metadata: { ...subscription.metadata },
+    quantity: item?.quantity ?? 1,
   };
 }
 
@@ -211,6 +213,42 @@ export class StripePaymentProvider implements PaymentProvider {
       cancel_url: input.cancelUrl,
     });
     return { url: session.url!, sessionId: session.id };
+  }
+
+  async createInlineSubscriptionCheckout(input: InlineSubscriptionCheckoutInput): Promise<CheckoutResult> {
+    const session = await this.stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: input.customerId,
+      line_items: [
+        {
+          quantity: input.quantity,
+          price_data: {
+            currency: input.currency.toLowerCase(),
+            unit_amount: input.amount,
+            tax_behavior: "inclusive",
+            recurring: { interval: input.interval === BillingInterval.YEAR ? "year" : "month" },
+            product_data: { name: input.name },
+          },
+        },
+      ],
+      subscription_data: { metadata: input.metadata },
+      metadata: input.metadata,
+      client_reference_id: input.metadata.userId,
+      locale: "pl",
+      success_url: input.successUrl,
+      cancel_url: input.cancelUrl,
+    });
+    return { url: session.url!, sessionId: session.id };
+  }
+
+  async setSubscriptionQuantity(input: { subscriptionId: string; quantity: number }) {
+    const subscription = await this.stripe.subscriptions.retrieve(input.subscriptionId);
+    const item = subscription.items.data[0];
+    if (!item) throw new PaymentProviderError("providerError", "Subscription has no items");
+    await this.stripe.subscriptions.update(input.subscriptionId, {
+      items: [{ id: item.id, quantity: input.quantity }],
+      proration_behavior: "create_prorations",
+    });
   }
 
   async createPortalSession(input: { customerId: string; returnUrl: string }) {

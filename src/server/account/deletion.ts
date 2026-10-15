@@ -1,4 +1,10 @@
-import { DomainOrderStatus, SubscriptionStatus } from "@/generated/prisma/enums";
+import {
+  DomainOrderStatus,
+  LicenseSource,
+  LicenseStatus,
+  SponsorRemovalStatus,
+  SubscriptionStatus,
+} from "@/generated/prisma/enums";
 import { defaultLocale, isLocale } from "@/i18n/config";
 import { db } from "@/lib/db";
 import type { DomainRegistrar, HostnameProvider } from "@/server/domains/providers";
@@ -58,6 +64,29 @@ function localeOf(value: string) {
   return isLocale(value) ? value : defaultLocale;
 }
 
+/** Group licenses the user pays for and their monthly sponsor footer removal (provider subscriptions). */
+async function addonSubscriptions(userId: string): Promise<string[]> {
+  const [organizations, removal] = await Promise.all([
+    db.organization.findMany({
+      where: {
+        managerId: userId,
+        source: LicenseSource.STRIPE,
+        providerSubscriptionId: { not: null },
+        status: { in: [LicenseStatus.ACTIVE, LicenseStatus.PAST_DUE] },
+      },
+      select: { providerSubscriptionId: true },
+    }),
+    db.sponsorRemoval.findFirst({
+      where: { userId, status: SponsorRemovalStatus.ACTIVE, providerSubscriptionId: { not: null } },
+      select: { providerSubscriptionId: true },
+    }),
+  ]);
+  return [
+    ...organizations.map((o) => o.providerSubscriptionId!),
+    ...(removal ? [removal.providerSubscriptionId!] : []),
+  ];
+}
+
 export async function requestAccountDeletion(userId: string, deps: AccountDeps): Promise<Date> {
   const now = deps.now?.() ?? new Date();
   const user = await db.user.findUnique({ where: { id: userId } });
@@ -94,6 +123,9 @@ export async function requestAccountDeletion(userId: string, deps: AccountDeps):
   for (const order of orders) {
     await deps.payments.setCancelAtPeriodEnd({ subscriptionId: order.providerSubscriptionId!, cancel: true });
     await db.domainOrder.update({ where: { id: order.id }, data: { autoRenew: false } });
+  }
+  for (const subscriptionId of await addonSubscriptions(userId)) {
+    await deps.payments.setCancelAtPeriodEnd({ subscriptionId, cancel: true });
   }
 
   await db.user.update({ where: { id: userId }, data: { deletionScheduledAt: scheduledAt } });
@@ -164,6 +196,9 @@ export async function eraseAccount(userId: string, deps: AccountDeps): Promise<v
   for (const subscription of user.subscriptions) {
     await deps.payments.cancelSubscription({ subscriptionId: subscription.providerSubscriptionId! });
   }
+  for (const subscriptionId of await addonSubscriptions(userId)) {
+    await deps.payments.cancelSubscription({ subscriptionId });
+  }
   const transferCodes: string[] = [];
   for (const order of user.domainOrders) {
     if (order.providerSubscriptionId) {
@@ -219,6 +254,9 @@ export async function eraseAccount(userId: string, deps: AccountDeps): Promise<v
     db.templateOverride.deleteMany({ where: { userId } }),
     db.verificationToken.deleteMany({ where: { identifier: { endsWith: email } } }),
     db.domainOrder.updateMany({ where: { userId }, data: { registrant: {}, autoRenew: false } }),
+    db.organizationMember.deleteMany({ where: { userId } }),
+    db.organizationInvite.deleteMany({ where: { email } }),
+    db.organization.updateMany({ where: { managerId: userId }, data: { managerId: null } }),
     db.user.update({
       where: { id: userId },
       data: {

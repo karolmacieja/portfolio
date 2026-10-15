@@ -34,6 +34,8 @@ export const LINK_MAIL_KINDS = [
   "passwordReset",
   "accountDeletionScheduled",
   "accountDeleted",
+  "licenseInvite",
+  "licenseEnded",
 ] as const;
 
 type LinkMailKind = (typeof LINK_MAIL_KINDS)[number];

@@ -5,6 +5,8 @@ import { buildLinkMail } from "@/server/mail/templates";
 
 import type { BillingDeps } from "./deps";
 import { getBillingSettings } from "./settings";
+import { loadLicense } from "@/server/entitlements/load";
+
 import { suspendSitesForPayment } from "./sites";
 
 const DAY_MS = 86_400_000;
@@ -49,7 +51,10 @@ export async function runDunning(deps: BillingDeps): Promise<{ reminders: number
         .catch((error) => console.error(`Failed to send ${kind} mail`, error));
 
     if (days >= settings.gracePeriodDays) {
-      await deps.invalidate(await suspendSitesForPayment(subscription.userId));
+      // Members of an active group license keep their sites running on their seat.
+      if (!(await loadLicense(subscription.userId))) {
+        await deps.invalidate(await suspendSitesForPayment(subscription.userId));
+      }
       await db.subscription.update({
         where: { id: subscription.id },
         data: { dunningStage: DUNNING_SUSPENDED },
