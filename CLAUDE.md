@@ -13,8 +13,9 @@ Next.js 16 ships its own docs in `node_modules/next/dist/docs/` (see `AGENTS.md`
 | 2     | Editor (Puck), blocks, themes, draft/publish, versions, media, SEO     | done    |
 | 3     | Plans & entitlements: limits, flags, block tiers, plan seed            | done    |
 | 4     | Templates: template mode, versions, gallery, copy, theme/layout change | done    |
-| 5     | Payments (Stripe): checkout, webhooks, portal, dunning, coupons        | next    |
-| 6-9   | Invoicing, domains, admin, polish                                      | pending |
+| 5     | Payments (Stripe): checkout, webhooks, portal, dunning, coupons        | done    |
+| 6     | Invoicing (Fakturownia, KSeF)                                          | next    |
+| 7-9   | Domains, admin, polish                                                 | pending |
 
 Work in phases; after each phase run lint/typecheck/tests, summarize and wait for the owner's approval.
 
@@ -40,7 +41,9 @@ pnpm install                  # also runs `prisma generate`
 pnpm db:migrate --name x      # create/apply a migration + regenerate the client (Prisma 7 no longer auto-generates)
 pnpm db:seed                  # plans, users (password Password123!), demo sites with generated images
 pnpm dev                      # http://localhost:3000 (marketing), app./admin./jan.localhost:3000
-pnpm worker                   # background jobs (template thumbnails); needs Redis
+pnpm worker                   # background jobs (template thumbnails, hourly dunning); needs Redis
+pnpm billing:sync-prices      # create Stripe prices for PlanPrice rows without stripePriceId
+stripe listen --forward-to app.localhost:3000/api/webhooks/stripe   # PAYMENTS_PROVIDER=stripe locally
 pnpm lint | pnpm format | pnpm typecheck | pnpm test | pnpm test:e2e | pnpm build
 pnpm db:reset                 # drop, migrate, seed
 ```
@@ -48,6 +51,9 @@ pnpm db:reset                 # drop, migrate, seed
 `pnpm test` loads `.env` (via Vite `loadEnv`): DB/Redis integration tests need `docker compose up`; they are skipped
 when `DATABASE_URL` / `REDIS_URL` are unset. Override the test database in `.env.test.local`.
 E2E against a preinstalled Chromium: `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chrome pnpm test:e2e`.
+Migrations that rename columns: `prisma migrate dev` needs a TTY, so generate SQL with
+`prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`, edit it into RENAMEs, apply
+with `pnpm db:deploy` and run `pnpm db:generate`.
 `pnpm typecheck` runs `next typegen` first (route types such as `PageProps<"/login">`).
 
 ## Host routing
@@ -135,7 +141,25 @@ E2E against a preinstalled Chromium: `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/ch
 - Lock rules (`src/blocks/locks.ts`): `{ [blockId]: { edit?, drag?, delete?: false } }` stored on `Page.lockRules`.
   The editor applies them via Puck `resolvePermissions`; `savePageDraft` refuses deleting delete-locked and changing
   edit-locked blocks (`blockLocked`). Drag locks are editor-only.
-- Premium templates: `isPremium` + `priceAmount`; purchase (`TemplatePurchase`) arrives with Stripe in Phase 5.
+- Premium templates: `isPremium` + `priceAmount`; bought via one-time Checkout (`TemplatePurchase` from the
+  `checkout.completed` event); buying needs a plan tier that covers the template.
+
+## Payments and billing
+
+- Provider adapter `src/server/payments` (`PAYMENTS_PROVIDER` = mock | stripe): checkout, portal, price changes,
+  cancel at period end, price/coupon sync, webhook parsing into normalized `BillingEvent`s. The mock serves
+  `/billing/mock-checkout` and `/billing/mock-portal` and emits events in-process (`MockPaymentProvider`).
+- `src/server/billing/`: `events.ts` (`handleBillingEvent`: the only writer of `Subscription`/`Payment`/
+  `TemplatePurchase` from the provider; idempotent via `WebhookEvent`), `service.ts` (owner-scoped: billing profile,
+  checkout, change plan, cancel/resume, portal, template purchase, overview), `dunning.ts` (worker, hourly),
+  `sites.ts` (payment suspension/restore), `coupons.ts` (ADMIN, not owner-scoped), `actions.ts`, `provider.ts`
+  (singleton + Next deps). Side effects are injected (`BillingDeps`: invalidate, mailer, brand, billingUrl, now).
+- Webhook: `POST /api/webhooks/stripe` (raw body + signature). Never update subscriptions from redirects.
+- Purchases require a verified email and a `BillingProfile` (NIP checksum for PL companies, VIES for EU VAT ids).
+- Pages (app host): `/plans` (monthly/yearly, coupon, buy or switch), `/billing` (status, cancel/resume, portal,
+  payments), `/billing/profile`, `/billing/success`; admin host: `/coupons`.
+- Worker-side cache invalidation: `remoteInvalidate` -> `/api/internal/revalidate` (signed token).
+- E2E create throwaway verified users with `tests/e2e/db.ts` (`createBillingUser`).
 
 ## Published sites and caching
 
@@ -161,7 +185,8 @@ src/app/(platform)/         root layout for platform hosts
                             sites/[siteId]/(manage)/{pages,theme,template,settings,history}, editor
   admin/                    admin panel (admin.): login, forbidden, (protected)/ dashboard + templates, (editor)/
 src/app/sites/[host]/       root layout + renderer for published client sites
-src/app/api/                auth (wrapped with withPublicOrigin), email/verify, media/upload, health
+src/app/api/                auth (wrapped with withPublicOrigin), email/verify, media/upload, health,
+                            webhooks/stripe, internal/revalidate
 src/app/template-preview/   public template preview (own root layout)
 src/app/storage/            local storage file server (dev)
 src/app/global-not-found.tsx
@@ -183,10 +208,14 @@ src/server/                 server-only domain code
                             actions, cache tags, urls
   entitlements/             plan rules (pure) + loader; test fixtures
   plans/                    plan listing for the pricing page
+  payments/                 PaymentProvider: mock | stripe (normalized billing events)
+  billing/                  billing events, dunning, owner-scoped billing service, coupons, actions
+  cache/                    remote cache invalidation (worker -> app)
   templates/                schema, admin + client services, content mapping, preview, thumbnail job, actions
   jobs/                     BullMQ queues (enqueue helpers)
   thumbnails/               ThumbnailRenderer: mock | playwright
 src/worker/                 background worker entry (`pnpm worker`)
+src/scripts/                one-off scripts (`billing:sync-prices`)
 tests/e2e/                  Playwright specs (+ hosts.ts URL helpers, global-setup cleanup)
 ```
 

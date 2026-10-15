@@ -147,3 +147,33 @@ Lightweight ADR log. Newest at the bottom. Business decisions confirmed by the o
     sharp so the gallery looks reasonable without a browser.
 64. **Template statistics** computed on the fly: uses = sites with `templateId`; conversion = share of those sites'
     owners who currently have an entitled subscription. Good enough until the admin dashboard (Phase 8).
+
+## Phase 5
+
+65. **Payment provider adapter** (`src/server/payments`): `stripe` or `mock`. The mock serves its own checkout and
+    portal pages and emits the same normalized `BillingEvent`s in-process, so the whole flow (and E2E) runs without
+    keys. Production refuses the mock.
+66. **Normalized billing events, one handler** (`handleBillingEvent`): Stripe webhooks are mapped to
+    `checkout.completed`, `subscription.updated|deleted`, `invoice.paid|payment_failed`. Idempotency through the
+    `WebhookEvent` table (row inserted first, removed if processing fails so the provider's retry is handled). Local
+    state is only written from events, never from the redirect after Checkout.
+67. **One trial per user**: the trial is only offered at the first provider-managed subscription.
+68. **Dunning in the worker** (hourly): mail on the first failed payment, reminders on days 3 and 6, sites suspended
+    (`SuspensionReason.PAYMENT`) after a 7-day grace period; values in `Setting` "billing". Payment or a healthy
+    subscription restores only payment-suspended sites. Stripe's own retries (Smart Retries) keep running meanwhile.
+69. **Subscription ended = sites suspended** (owner decision "edit yes, publish no" applies to new publishing; existing
+    live sites of a user without a plan are suspended with a notice and restored on the next subscription).
+70. **Prices are gross** (VAT included; `tax_behavior: inclusive` at Stripe). Plan changes are immediate with
+    proration; cancellation is at period end.
+71. **Payment methods come from the Stripe dashboard** (dynamic payment methods, no `payment_method_types` in code).
+    Enable card, BLIK and Przelewy24; Stripe hides BLIK/P24 in subscription Checkout (no recurring support), so they
+    apply to one-time premium template purchases.
+72. **Billing profile before purchase** (person or company; Polish NIP checksum; EU VAT ids checked in VIES with a
+    `reverseCharge` flag for invoicing in Phase 6; VIES unavailable = saved unverified, no reverse charge). Purchases
+    require a verified email (owner decision from Phase 0).
+73. **Coupons are data mirrored to Stripe** (coupon + promotion code), created by admins; the code is entered on our
+    plans page and passed to Checkout. Redemptions are counted from `checkout.completed`.
+74. **Cache invalidation from the worker** goes through `/api/internal/revalidate` with an HMAC token signed with
+    `AUTH_SECRET` (`INTERNAL_APP_URL` for a private address), because `revalidateTag` only works inside Next.js.
+75. **Plan prices are synced to Stripe by a script** (`pnpm billing:sync-prices`), not on the fly: prices are immutable
+    at Stripe, a new amount is a new `PlanPrice` row.
