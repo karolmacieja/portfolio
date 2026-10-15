@@ -100,6 +100,18 @@
       "intro": "Twoja subskrypcja wygasła, a Twoje strony zostały wstrzymane. Wybierz plan, aby je przywrócić.",
       "cta": "Wybierz plan",
       "ignore": "Twoje dane i treści są bezpieczne."
+    },
+    "invoiceIssued": {
+      "subject": "Faktura {number} — {brand}",
+      "intro": "Dziękujemy za płatność. W załączniku przesyłamy fakturę {number}. Wszystkie faktury znajdziesz też w panelu.",
+      "cta": "Przejdź do płatności",
+      "ignore": "Wiadomość wygenerowana automatycznie — nie odpowiadaj na nią."
+    },
+    "correctionIssued": {
+      "subject": "Faktura korygująca {number} — {brand}",
+      "intro": "Zwróciliśmy część lub całość płatności. W załączniku przesyłamy fakturę korygującą {number}.",
+      "cta": "Przejdź do płatności",
+      "ignore": "Wiadomość wygenerowana automatycznie — nie odpowiadaj na nią."
     }
   },
   "site": {
@@ -554,7 +566,9 @@
   "adminNav": {
     "dashboard": "Pulpit",
     "templates": "Szablony",
-    "coupons": "Kupony"
+    "coupons": "Kupony",
+    "invoices": "Faktury",
+    "settings": "Ustawienia"
   },
   "adminTemplates": {
     "title": "Szablony",
@@ -704,7 +718,8 @@
       "renewFail": "Symuluj nieudaną płatność",
       "end": "Symuluj wygaśnięcie subskrypcji",
       "back": "Wróć",
-      "done": "Gotowe."
+      "done": "Gotowe.",
+      "refund": "Symuluj zwrot ostatniej płatności"
     },
     "errors": {
       "notFound": "Nie znaleziono.",
@@ -728,7 +743,20 @@
     "paymentDate": "Data",
     "paymentDescription": "Opis",
     "amount": "Kwota",
-    "paymentStatusLabel": "Status"
+    "paymentStatusLabel": "Status",
+    "invoices": "Faktury",
+    "noInvoices": "Brak faktur. Faktura pojawi się tu kilka chwil po płatności.",
+    "invoiceNumber": "Numer",
+    "correctionOf": "Korekta faktury {number}",
+    "downloadPdf": "Pobierz PDF",
+    "partiallyRefunded": "Zwrócono {amount}",
+    "ksefStatus": {
+      "NOT_SENT": "Nie wysłano",
+      "PROCESSING": "W trakcie",
+      "ACCEPTED": "Przyjęta",
+      "ERROR": "Błąd",
+      "NOT_APPLICABLE": "Nie dotyczy"
+    }
   },
   "coupons": {
     "title": "Kupony",
@@ -758,5 +786,72 @@
     },
     "discount": "Rabat",
     "status": "Status"
+  },
+  "adminInvoices": {
+    "title": "Faktury",
+    "all": "Wszystkie",
+    "needsReview": "Do ręcznej weryfikacji",
+    "ksefErrors": "Błędy KSeF",
+    "search": "Numer faktury lub e-mail",
+    "searchButton": "Szukaj",
+    "empty": "Brak faktur.",
+    "columns": {
+      "number": "Faktura",
+      "client": "Klient",
+      "amount": "Kwota",
+      "status": "Status",
+      "ksef": "KSeF",
+      "actions": "Akcje"
+    },
+    "kind": {
+      "INVOICE": "Faktura VAT",
+      "CORRECTION": "Korekta"
+    },
+    "status": {
+      "PENDING": "W kolejce",
+      "ISSUED": "Wystawiona",
+      "FAILED": "Do ręcznej weryfikacji"
+    },
+    "reverseCharge": "odwrotne obciążenie",
+    "attempts": "Próby: {count}",
+    "retry": "Ponów",
+    "resendKsef": "Wyślij ponownie do KSeF",
+    "queued": "Zlecono.",
+    "errors": {
+      "notRetryable": "Tej faktury nie można teraz ponowić.",
+      "providerError": "Operator faktur zwrócił błąd. Spróbuj później."
+    }
+  },
+  "adminSettings": {
+    "title": "Ustawienia",
+    "invoicing": "Fakturowanie",
+    "seller": "Dane sprzedawcy",
+    "save": "Zapisz ustawienia",
+    "saved": "Zapisano.",
+    "exemptionPlaceholder": "Domyślnie: art. 113 ust. 1 i 9 ustawy o VAT",
+    "fakturowniaHint": "Przy Fakturowni dane sprzedawcy i numeracja mogą pochodzić z działu (FAKTUROWNIA_DEPARTMENT_ID). Zmiana stawki dotyczy nowych faktur.",
+    "fields": {
+      "vatRate": "Stawka VAT sprzedaży",
+      "exemptionBasis": "Podstawa zwolnienia (dla „zw”)",
+      "placeOfIssue": "Miejsce wystawienia",
+      "sellerName": "Nazwa firmy",
+      "sellerTaxId": "NIP",
+      "sellerStreet": "Ulica i numer",
+      "sellerPostalCode": "Kod pocztowy",
+      "sellerCity": "Miejscowość",
+      "sellerCountry": "Kraj",
+      "sellerEmail": "E-mail",
+      "sellerBankAccount": "Numer konta"
+    },
+    "vatRates": {
+      "23": "23%",
+      "8": "8%",
+      "5": "5%",
+      "0": "0%",
+      "zw": "zw — zwolniony z VAT"
+    },
+    "errors": {
+      "invalid": "Sprawdź poprawność pól."
+    }
   }
 }

@@ -100,6 +100,18 @@
       "intro": "Your subscription has ended and your sites have been suspended. Choose a plan to restore them.",
       "cta": "Choose a plan",
       "ignore": "Your data and content are safe."
+    },
+    "invoiceIssued": {
+      "subject": "Invoice {number} — {brand}",
+      "intro": "Thank you for your payment. Invoice {number} is attached. You can also find all invoices in your account.",
+      "cta": "Go to billing",
+      "ignore": "This message was generated automatically — please do not reply."
+    },
+    "correctionIssued": {
+      "subject": "Corrective invoice {number} — {brand}",
+      "intro": "We refunded part or all of your payment. The corrective invoice {number} is attached.",
+      "cta": "Go to billing",
+      "ignore": "This message was generated automatically — please do not reply."
     }
   },
   "site": {
@@ -554,7 +566,9 @@
   "adminNav": {
     "dashboard": "Dashboard",
     "templates": "Templates",
-    "coupons": "Coupons"
+    "coupons": "Coupons",
+    "invoices": "Invoices",
+    "settings": "Settings"
   },
   "adminTemplates": {
     "title": "Templates",
@@ -704,7 +718,8 @@
       "renewFail": "Simulate failed payment",
       "end": "Simulate subscription end",
       "back": "Back",
-      "done": "Done."
+      "done": "Done.",
+      "refund": "Simulate a refund of the latest payment"
     },
     "errors": {
       "notFound": "Not found.",
@@ -728,7 +743,20 @@
     "paymentDate": "Date",
     "paymentDescription": "Description",
     "amount": "Amount",
-    "paymentStatusLabel": "Status"
+    "paymentStatusLabel": "Status",
+    "invoices": "Invoices",
+    "noInvoices": "No invoices yet. An invoice appears here a few moments after a payment.",
+    "invoiceNumber": "Number",
+    "correctionOf": "Correction of invoice {number}",
+    "downloadPdf": "Download PDF",
+    "partiallyRefunded": "Refunded {amount}",
+    "ksefStatus": {
+      "NOT_SENT": "Not sent",
+      "PROCESSING": "Processing",
+      "ACCEPTED": "Accepted",
+      "ERROR": "Error",
+      "NOT_APPLICABLE": "Not applicable"
+    }
   },
   "coupons": {
     "title": "Coupons",
@@ -758,5 +786,72 @@
     },
     "discount": "Discount",
     "status": "Status"
+  },
+  "adminInvoices": {
+    "title": "Invoices",
+    "all": "All",
+    "needsReview": "Needs manual review",
+    "ksefErrors": "KSeF errors",
+    "search": "Invoice number or email",
+    "searchButton": "Search",
+    "empty": "No invoices.",
+    "columns": {
+      "number": "Invoice",
+      "client": "Client",
+      "amount": "Amount",
+      "status": "Status",
+      "ksef": "KSeF",
+      "actions": "Actions"
+    },
+    "kind": {
+      "INVOICE": "VAT invoice",
+      "CORRECTION": "Correction"
+    },
+    "status": {
+      "PENDING": "Queued",
+      "ISSUED": "Issued",
+      "FAILED": "Needs manual review"
+    },
+    "reverseCharge": "reverse charge",
+    "attempts": "Attempts: {count}",
+    "retry": "Retry",
+    "resendKsef": "Resend to KSeF",
+    "queued": "Queued.",
+    "errors": {
+      "notRetryable": "This invoice can't be retried now.",
+      "providerError": "The invoicing provider returned an error. Try again later."
+    }
+  },
+  "adminSettings": {
+    "title": "Settings",
+    "invoicing": "Invoicing",
+    "seller": "Seller details",
+    "save": "Save settings",
+    "saved": "Saved.",
+    "exemptionPlaceholder": "Default: art. 113 sec. 1 and 9 of the VAT Act",
+    "fakturowniaHint": "With Fakturownia, seller data and numbering may come from a department (FAKTUROWNIA_DEPARTMENT_ID). A rate change applies to new invoices.",
+    "fields": {
+      "vatRate": "Sales VAT rate",
+      "exemptionBasis": "Exemption basis (for \"zw\")",
+      "placeOfIssue": "Place of issue",
+      "sellerName": "Company name",
+      "sellerTaxId": "Tax id (NIP)",
+      "sellerStreet": "Street and number",
+      "sellerPostalCode": "Postal code",
+      "sellerCity": "City",
+      "sellerCountry": "Country",
+      "sellerEmail": "Email",
+      "sellerBankAccount": "Bank account"
+    },
+    "vatRates": {
+      "23": "23%",
+      "8": "8%",
+      "5": "5%",
+      "0": "0%",
+      "zw": "zw — VAT exempt"
+    },
+    "errors": {
+      "invalid": "Please check the fields."
+    }
   }
 }

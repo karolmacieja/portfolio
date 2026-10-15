@@ -11,6 +11,7 @@ import { SubscriptionStatus } from "@/generated/prisma/enums";
 import { formatMoney } from "@/lib/format";
 import { requireUser } from "@/server/auth/session";
 import { getBillingOverview } from "@/server/billing/service";
+import { listUserInvoices } from "@/server/invoicing/client";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("billing");
@@ -20,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /** Subscription overview: plan and status, cancel/resume, customer portal, billing profile, payments. */
 export default async function BillingPage() {
   const user = await requireUser("/billing");
-  const overview = await getBillingOverview(user.id);
+  const [overview, invoices] = await Promise.all([getBillingOverview(user.id), listUserInvoices(user.id)]);
   const [t, tCommon, format, locale] = await Promise.all([
     getTranslations("billing"),
     getTranslations("common"),
@@ -116,6 +117,56 @@ export default async function BillingPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle>{t("invoices")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {invoices.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("noInvoices")}</p>
+          ) : (
+            <table className="w-full text-left text-sm" data-testid="invoices">
+              <thead className="text-muted-foreground">
+                <tr>
+                  <th className="py-2 font-normal">{t("invoiceNumber")}</th>
+                  <th className="py-2 font-normal">{t("paymentDate")}</th>
+                  <th className="py-2 font-normal">{t("amount")}</th>
+                  <th className="py-2 font-normal">KSeF</th>
+                  <th className="py-2" />
+                </tr>
+              </thead>
+              <tbody>
+                {invoices.map((invoice) => (
+                  <tr key={invoice.id} className="border-t" data-testid={`invoice-${invoice.kind}`}>
+                    <td className="py-2">
+                      {invoice.number}
+                      {invoice.correctedInvoice?.number && (
+                        <div className="text-xs text-muted-foreground">
+                          {t("correctionOf", { number: invoice.correctedInvoice.number })}
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-2">{date(invoice.issueDate)}</td>
+                    <td className="py-2">{formatMoney(invoice.grossAmount, invoice.currency, locale)}</td>
+                    <td className="py-2" title={invoice.ksefNumber ?? undefined}>
+                      {t(`ksefStatus.${invoice.ksefStatus}`)}
+                    </td>
+                    <td className="py-2 text-right">
+                      <a
+                        href={`/api/invoices/${invoice.id}/pdf`}
+                        className="underline-offset-4 hover:underline"
+                      >
+                        {t("downloadPdf")}
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>{t("payments")}</CardTitle>
         </CardHeader>
         <CardContent>
@@ -137,7 +188,16 @@ export default async function BillingPage() {
                     <td className="py-2">{date(payment.paidAt ?? payment.createdAt)}</td>
                     <td className="py-2">{payment.description}</td>
                     <td className="py-2">{formatMoney(payment.amount, payment.currency, locale)}</td>
-                    <td className="py-2">{t(`paymentStatus.${payment.status}`)}</td>
+                    <td className="py-2">
+                      {t(`paymentStatus.${payment.status}`)}
+                      {payment.status === "PAID" && payment.refundedAmount > 0 && (
+                        <div className="text-xs text-muted-foreground">
+                          {t("partiallyRefunded", {
+                            amount: formatMoney(payment.refundedAmount, payment.currency, locale),
+                          })}
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

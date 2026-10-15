@@ -205,7 +205,7 @@ export function MockPortalActions() {
   const [state, action, pending] = useActionState<ActionState, FormData>(mockPortalAction, {});
   return (
     <form action={action} className="grid gap-2">
-      {(["renewOk", "renewFail", "end"] as const).map((op) => (
+      {(["renewOk", "renewFail", "end", "refund"] as const).map((op) => (
         <Button key={op} type="submit" name="op" value={op} variant="outline" disabled={pending}>
           {t(op)}
         </Button>
