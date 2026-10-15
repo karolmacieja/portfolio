@@ -383,6 +383,10 @@ model Plan {
   features         Json     @default("{}")
   /// Access tiers for blocks and templates, e.g. ["basic", "pro"].
   accessTiers      String[]
+  /// Marketing bullets shown first on the pricing cards ("what's in the plan"), in order.
+  highlights       String[] @default([])
+  /// Marked as recommended on the pricing page.
+  isFeatured       Boolean  @default(false)
   /// Gross price per seat of a group license (grosze); null = not offered for self-service licenses.
   seatPriceMonthly Int?
   seatPriceYearly  Int?
@@ -997,4 +1001,18 @@ model SponsorRemoval {
   updatedAt              DateTime             @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Daily platform usage snapshot (worker), the history behind usage charts and the server capacity forecast.
+model UsageSnapshot {
+  day            DateTime @id @db.Date
+  clients        Int
+  payingClients  Int
+  sites          Int
+  publishedSites Int
+  storageBytes   BigInt
+  databaseBytes  BigInt
+  /// Page views counted that day (all sites with statistics).
+  pageViews      Int
+  createdAt      DateTime @default(now())
 }
