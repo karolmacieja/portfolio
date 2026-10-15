@@ -35,8 +35,9 @@ describe.skipIf(!process.env.DATABASE_URL)("template thumbnail job (database)", 
 
     const url = await renderTemplateThumbnail(value.id, published.versionId);
     expect(url).toMatch(new RegExp(`^/storage/templates/${value.id}/v1\\.webp$`));
-    const file = await new LocalStorageProvider(dir).read(url.replace("/storage/", ""));
+    const file = await new LocalStorageProvider(dir).read(url!.replace("/storage/", ""));
     expect((await sharp(file!).metadata()).format).toBe("webp");
     expect((await db.template.findUniqueOrThrow({ where: { id: value.id } })).thumbnailUrl).toBe(url);
+    expect(await renderTemplateThumbnail("missing", published.versionId)).toBeNull();
   });
 });
