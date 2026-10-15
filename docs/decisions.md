@@ -337,3 +337,16 @@ Lightweight ADR log. Newest at the bottom. Business decisions confirmed by the o
 124. **Server forecast from daily snapshots**: a least-squares trend over 90 days against capacities the admin sets
      (DB disk, storage budget, monthly page views, published sites), warning at a chosen percentage. The first
      history is reconstructed from creation dates so the page is useful before 90 days of snapshots exist.
+
+## Phase 12
+
+125. **Consent-based newsletter (owner)**: marketing only to users who opted in (unchecked box at registration,
+     toggle in the account), service announcements to every active client. Consent is re-checked at send time, so
+     unsubscribing during a long send works.
+126. **One-click unsubscribe without login**: a signed token per recipient (2 years); the page needs a button (link
+     scanners must not unsubscribe people) and mail clients get RFC 8058 `List-Unsubscribe-Post`. No open/click
+     tracking (it would need consent itself); stats are sent/failed/skipped/unsubscribed.
+127. **Frozen audience, resumable batches**: the recipient list is fixed when sending starts; the worker sends 50 per
+     batch every 5 seconds (provider rate limits) and recipients stay PENDING if a batch crashes.
+128. **Mail branding as data**: logo URL, accent colour and footer in a setting applied to every mail (transactional
+     and campaigns); the footer defaults to the seller data so mails carry the company details from day one.

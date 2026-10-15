@@ -20,7 +20,7 @@ Next.js 16 ships its own docs in `node_modules/next/dist/docs/` (see `AGENTS.md`
 | 9     | Polish: forms, stats, landing/pricing, mails, RODO, deployment docs    | done  |
 | 10    | Group licenses, sponsor footer (+ paid removal)                        | done  |
 | 11    | Finance: net profit per plan, revenue/profit stats, forecasts, usage   | done  |
-| 12    | Mail template editor, newsletter (consent)                             | next  |
+| 12    | Mail template editor, newsletter (consent)                             | done  |
 
 Work in phases; after each phase run lint/typecheck/tests, summarize and wait for the owner's approval.
 
@@ -281,12 +281,25 @@ with `pnpm db:deploy` and run `pnpm db:generate`.
   (`PricingTable`, `PlanFeatureList` shared with the panel).
 - Onboarding: the dashboard shows "Pierwsze kroki" (plan -> template -> edit and publish) until the first site.
 
-## Mail
+## Mail and newsletter
 
 - Every transactional mail goes through `buildLinkMail` (`src/server/mail/templates.ts`): texts from
   `messages.email.{kind}` (+ admin overrides), rendered with the React Email layout `src/server/mail/layout.tsx`
   (HTML + plain text), optional quoted user text and `replyTo`. Add a kind to `LINK_MAIL_KINDS`, messages
   (`email.{kind}`, `adminSettings.mailKinds.{kind}`) in both locales.
+- Look of all mails (Setting "mailBranding", `mail/branding.ts`, cached 60 s): logo URL (https), accent colour,
+  footer text (default: seller data). Admin `/settings` + `/mail-preview` (any kind/locale with sample values, test
+  send to yourself). `MailMessage.headers` passes extra headers (smtp + Resend).
+- Newsletter (`src/server/newsletter/`, permission `newsletter.manage`, SUPPORT too): `Campaign` (subject, mini-markup
+  body with `{name}`, optional button, type MARKETING | SERVICE, audience all/plan/noPlan/license/organization) and
+  `CampaignRecipient`. MARKETING only reaches `User.marketingConsent` (opt-in checkbox at registration, toggle on
+  `/account`), SERVICE reaches every active client. Sending: "send now" or schedule (Polish wall-clock time,
+  `lib/timezone.ts`) -> worker queue `newsletter` (`due` every minute freezes the list via `prepareCampaign`, batches
+  of 50 every 5 s; consent re-checked per recipient, SKIPPED otherwise). Unsubscribe: signed token (2 years) ->
+  `/unsubscribe?token=` page (button, no login) and RFC 8058 one-click `POST /api/newsletter/unsubscribe` via
+  `List-Unsubscribe` headers; counted per campaign. Admin `/newsletter`, `/newsletter/{id}` (stats, preview, test,
+  send/schedule/cancel, edit while DRAFT/SCHEDULED).
+- Never export non-action helpers from `"use server"` files: every export becomes a public endpoint.
 
 ## Group licenses
 
@@ -359,15 +372,17 @@ messages/{pl,en}.json       UI strings (pl is the source; a test enforces identi
 src/proxy.ts                host-based routing (see above)
 src/app/(platform)/         root layout for platform hosts
   marketing/                landing, cennik, regulamin, polityka-prywatnosci, report (root domain)
-  panel/                    client panel (app.): (auth)/{login,register,forgot-password,reset-password}, dashboard,
+  panel/                    client panel (app.): (auth)/{login,register,forgot-password,reset-password,unsubscribe},
+                            dashboard,
                             account, messages, plans, templates, media, editor, licenses, organization, join,
                             sites/[siteId]/(manage)/{pages,theme,template,domains,stats,messages,settings,history}
   admin/                    admin panel (admin.): login, forbidden, (protected)/ dashboard, clients, sites, reports,
                             invoices, domains, templates, coupons, plans, staff, audit, settings, licenses, finance,
-                            usage; (editor)/
+                            usage, newsletter, mail-preview; (editor)/
 src/app/sites/[host]/       root layout + renderer for published client sites; %5Fp/{contact,v} (form, beacon)
 src/app/api/                auth (wrapped with withPublicOrigin), email/verify, media/upload, health,
-                            webhooks/stripe, internal/revalidate, invoices/[id]/pdf, account/export, messages/export
+                            webhooks/stripe, internal/revalidate, invoices/[id]/pdf, account/export, messages/export,
+                            newsletter/unsubscribe
 src/app/template-preview/   public template preview (own root layout)
 src/app/storage/            local storage file server (dev)
 src/app/global-not-found.tsx
@@ -403,6 +418,7 @@ src/server/                 server-only domain code
   legal/                    terms/privacy documents (defaults, versions, placeholders)
   licenses/                 group licenses: service (client), admin, billing events, settings, maintenance
   finance/                  cost settings, unit economics, profit report + forecast, usage snapshots, capacity
+  newsletter/               campaigns: audiences, rendering, sending (worker), unsubscribe, admin
   cache/                    remote cache invalidation (worker -> app)
   templates/                schema, admin + client services, content mapping, preview, thumbnail job, actions
   jobs/                     BullMQ queues (enqueue helpers)
