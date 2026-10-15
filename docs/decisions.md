@@ -238,3 +238,36 @@ Lightweight ADR log. Newest at the bottom. Business decisions confirmed by the o
     covered by tests on recorded-shape responses; verify in the Openprovider sandbox before launch.
 95. **Entitlements loader split out (`entitlements/load.ts`)** so the worker, which runs outside Next.js, can enforce
     plan features without importing `server-only` modules.
+
+## Phase 8
+
+96. **Permission map instead of role checks** (`src/server/auth/permissions.ts`, `requirePermission`). SUPPORT may do
+    almost everything **(owner)**: clients, notes, blocking clients, refunds, granting plans, impersonation,
+    moderation, invoices, domains, coupons, templates and the audit log. ADMIN-only: plan catalog and block tiers,
+    platform settings (VAT, mail texts, domain pricing) and the team (roles, blocking staff).
+97. **Every staff mutation is audited** (`audit()` with actor, action, target, metadata and IP). Retention 2 years
+    **(owner)**: a daily worker job deletes older rows.
+98. **Impersonation: full access without payments (owner).** Staff start it from the client card with a mandatory
+    reason; an `ImpersonationSession` row (30 min) and a one-minute signed, single-use token lead to a confirmation
+    page on the app host, where a dedicated Auth.js credentials provider signs in as the client with an
+    `impersonation` claim in the JWT. The staff member's own admin session (separate host) is untouched. The claim is
+    rechecked on every token refresh (ended or expired -> signed out). A banner is always shown; every payment,
+    purchase, billing-profile and domain-billing action is refused while impersonating. Redeeming re-checks the
+    staff permission and that the client is not blocked.
+99. **DSA notice-and-action**: the report form lives on the root domain (`/report?site=`) so client sites stay
+    cookie-free and static; every site footer links to it. Reporter IPs are stored only as salted hashes (rate limit +
+    abuse tracing). Suspending a site requires a statement of reasons that is mailed to the owner and shown in the
+    panel; reporters get the decision. Moderation never lifts a payment suspension.
+100.  **Price history**: changing a plan price creates a new `PlanPrice` row and deactivates the old one (the unique
+      `(planId, interval, currency)` was dropped), so existing subscribers keep their Stripe price; the new row is synced
+      to Stripe immediately when Stripe is the provider.
+101.  **Manual plans** are `Subscription` rows without a provider id, optionally with an end date; the hourly dunning job
+      cancels expired ones. They are refused while the client has a provider subscription (change the plan there).
+102.  **Admin refunds go through the payment provider** (`PaymentProvider.refund`); the provider's refund event then
+      updates the payment and issues the correction invoice, the same path as a refund made in the Stripe dashboard.
+103.  **Mail text overrides** (subject/body per kind, ICU, `Setting` "mailTexts", cached 60 s). Rendering is strict: an
+      override that fails to format falls back to the built-in text instead of sending a broken mail.
+104.  **Dashboard metrics**: MRR = provider-managed ACTIVE/PAST_DUE subscriptions at their current price (yearly / 12),
+      manual plans counted separately; churn = cancellations in the last 30 days / entitled subscriptions 30 days ago;
+      monthly series (revenue net of refunds, new clients, cancellations, failed payments) over 12 months, rendered
+      server-side as SVG bar charts with a table view.

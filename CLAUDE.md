@@ -6,18 +6,18 @@ Next.js 16 ships its own docs in `node_modules/next/dist/docs/` (see `AGENTS.md`
 
 ## Status
 
-| Phase | Scope                                                                  | State   |
-| ----- | ---------------------------------------------------------------------- | ------- |
-| 0     | Foundation: Next.js, Docker Compose, Prisma, Auth.js + roles, i18n, CI | done    |
-| 1     | Multi-tenancy (host routing), Site/Page, renderer, cache               | done    |
-| 2     | Editor (Puck), blocks, themes, draft/publish, versions, media, SEO     | done    |
-| 3     | Plans & entitlements: limits, flags, block tiers, plan seed            | done    |
-| 4     | Templates: template mode, versions, gallery, copy, theme/layout change | done    |
-| 5     | Payments (Stripe): checkout, webhooks, portal, dunning, coupons        | done    |
-| 6     | Invoicing (Fakturownia, KSeF): invoices, corrections, PDFs, panels     | done    |
-| 7     | Domains: Cloudflare for SaaS, Openprovider; purchase and renewals      | done    |
-| 8     | Admin panel                                                            | next    |
-| 9     | Polish                                                                 | pending |
+| Phase | Scope                                                                  | State |
+| ----- | ---------------------------------------------------------------------- | ----- |
+| 0     | Foundation: Next.js, Docker Compose, Prisma, Auth.js + roles, i18n, CI | done  |
+| 1     | Multi-tenancy (host routing), Site/Page, renderer, cache               | done  |
+| 2     | Editor (Puck), blocks, themes, draft/publish, versions, media, SEO     | done  |
+| 3     | Plans & entitlements: limits, flags, block tiers, plan seed            | done  |
+| 4     | Templates: template mode, versions, gallery, copy, theme/layout change | done  |
+| 5     | Payments (Stripe): checkout, webhooks, portal, dunning, coupons        | done  |
+| 6     | Invoicing (Fakturownia, KSeF): invoices, corrections, PDFs, panels     | done  |
+| 7     | Domains: Cloudflare for SaaS, Openprovider; purchase and renewals      | done  |
+| 8     | Admin panel                                                            | done  |
+| 9     | Polish                                                                 | next  |
 
 Work in phases; after each phase run lint/typecheck/tests, summarize and wait for the owner's approval.
 
@@ -212,6 +212,26 @@ with `pnpm db:deploy` and run `pnpm db:generate`.
   admin `/domains` (all domains and registrations); domain pricing in admin `/settings`.
 - The worker must not import `server-only` modules: entitlements for it come from `entitlements/load.ts`.
 
+## Admin panel
+
+- Permissions (`src/server/auth/permissions.ts`): staff pages and actions call `requirePermission(permission)`; the nav
+  is filtered the same way. SUPPORT has everything except `plans.manage`, `settings.manage`, `staff.manage` (ADMIN).
+- Every staff mutation calls `audit()` (`src/server/audit`); `/audit` lists it; retention 2 years (daily worker job).
+- Clients (`src/server/admin/clients.ts`, not owner-scoped): `/clients` (search by email/name/slug/domain, filters),
+  `/clients/{id}` (subscriptions, payments with refunds via `PaymentProvider.refund`, invoices, sites, domains, notes,
+  manual plan grant/revoke, block, impersonation history). Manual plans expire in the hourly dunning job.
+- Impersonation (`src/server/admin/impersonation.ts`): reason -> `ImpersonationSession` (30 min) -> one-minute signed
+  token -> `/impersonate` on the app host -> credentials provider `impersonation` (JWT claim). Panel shows a banner;
+  billing/domain-billing actions refuse with `billing.errors.impersonation` (`isImpersonating(user)`). Add the same
+  check to any new payment action.
+- Moderation (`src/server/moderation`): DSA report form `/report?site=` on the root domain (footer link on every site),
+  admin `/reports` (dismiss / suspend with a statement of reasons) and `/sites` (suspend/restore; payment suspensions
+  are left to billing). `Site.suspensionNote` is shown in the panel.
+- ADMIN only: `/plans` (plans, prices with history, Stripe sync, block tiers; `src/server/admin/plans.ts`), `/staff`
+  (roles; never demote the last admin or yourself), `/settings` (invoicing, billing grace, domain pricing, mail text
+  overrides in `Setting` "mailTexts").
+- Dashboard: `getDashboardMetrics()` (`src/server/admin/metrics.ts`) + SVG `BarChart` (`src/components/admin`).
+
 ## Published sites and caching
 
 - Rendering: `src/app/sites/[host]/[[...path]]/page.tsx` is ISR (`generateStaticParams` returns `[]`); the layout applies
@@ -235,8 +255,8 @@ src/app/(platform)/         root layout for platform hosts
   marketing/                landing (root domain)
   panel/                    client panel (app.): (auth)/..., dashboard, plans, templates, media,
                             sites/[siteId]/(manage)/{pages,theme,template,domains,settings,history}, editor
-  admin/                    admin panel (admin.): login, forbidden, (protected)/ dashboard, templates, coupons,
-                            invoices, domains, settings; (editor)/
+  admin/                    admin panel (admin.): login, forbidden, (protected)/ dashboard, clients, sites, reports,
+                            invoices, domains, templates, coupons, plans, staff, audit, settings; (editor)/
 src/app/sites/[host]/       root layout + renderer for published client sites
 src/app/api/                auth (wrapped with withPublicOrigin), email/verify, media/upload, health,
                             webhooks/stripe, internal/revalidate, invoices/[id]/pdf
@@ -265,6 +285,9 @@ src/server/                 server-only domain code
   billing/                  billing events, dunning, owner-scoped billing service, coupons, actions
   invoicing/                InvoicingProvider: mock | fakturownia; invoice lifecycle, client/admin reads, settings
   domains/                  HostnameProvider + DomainRegistrar adapters; connected domains, purchases, worker jobs
+  admin/                    staff services: clients, impersonation, plans/catalog, staff, metrics, actions
+  audit/                    audit log + retention
+  moderation/               DSA reports, site moderation
   cache/                    remote cache invalidation (worker -> app)
   templates/                schema, admin + client services, content mapping, preview, thumbnail job, actions
   jobs/                     BullMQ queues (enqueue helpers)

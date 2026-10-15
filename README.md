@@ -111,6 +111,13 @@ Fakturownia:
 Try it: sign in as the client at http://app.localhost:3000, open "Zarządzaj" on the demo site, edit a page in the
 editor, change the theme and publish; then reload http://jan.localhost:3000.
 
+### Admin panel
+
+Sign in at http://admin.localhost:3000 as `admin@example.com` (everything) or `support@example.com` (no plans, settings
+or team). Clients: search, notes, manual plans, refunds, blocking and "Zaloguj jako klient" (30 minutes, payments
+disabled, audited). Content reports come from the "Zgłoś treść" link in every site footer and are handled under
+`/reports`; staff actions are listed under `/audit`.
+
 ## Scripts
 
 | Command                                                              | Description                                                  |
