@@ -39,6 +39,7 @@ import {
   type ThumbnailJob,
 } from "@/server/jobs/queues";
 import { purgeContactMessages } from "@/server/contact/retention";
+import { takeUsageSnapshot } from "@/server/finance/usage";
 import { createMailer } from "@/server/mail";
 import { createPaymentProvider } from "@/server/payments";
 import { rollupStats } from "@/server/stats/rollup";
@@ -75,6 +76,8 @@ const billing = new Worker(
     if (job.name === "retention") {
       console.info(`[worker] retention: ${await purgeAuditLog()} audit entries removed`);
       console.info(`[worker] retention: ${await purgeContactMessages()} contact messages removed`);
+      // The snapshot reads yesterday's page views before they are rolled up.
+      await takeUsageSnapshot();
       const stats = await rollupStats();
       console.info(`[worker] stats: ${stats.days} site-days rolled up, ${stats.purged} old rows removed`);
       return;

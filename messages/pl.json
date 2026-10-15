@@ -56,7 +56,14 @@
     "acceptTerms": "Akceptuję <terms>regulamin</terms> i zapoznałem(-am) się z <privacy>polityką prywatności</privacy>."
   },
   "dashboard": {
-    "title": "Witaj, {name}!"
+    "title": "Witaj, {name}!",
+    "usage": {
+      "title": "Twoje strony w ostatnich 30 dniach",
+      "views": "Wyświetlenia",
+      "published": "Opublikowane strony",
+      "messages": "Wiadomości z formularzy",
+      "viewsLocked": "Statystyki w wyższym planie"
+    }
   },
   "admin": {
     "title": "Panel administratora",
@@ -640,7 +647,8 @@
       "storage": "Miejsce: {used} z {limit}"
     },
     "licenseNote": "Masz plan z licencji grupowej „{organization}”. Wybierając wyższy plan, płacisz za niego sam — będzie obowiązywał zamiast planu z licencji.",
-    "fromLicense": "Plan z licencji grupowej „{organization}”."
+    "fromLicense": "Plan z licencji grupowej „{organization}”.",
+    "featured": "Polecany"
   },
   "templates": {
     "title": "Szablony",
@@ -717,7 +725,9 @@
     "plans": "Plany",
     "staff": "Zespół",
     "audit": "Audit log",
-    "licenses": "Licencje"
+    "licenses": "Licencje",
+    "finance": "Finanse",
+    "usage": "Użycie"
   },
   "adminTemplates": {
     "title": "Szablony",
@@ -1064,7 +1074,29 @@
       "MONTHLY": "Miesięczny dodatek",
       "ONCE": "Jednorazowo"
     },
-    "sponsorAmount": "Cena (zł brutto)"
+    "sponsorAmount": "Cena (zł brutto)",
+    "finance": "Koszty (zysk netto)",
+    "financeHint": "Na tej podstawie liczymy zysk netto pakietów, statystyki zysku i prognozy. VAT bierzemy z ustawień faktur. Kwoty w zł.",
+    "feePercent": "Prowizja płatności (%)",
+    "feeFixed": "Prowizja stała (zł / płatność)",
+    "infrastructureMonthly": "Koszt serwera i usług (zł / mies.)",
+    "infrastructureMode": "Koszt serwera na klienta",
+    "infrastructureModes": {
+      "perClient": "Rachunek ÷ aktywni klienci",
+      "fixed": "Stała kwota na klienta"
+    },
+    "costPerClientMonthly": "Stała kwota na klienta (zł / mies.)",
+    "otherCosts": "Inne koszty stałe (nazwa; zł miesięcznie — jedna pozycja w linii)",
+    "otherCostsPlaceholder": "Księgowość; 300\nFakturownia; 49",
+    "capacity": "Pojemność serwera (prognoza rozbudowy)",
+    "capacityHint": "Ile obecna infrastruktura obsłuży bez problemu. Prognoza ostrzeże, gdy przy obecnym tempie wzrostu przekroczysz wybrany procent. 0 = nie śledź.",
+    "capacityFields": {
+      "databaseGb": "Dysk bazy (GB)",
+      "storageGb": "Pliki (GB)",
+      "monthlyPageViews": "Wyświetlenia / mies.",
+      "activeSites": "Opublikowane strony",
+      "warnAtPercent": "Ostrzegaj przy (%)"
+    }
   },
   "domains": {
     "title": "Domeny",
@@ -1277,7 +1309,8 @@
       "refundAmount": "Nieprawidłowa kwota zwrotu.",
       "providerError": "Operator płatności zwrócił błąd.",
       "reasonRequired": "Podaj powód (min. 3 znaki)."
-    }
+    },
+    "usage": "30 dni: {views} wyświetleń · {storage} MB plików · strony {published}/{sites} opublikowane · {messages} wiadomości"
   },
   "impersonation": {
     "title": "Logowanie jako klient",
@@ -1392,12 +1425,16 @@
       "maxProjects": "Projekty",
       "storageMb": "Miejsce (MB)",
       "description": "Opis",
-      "isActive": "Aktywny (w sprzedaży)"
+      "isActive": "Aktywny (w sprzedaży)",
+      "highlights": "Co w pakiecie (jedna pozycja w linii, pokazywane w cenniku)",
+      "isFeatured": "Wyróżniony w cenniku"
     },
     "seatPriceMonthly": "Cena za miejsce / mies. (zł)",
     "seatPriceYearly": "Cena za miejsce / rok (zł)",
     "saveSeatPrices": "Zapisz ceny licencji",
-    "seatPricesHint": "Licencje grupowe: cena brutto za jedno miejsce. Puste = plan niedostępny w samoobsługowym zakupie licencji."
+    "seatPricesHint": "Licencje grupowe: cena brutto za jedno miejsce. Puste = plan niedostępny w samoobsługowym zakupie licencji.",
+    "highlightsPlaceholder": "Np.\nWłasna domena w cenie\nPomoc przy starcie",
+    "costBasis": "Zysk netto liczony przy: VAT {vat}%, prowizja {fee}% + {fixed} zł, koszt obsługi klienta {cost} zł / mies. (aktywni płacący klienci: {clients}). Koszty zmienisz w Ustawieniach."
   },
   "adminStaff": {
     "title": "Zespół",
@@ -1777,5 +1814,108 @@
     "addMember": "Dodaj członka (e-mail konta)",
     "pendingInvites": "Oczekujące zaproszenia: {emails}",
     "payments": "Płatności"
+  },
+  "finance": {
+    "preview": {
+      "line": "Netto {net} · prowizja {fee} · koszt {cost} → zysk {profit} ({margin}%)"
+    },
+    "errors": {
+      "invalid": "Sprawdź poprawność pól."
+    }
+  },
+  "adminFinance": {
+    "title": "Finanse",
+    "description": "Przychód ze wszystkich źródeł, koszty i zysk netto z ostatnich 12 miesięcy oraz prognoza na kolejne 12. Kwoty brutto w zł; koszty według Ustawień → Koszty.",
+    "tiles": {
+      "mrr": "Przychód powtarzalny (MRR)",
+      "revenue12": "Przychód brutto (12 mies.)",
+      "profit12": "Zysk netto (12 mies.)",
+      "margin": "Marża netto",
+      "forecastProfit": "Prognoza zysku (12 mies.)",
+      "breakEven": "Próg rentowności"
+    },
+    "breakEvenNow": "osiągnięty",
+    "breakEvenNever": "poza horyzontem 12 mies.",
+    "breakEvenIn": "za {months, plural, one {# miesiąc} few {# miesiące} other {# miesięcy}}",
+    "charts": {
+      "profit": "Zysk netto miesięcznie",
+      "revenue": "Przychód brutto miesięcznie",
+      "forecastRevenue": "Prognoza przychodu",
+      "forecastProfit": "Prognoza zysku netto"
+    },
+    "table": "Pokaż tabelę",
+    "sourcesTitle": "Źródła przychodu",
+    "sourcesDescription": "Plany, licencje grupowe, szablony premium, domeny i dodatki (usunięcie stopki).",
+    "source": "Źródło",
+    "revenue12": "Przychód (12 mies.)",
+    "mrrColumn": "Powtarzalny / mies.",
+    "sources": {
+      "SUBSCRIPTION": "Plany",
+      "LICENSE": "Licencje grupowe",
+      "TEMPLATE": "Szablony premium",
+      "DOMAIN": "Domeny",
+      "ADDON": "Dodatki"
+    },
+    "monthsTitle": "Miesiące",
+    "columns": {
+      "month": "Miesiąc",
+      "gross": "Brutto",
+      "vat": "VAT",
+      "net": "Netto",
+      "fees": "Prowizje",
+      "registrar": "Koszt domen",
+      "fixed": "Koszty stałe",
+      "profit": "Zysk netto"
+    },
+    "total": "Razem",
+    "forecastTitle": "Prognoza",
+    "assumptions": "Założenia: odpływ {churn} miesięcznie, nowy przychód powtarzalny {newMrr} / mies. (średnia z 3 mies.), sprzedaż jednorazowa {oneTime} / mies., koszty stałe {fixed} / mies. Prognoza to trend, nie gwarancja."
+  },
+  "adminUsage": {
+    "title": "Użycie i serwer",
+    "description": "Wykorzystanie platformy (ostatnie 90 dni, dzienne migawki) i prognoza, kiedy trzeba będzie rozbudować serwer. Pojemność ustawisz w Ustawieniach.",
+    "tiles": {
+      "clients": "Klienci",
+      "payingClients": "Płacący klienci (z licencjami)",
+      "sites": "Strony opublikowane / wszystkie",
+      "storage": "Pliki",
+      "database": "Baza danych",
+      "pageViews30": "Wyświetlenia (30 dni)"
+    },
+    "forecastTitle": "Prognoza rozbudowy serwera",
+    "forecastDescription": "Trend z ostatnich 90 dni. Ostrzegamy, gdy metryka zbliży się do {percent}% pojemności.",
+    "columns": {
+      "metric": "Metryka",
+      "current": "Teraz",
+      "capacity": "Pojemność",
+      "in90": "Za 90 dni",
+      "warn": "Próg ostrzeżenia",
+      "full": "Pełna pojemność",
+      "status": "Stan"
+    },
+    "metrics": {
+      "database": "Baza danych",
+      "storage": "Pliki (R2)",
+      "pageViews": "Wyświetlenia / mies.",
+      "sites": "Opublikowane strony"
+    },
+    "status": {
+      "ok": "OK",
+      "soon": "Zaplanuj rozbudowę",
+      "over": "Przekroczony próg",
+      "untracked": "Nie śledzone"
+    },
+    "now": "już teraz",
+    "never": "nie przy obecnym trendzie",
+    "inDays": "za {days} dni ({date})",
+    "advice": "Baza: większy dysk lub plan VPS; pliki: wyższy budżet R2; wyświetlenia i strony: większy VPS lub druga instancja aplikacji za Cloudflare.",
+    "charts": {
+      "pageViews": "Wyświetlenia dziennie",
+      "clients": "Klienci",
+      "storage": "Pliki"
+    },
+    "table": "Pokaż tabelę",
+    "topSites": "Najczęściej odwiedzane strony (30 dni)",
+    "topStorage": "Najwięcej miejsca na pliki"
   }
 }

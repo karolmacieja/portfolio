@@ -21,6 +21,7 @@ import { AdminError, getClientDetail } from "@/server/admin/clients";
 import { startImpersonationAction } from "@/server/admin/impersonation-actions";
 import { hasPermission } from "@/server/auth/permissions";
 import { requirePermission } from "@/server/auth/session";
+import { getClientUsage } from "@/server/finance/usage";
 import { ENTITLED_STATUSES } from "@/server/entitlements";
 import { siteSubdomainUrl } from "@/server/sites/urls";
 
@@ -40,12 +41,13 @@ export default async function AdminClientPage({ params }: PageProps<"/admin/clie
     if (error instanceof AdminError) notFound();
     throw error;
   }
-  const [plans, t, tBilling, format, locale] = await Promise.all([
+  const [plans, t, tBilling, format, locale, usage] = await Promise.all([
     db.plan.findMany({ orderBy: { position: "asc" }, select: { id: true, name: true } }),
     getTranslations("adminClients"),
     getTranslations("billing"),
     getFormatter(),
     getLocale(),
+    getClientUsage(client.id),
   ]);
   const can = (permission: Parameters<typeof hasPermission>[1]) => hasPermission(actor.role, permission);
   const date = (value: Date | null) => (value ? format.dateTime(value, { dateStyle: "medium" }) : "—");
@@ -68,6 +70,15 @@ export default async function AdminClientPage({ params }: PageProps<"/admin/clie
           <p className="text-sm text-muted-foreground">
             {client.name} · {client.role} · {t("joined", { date: date(client.createdAt) })}
             {client.emailVerified ? "" : ` · ${t("unverified")}`}
+          </p>
+          <p className="text-sm text-muted-foreground" data-testid="client-usage">
+            {t("usage", {
+              views: format.number(usage.views30),
+              storage: format.number(usage.storageBytes / 1024 ** 2, { maximumFractionDigits: 1 }),
+              published: usage.published,
+              sites: usage.sites,
+              messages: usage.messages30,
+            })}
           </p>
           {client.blockedAt && (
             <Badge variant="destructive" className="mt-2">

@@ -56,7 +56,14 @@
     "acceptTerms": "I accept the <terms>terms of service</terms> and have read the <privacy>privacy policy</privacy>."
   },
   "dashboard": {
-    "title": "Welcome, {name}!"
+    "title": "Welcome, {name}!",
+    "usage": {
+      "title": "Your sites in the last 30 days",
+      "views": "Page views",
+      "published": "Published sites",
+      "messages": "Form messages",
+      "viewsLocked": "Statistics on a higher plan"
+    }
   },
   "admin": {
     "title": "Admin panel",
@@ -640,7 +647,8 @@
       "storage": "Storage: {used} of {limit}"
     },
     "licenseNote": "You have a plan from the group license “{organization}”. A higher plan you choose here is paid by you and applies instead of the license plan.",
-    "fromLicense": "Plan from the group license “{organization}”."
+    "fromLicense": "Plan from the group license “{organization}”.",
+    "featured": "Recommended"
   },
   "templates": {
     "title": "Templates",
@@ -717,7 +725,9 @@
     "plans": "Plans",
     "staff": "Team",
     "audit": "Audit log",
-    "licenses": "Licenses"
+    "licenses": "Licenses",
+    "finance": "Finance",
+    "usage": "Usage"
   },
   "adminTemplates": {
     "title": "Templates",
@@ -1064,7 +1074,29 @@
       "MONTHLY": "Monthly add-on",
       "ONCE": "One-time"
     },
-    "sponsorAmount": "Price (PLN gross)"
+    "sponsorAmount": "Price (PLN gross)",
+    "finance": "Costs (net profit)",
+    "financeHint": "Used for plan net profit, profit statistics and forecasts. VAT comes from the invoicing settings. Amounts in PLN.",
+    "feePercent": "Payment fee (%)",
+    "feeFixed": "Fixed fee (PLN / payment)",
+    "infrastructureMonthly": "Server and services (PLN / month)",
+    "infrastructureMode": "Server cost per client",
+    "infrastructureModes": {
+      "perClient": "Bill ÷ active clients",
+      "fixed": "Fixed amount per client"
+    },
+    "costPerClientMonthly": "Fixed amount per client (PLN / month)",
+    "otherCosts": "Other fixed costs (name; PLN per month — one per line)",
+    "otherCostsPlaceholder": "Accounting; 300\nInvoicing; 49",
+    "capacity": "Server capacity (scaling forecast)",
+    "capacityHint": "What the current infrastructure handles comfortably. The forecast warns when growth is projected to cross the chosen percentage. 0 = don't track.",
+    "capacityFields": {
+      "databaseGb": "Database disk (GB)",
+      "storageGb": "Files (GB)",
+      "monthlyPageViews": "Page views / month",
+      "activeSites": "Published sites",
+      "warnAtPercent": "Warn at (%)"
+    }
   },
   "domains": {
     "title": "Domains",
@@ -1277,7 +1309,8 @@
       "refundAmount": "Invalid refund amount.",
       "providerError": "The payment provider returned an error.",
       "reasonRequired": "Give a reason (at least 3 characters)."
-    }
+    },
+    "usage": "30 days: {views} views · {storage} MB of files · {published}/{sites} sites published · {messages} messages"
   },
   "impersonation": {
     "title": "Sign in as client",
@@ -1392,12 +1425,16 @@
       "maxProjects": "Projects",
       "storageMb": "Storage (MB)",
       "description": "Description",
-      "isActive": "Active (for sale)"
+      "isActive": "Active (for sale)",
+      "highlights": "What's in the plan (one item per line, shown on the pricing page)",
+      "isFeatured": "Featured on the pricing page"
     },
     "seatPriceMonthly": "Price per seat / month (PLN)",
     "seatPriceYearly": "Price per seat / year (PLN)",
     "saveSeatPrices": "Save license prices",
-    "seatPricesHint": "Group licenses: gross price for one seat. Empty = the plan isn't offered for self-service licenses."
+    "seatPricesHint": "Group licenses: gross price for one seat. Empty = the plan isn't offered for self-service licenses.",
+    "highlightsPlaceholder": "E.g.\nOwn domain included\nOnboarding help",
+    "costBasis": "Net profit assumes: VAT {vat}%, fee {fee}% + {fixed} PLN, cost of serving a client {cost} PLN / month (active paying clients: {clients}). Change costs in Settings."
   },
   "adminStaff": {
     "title": "Team",
@@ -1777,5 +1814,108 @@
     "addMember": "Add member (account email)",
     "pendingInvites": "Pending invitations: {emails}",
     "payments": "Payments"
+  },
+  "finance": {
+    "preview": {
+      "line": "Net {net} · fee {fee} · cost {cost} → profit {profit} ({margin}%)"
+    },
+    "errors": {
+      "invalid": "Check the fields."
+    }
+  },
+  "adminFinance": {
+    "title": "Finance",
+    "description": "Revenue from all sources, costs and net profit for the last 12 months and a forecast for the next 12. Gross amounts in PLN; costs from Settings → Costs.",
+    "tiles": {
+      "mrr": "Recurring revenue (MRR)",
+      "revenue12": "Gross revenue (12 months)",
+      "profit12": "Net profit (12 months)",
+      "margin": "Net margin",
+      "forecastProfit": "Profit forecast (12 months)",
+      "breakEven": "Break-even"
+    },
+    "breakEvenNow": "reached",
+    "breakEvenNever": "beyond 12 months",
+    "breakEvenIn": "in {months, plural, one {# month} other {# months}}",
+    "charts": {
+      "profit": "Net profit per month",
+      "revenue": "Gross revenue per month",
+      "forecastRevenue": "Revenue forecast",
+      "forecastProfit": "Net profit forecast"
+    },
+    "table": "Show table",
+    "sourcesTitle": "Revenue sources",
+    "sourcesDescription": "Plans, group licenses, premium templates, domains and add-ons (footer removal).",
+    "source": "Source",
+    "revenue12": "Revenue (12 months)",
+    "mrrColumn": "Recurring / month",
+    "sources": {
+      "SUBSCRIPTION": "Plans",
+      "LICENSE": "Group licenses",
+      "TEMPLATE": "Premium templates",
+      "DOMAIN": "Domains",
+      "ADDON": "Add-ons"
+    },
+    "monthsTitle": "Months",
+    "columns": {
+      "month": "Month",
+      "gross": "Gross",
+      "vat": "VAT",
+      "net": "Net",
+      "fees": "Fees",
+      "registrar": "Domain costs",
+      "fixed": "Fixed costs",
+      "profit": "Net profit"
+    },
+    "total": "Total",
+    "forecastTitle": "Forecast",
+    "assumptions": "Assumptions: churn {churn} per month, new recurring revenue {newMrr} / month (3-month average), one-time sales {oneTime} / month, fixed costs {fixed} / month. A trend, not a guarantee."
+  },
+  "adminUsage": {
+    "title": "Usage and server",
+    "description": "Platform usage (last 90 days, daily snapshots) and when the server will need to grow. Set the capacity in Settings.",
+    "tiles": {
+      "clients": "Clients",
+      "payingClients": "Paying clients (incl. licenses)",
+      "sites": "Sites published / all",
+      "storage": "Files",
+      "database": "Database",
+      "pageViews30": "Page views (30 days)"
+    },
+    "forecastTitle": "Server scaling forecast",
+    "forecastDescription": "Trend of the last 90 days. We warn when a metric approaches {percent}% of capacity.",
+    "columns": {
+      "metric": "Metric",
+      "current": "Now",
+      "capacity": "Capacity",
+      "in90": "In 90 days",
+      "warn": "Warning level",
+      "full": "Full capacity",
+      "status": "Status"
+    },
+    "metrics": {
+      "database": "Database",
+      "storage": "Files (R2)",
+      "pageViews": "Page views / month",
+      "sites": "Published sites"
+    },
+    "status": {
+      "ok": "OK",
+      "soon": "Plan an upgrade",
+      "over": "Over the threshold",
+      "untracked": "Not tracked"
+    },
+    "now": "already",
+    "never": "not at the current trend",
+    "inDays": "in {days} days ({date})",
+    "advice": "Database: a bigger disk or VPS plan; files: a higher R2 budget; page views and sites: a bigger VPS or a second app instance behind Cloudflare.",
+    "charts": {
+      "pageViews": "Page views per day",
+      "clients": "Clients",
+      "storage": "Files"
+    },
+    "table": "Show table",
+    "topSites": "Most visited sites (30 days)",
+    "topStorage": "Most storage used"
   }
 }

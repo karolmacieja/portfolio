@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 
 import { ActionForm } from "@/components/action-form";
 import { SignOutButton } from "@/components/sign-out-button";
+import { ClientUsage } from "@/components/plans/client-usage";
 import { PlanSummary } from "@/components/plans/plan-summary";
 import { CreateSiteForm } from "@/components/sites/create-site-form";
 import { SiteList } from "@/components/sites/site-list";
@@ -140,6 +141,7 @@ export default async function DashboardPage() {
       )}
 
       <PlanSummary userId={user.id} />
+      {sites.length > 0 && <ClientUsage userId={user.id} />}
 
       <section className="grid gap-4">
         <h2 className="text-lg font-semibold">{t("sites.title")}</h2>
