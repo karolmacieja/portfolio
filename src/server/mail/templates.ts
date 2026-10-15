@@ -4,6 +4,7 @@ import type { Locale } from "@/i18n/config";
 import { loadMessages } from "@/i18n/messages";
 import { platformUrl } from "@/lib/env";
 
+import { getMailBranding } from "./branding";
 import { renderLinkMail } from "./layout";
 import { getMailOverrides } from "./overrides";
 import type { MailMessage } from "./types";
@@ -107,7 +108,9 @@ export async function buildLinkMail(params: {
       brand: params.brand,
     },
   );
+  const branding = await getMailBranding();
   const { html, text } = await renderLinkMail({
+    branding,
     brand: params.brand,
     homeUrl: platformUrl(undefined, "/"),
     locale: params.locale,

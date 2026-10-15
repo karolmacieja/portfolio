@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { DomainSettingsForm } from "@/components/admin/domain-admin-forms";
 import { InvoicingSettingsForm } from "@/components/admin/invoice-forms";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requirePermission } from "@/server/auth/session";
 import { ActionForm } from "@/components/action-form";
@@ -21,6 +23,8 @@ import { getCapacitySettings } from "@/server/finance/capacity";
 import { getFinanceSettings } from "@/server/finance/settings";
 import { getBillingSettings } from "@/server/billing/settings";
 import { getDomainSettings } from "@/server/domains/settings";
+import { saveMailBrandingAction } from "@/server/mail/actions";
+import { getMailBrandingSettings } from "@/server/mail/branding";
 import { getMailOverrides } from "@/server/mail/overrides";
 import { LINK_MAIL_KINDS } from "@/server/mail/templates";
 import { getInvoicingSettings, VAT_RATES } from "@/server/invoicing/settings";
@@ -42,10 +46,11 @@ export default async function AdminSettingsPage() {
     getLegalDocument("privacy"),
     getTranslations("adminSettings"),
   ]);
-  const [sponsor, finance, capacity] = await Promise.all([
+  const [sponsor, finance, capacity, mailBranding] = await Promise.all([
     getSponsorSettings(),
     getFinanceSettings(),
     getCapacitySettings(),
+    getMailBrandingSettings(),
   ]);
   const zl = (grosze: number) => (grosze / 100).toFixed(2);
   const legal = { terms, privacy };
@@ -312,6 +317,64 @@ export default async function AdminSettingsPage() {
               </ActionForm>
             </details>
           ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("mailBranding")}</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          <ActionForm
+            action={saveMailBrandingAction}
+            hidden={{}}
+            label={t("save")}
+            success={t("saved")}
+            className="grid gap-3"
+            testId="mail-branding-form"
+          >
+            <p className="text-sm text-muted-foreground">{t("mailBrandingHint")}</p>
+            <div className="flex flex-wrap gap-3">
+              <div className="grid gap-1">
+                <Label htmlFor="mail-logo">{t("mailLogo")}</Label>
+                <Input
+                  id="mail-logo"
+                  name="logoUrl"
+                  type="url"
+                  defaultValue={mailBranding.logoUrl}
+                  placeholder="https://"
+                  className="w-80"
+                />
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="mail-accent">{t("mailAccent")}</Label>
+                <Input
+                  id="mail-accent"
+                  name="accentColor"
+                  type="color"
+                  defaultValue={mailBranding.accentColor}
+                  className="h-9 w-20 p-1"
+                />
+              </div>
+            </div>
+            <div className="grid gap-1">
+              <Label htmlFor="mail-footer">{t("mailFooter")}</Label>
+              <textarea
+                id="mail-footer"
+                name="footerText"
+                rows={4}
+                maxLength={1000}
+                defaultValue={mailBranding.footerText}
+                placeholder={t("mailFooterPlaceholder")}
+                className="rounded-md border bg-background p-2 text-sm"
+              />
+            </div>
+          </ActionForm>
+          <div>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/mail-preview">{t("mailPreview")}</Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

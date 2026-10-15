@@ -4,6 +4,8 @@ export type MailMessage = {
   text: string;
   html: string;
   replyTo?: string;
+  /** Extra headers (e.g. List-Unsubscribe for newsletters). */
+  headers?: Record<string, string>;
   attachments?: MailAttachment[];
 };
 
