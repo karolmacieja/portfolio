@@ -112,10 +112,20 @@ test("SUPPORT handles clients but not settings, plans or the team", async ({ pag
   await page.getByRole("button", { name: "Zaloguj się", exact: true }).click();
   await expect(page.getByTestId("admin-title")).toBeVisible();
 
-  const nav = page.getByRole("navigation");
-  await expect(nav.getByRole("link", { name: "Klienci" })).toBeVisible();
-  await expect(nav.getByRole("link", { name: "Ustawienia" })).toHaveCount(0);
+  const nav = page.getByRole("navigation", { name: "Menu administracyjne" });
+  await expect(nav.getByRole("button", { name: "Analizy" })).toHaveCount(0);
+  await nav.getByRole("button", { name: "Obsługa" }).click();
+  await nav.getByRole("link", { name: "Klienci" }).click();
+  await expect(page.getByTestId("admin-clients")).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Klienci" })).toHaveCount(0);
+  await nav.getByRole("button", { name: "Sprzedaż" }).click();
+  await expect(nav.getByRole("link", { name: "Faktury" })).toBeVisible();
   await expect(nav.getByRole("link", { name: "Plany" })).toHaveCount(0);
+  // Only the audit log is left of "System" for SUPPORT, so it is a plain link.
+  await expect(nav.getByRole("button", { name: "System" })).toHaveCount(0);
+  await nav.getByRole("link", { name: "Audit log" }).click();
+  await expect(nav.getByRole("link", { name: "Faktury" })).toHaveCount(0);
+  await expect(nav.getByRole("link", { name: "Ustawienia" })).toHaveCount(0);
   for (const path of ["/settings", "/plans", "/staff"]) {
     await page.goto(adminUrl(path));
     await expect(page).toHaveURL(/\/forbidden$/);

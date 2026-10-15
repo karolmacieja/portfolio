@@ -729,7 +729,16 @@
     "licenses": "Licencje",
     "finance": "Finanse",
     "usage": "Użycie",
-    "newsletter": "Newsletter"
+    "newsletter": "Newsletter",
+    "mailPreview": "Podgląd maili",
+    "label": "Menu administracyjne",
+    "groups": {
+      "customers": "Obsługa",
+      "sales": "Sprzedaż",
+      "content": "Treści",
+      "analytics": "Analizy",
+      "system": "System"
+    }
   },
   "adminTemplates": {
     "title": "Szablony",

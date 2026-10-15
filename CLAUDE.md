@@ -220,8 +220,9 @@ with `pnpm db:deploy` and run `pnpm db:generate`.
 ## Admin panel
 
 - Permissions (`src/server/auth/permissions.ts`): staff pages and actions call `requirePermission(permission)`; the nav
-  is filtered the same way. SUPPORT has everything except `finance.view`, `plans.manage`, `settings.manage`,
-  `staff.manage` (ADMIN).
+  is filtered the same way. The nav (`(protected)/layout.tsx` -> `components/admin/admin-nav.tsx`) groups pages into
+  dropdowns (Obsługa, Sprzedaż, Treści, Analizy, System); a group with one visible page becomes a plain link.
+  SUPPORT has everything except `finance.view`, `plans.manage`, `settings.manage`, `staff.manage` (ADMIN).
 - Every staff mutation calls `audit()` (`src/server/audit`); `/audit` lists it; retention 2 years (daily worker job).
 - Clients (`src/server/admin/clients.ts`, not owner-scoped): `/clients` (search by email/name/slug/domain, filters),
   `/clients/{id}` (subscriptions, payments with refunds via `PaymentProvider.refund`, invoices, sites, domains, notes,
