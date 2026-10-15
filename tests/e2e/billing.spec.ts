@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { createBillingUser, createPremiumTemplate } from "./db";
-import { createSiteAndOpen, signInAsClient } from "./helpers";
-import { adminUrl, PASSWORD } from "./hosts";
+import { createSiteAndOpen, signInAsAdmin, signInAsClient } from "./helpers";
+import { adminUrl } from "./hosts";
 
 /** Buys a plan through the mock checkout (plans page -> checkout -> success). */
 async function buyPlan(page: Page, plan: string, coupon?: string) {
@@ -81,11 +81,7 @@ test("switching plan, cancelling and resuming", async ({ page }) => {
 
 test("admin creates a coupon that a client applies at checkout", async ({ page, browser }) => {
   const code = `E2E${Date.now().toString(36).toUpperCase()}`;
-  await page.goto(adminUrl("/login"));
-  await page.getByLabel("Adres e-mail").first().fill("admin@example.com");
-  await page.getByLabel("Hasło").fill(PASSWORD);
-  await page.getByRole("button", { name: "Zaloguj się", exact: true }).click();
-  await expect(page.getByTestId("admin-title")).toBeVisible();
+  await signInAsAdmin(page);
   await page.goto(adminUrl("/coupons"));
   const form = page.getByTestId("create-coupon-form");
   await form.getByLabel("Kod").fill(code);

@@ -20,20 +20,21 @@ export async function sql<T extends pg.QueryResultRow = pg.QueryResultRow>(
  * Creates a verified client with no plan (password as the seed users, copied from free@) and,
  * optionally, a billing profile. Removed by global-setup on the next run (`e2e-%@example.com`).
  */
-export async function createBillingUser(options: { profile?: boolean } = {}): Promise<string> {
+export async function createBillingUser(options: { profile?: boolean; name?: string } = {}): Promise<string> {
+  const name = options.name ?? "Klient E2E";
   const email = `e2e-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}@example.com`;
   const [user] = await sql<{ id: string }>(
     `INSERT INTO "User" (id, email, name, "passwordHash", "emailVerified", "updatedAt")
-     SELECT gen_random_uuid()::text, $1, 'Klient E2E', "passwordHash", now(), now()
+     SELECT gen_random_uuid()::text, $1, $2, "passwordHash", now(), now()
      FROM "User" WHERE email = 'free@example.com' RETURNING id`,
-    [email],
+    [email, name],
   );
   if (!user) throw new Error("Seed user free@example.com is missing (run pnpm db:seed)");
   if (options.profile) {
     await sql(
       `INSERT INTO "BillingProfile" (id, "userId", type, "fullName", line1, "postalCode", city, country, "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, 'PERSON', 'Klient E2E', 'Testowa 1', '00-001', 'Warszawa', 'PL', now())`,
-      [user.id],
+       VALUES (gen_random_uuid()::text, $1, 'PERSON', $2, 'Testowa 1', '00-001', 'Warszawa', 'PL', now())`,
+      [user.id, name],
     );
   }
   return email;

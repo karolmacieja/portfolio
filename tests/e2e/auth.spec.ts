@@ -1,8 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { resetSignInIpLimit } from "./helpers";
 import { adminUrl, PASSWORD } from "./hosts";
 
 async function fillSignIn(page: Page, email: string, password = PASSWORD) {
+  await resetSignInIpLimit();
   await page.getByLabel("Adres e-mail").first().fill(email);
   await page.getByLabel("Hasło").fill(password);
   await page.getByRole("button", { name: "Zaloguj się", exact: true }).click();

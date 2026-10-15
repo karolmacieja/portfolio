@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = Number(process.env.PORT ?? 3000);
+const WORKER_HEALTH_PORT = Number(process.env.WORKER_HEALTH_PORT ?? 3101);
 // Panel host; *.localhost resolves to loopback in Chromium without /etc/hosts changes.
 const baseURL = process.env.E2E_BASE_URL ?? `http://app.localhost:${PORT}`;
 
@@ -21,11 +22,21 @@ export default defineConfig({
       : undefined,
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  webServer: {
-    // CI runs against the production build; locally the dev server is reused if already running.
-    command: process.env.CI ? "pnpm start" : "pnpm dev",
-    url: `http://localhost:${PORT}/api/health`,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  webServer: [
+    {
+      // CI runs against the production build; locally the dev server is reused if already running.
+      command: process.env.CI ? "pnpm start" : "pnpm dev",
+      url: `http://localhost:${PORT}/api/health`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+    {
+      // Background jobs (invoices); its health endpoint tells Playwright when it is ready.
+      command: "pnpm worker",
+      url: `http://localhost:${WORKER_HEALTH_PORT}/health`,
+      env: { WORKER_HEALTH_PORT: String(WORKER_HEALTH_PORT) },
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+    },
+  ],
 });

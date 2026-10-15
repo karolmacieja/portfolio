@@ -1,15 +1,7 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
-import { createSiteAndOpen, signInAsClient } from "./helpers";
-import { adminUrl, PASSWORD, siteUrl } from "./hosts";
-
-async function signInAsAdmin(page: Page) {
-  await page.goto(adminUrl("/login"));
-  await page.getByLabel("Adres e-mail").first().fill("admin@example.com");
-  await page.getByLabel("Hasło").fill(PASSWORD);
-  await page.getByRole("button", { name: "Zaloguj się", exact: true }).click();
-  await expect(page.getByTestId("admin-title")).toBeVisible();
-}
+import { createSiteAndOpen, signInAsAdmin, signInAsClient } from "./helpers";
+import { adminUrl, siteUrl } from "./hosts";
 
 test("Start client: the gallery locks Pro templates and filters by category", async ({ page }) => {
   await signInAsClient(page, "start@example.com");
