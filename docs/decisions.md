@@ -206,3 +206,35 @@ Lightweight ADR log. Newest at the bottom. Business decisions confirmed by the o
     starts the worker next to the app.
 85. **Retrying a FAILED invoice re-reads the buyer's billing profile** if it was never issued, so fixing the client's
     data (e.g. a NIP rejected by KSeF) and pressing "Ponów" is the whole repair flow.
+
+## Phase 7
+
+86. **Cloudflare for SaaS with HTTP certificate validation**: the only record a client must add is a CNAME to our
+    target (`CUSTOM_DOMAIN_CNAME_TARGET`); the TXT ownership record is shown as optional pre-validation. Apex names
+    need CNAME flattening/ALIAS at the client's DNS, or A records when `CUSTOM_DOMAIN_APEX_IPS` (Cloudflare apex
+    proxying) is configured; the UI suggests the www address otherwise.
+87. **One main address per site**: the first connected domain is primary; when it is ACTIVE, the subdomain and all other
+    domains redirect permanently (Next `permanentRedirect`, HTTP 308 — the method-preserving equivalent of 301).
+    Clients can switch back to the subdomain. Sitemap URLs use the main address.
+88. **Squatting protection**: a hostname claimed but never verified for 48 hours can be taken over by another site;
+    verified (ACTIVE) domains can't.
+89. **Downgrade**: losing `customDomain` starts the billing grace period (mail), then domains are switched off
+    (DISABLED, removed from Cloudflare, mail); after upgrading the client re-enables them. Purchased registrations are
+    untouched (owner decision: the domain stays the client's).
+90. **Domain pricing** (owner decision: percent + minimum): registrar cost converted to PLN with admin-set rates, plus
+    max(30 %, 20 zł net) by default, plus VAT at the invoicing rate, rounded up to whole złoty. Prices are always
+    recomputed on the server at checkout. Offered TLDs (owner): .pl, .com, .com.pl, .art.pl, .info.pl.
+91. **Renewal = yearly Stripe subscription** (owner decision: auto-renew from card): the registrar's own auto-renew is
+    off and we renew only after a paid invoice, so we never pay the registry for unpaid domains. The subscription
+    starts at purchase, so the renewal charge falls on the expiry anniversary; Stripe retries failed charges and the
+    order expires 30 days after expiry at the latest. Reminders 30/7/1 days before expiry; turning auto-renew off
+    cancels the subscription at period end. Transfer codes are available in the panel.
+92. **Domain subscriptions never touch plan logic**: events with `kind: "domain"` metadata (also read from
+    `invoice.parent.subscription_details.metadata`, which arrives before checkout completion) are routed to
+    `domains/billing.ts`; plan dunning, site suspension and `Subscription` rows are only for plans.
+93. **Registration in the worker, resumable** (contact -> register -> DNS -> connect), FAILED for an admin retry when
+    the registry refuses; purchased domains use the registrar's DNS (www CNAME to our target).
+94. **Openprovider adapter written against the public v1beta API without live access** (like Fakturownia in Phase 6):
+    covered by tests on recorded-shape responses; verify in the Openprovider sandbox before launch.
+95. **Entitlements loader split out (`entitlements/load.ts`)** so the worker, which runs outside Next.js, can enforce
+    plan features without importing `server-only` modules.

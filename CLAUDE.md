@@ -15,8 +15,9 @@ Next.js 16 ships its own docs in `node_modules/next/dist/docs/` (see `AGENTS.md`
 | 4     | Templates: template mode, versions, gallery, copy, theme/layout change | done    |
 | 5     | Payments (Stripe): checkout, webhooks, portal, dunning, coupons        | done    |
 | 6     | Invoicing (Fakturownia, KSeF): invoices, corrections, PDFs, panels     | done    |
-| 7     | Domains: Cloudflare for SaaS, Openprovider                             | next    |
-| 8-9   | Admin panel, polish                                                    | pending |
+| 7     | Domains: Cloudflare for SaaS, Openprovider; purchase and renewals      | done    |
+| 8     | Admin panel                                                            | next    |
+| 9     | Polish                                                                 | pending |
 
 Work in phases; after each phase run lint/typecheck/tests, summarize and wait for the owner's approval.
 
@@ -42,7 +43,7 @@ pnpm install                  # also runs `prisma generate`
 pnpm db:migrate --name x      # create/apply a migration + regenerate the client (Prisma 7 no longer auto-generates)
 pnpm db:seed                  # plans, users (password Password123!), demo sites with generated images
 pnpm dev                      # http://localhost:3000 (marketing), app./admin./jan.localhost:3000
-pnpm worker                   # background jobs (thumbnails, dunning, invoices + KSeF sync); needs Redis
+pnpm worker                   # background jobs (thumbnails, dunning, invoices + KSeF, domains); needs Redis
 pnpm billing:sync-prices      # create Stripe prices for PlanPrice rows without stripePriceId
 stripe listen --forward-to app.localhost:3000/api/webhooks/stripe   # PAYMENTS_PROVIDER=stripe locally
 pnpm lint | pnpm format | pnpm typecheck | pnpm test | pnpm test:e2e | pnpm build
@@ -74,7 +75,9 @@ with `pnpm db:deploy` and run `pnpm db:generate`.
 - Links between hosts use absolute URLs: `platformUrl("app", "/path")`, `siteSubdomainUrl(slug)`.
 - Inside a host, use public paths (`/login`, `/dashboard`), never internal ones (`/panel/...`).
 - Custom domains: `Domain` rows with status `ACTIVE`; locally also `config/dev-domains.json`
-  (e.g. `jan-kowalski.pl.localhost` -> site `jan`; ignored when `APP_ENV=production`).
+  (e.g. `jan-kowalski.pl.localhost` -> site `jan`; ignored when `APP_ENV=production`) and connected domains named
+  `*.something.localhost` (allowed outside production). A site with an ACTIVE primary domain is served only there:
+  the page renderer `permanentRedirect`s (308) every other host of the site (subdomain, other domains).
 - Two root layouts: `src/app/(platform)/layout.tsx` (panels, cookies, next-intl) and `src/app/sites/[host]/layout.tsx`
   (client sites: no cookies/session so pages stay static). `src/app/global-not-found.tsx` handles unmatched URLs.
 
@@ -184,6 +187,31 @@ with `pnpm db:deploy` and run `pnpm db:generate`.
   host). Admin `/invoices` (staff view; ADMIN retries FAILED invoices with the buyer's current billing data and resends
   KSeF errors).
 
+## Domains
+
+- Adapters in `src/server/domains/providers`: `HostnameProvider` (`HOSTNAME_PROVIDER` = mock | cloudflare: Cloudflare
+  for SaaS custom hostnames, HTTP certificate validation, so clients only need the CNAME to `CUSTOM_DOMAIN_CNAME_TARGET`)
+  and `DomainRegistrar` (`REGISTRAR_PROVIDER` = mock | openprovider: REST v1beta, bearer token cached per process).
+  Mocks: a hostname activates on the next check (`*fail*` -> ERROR); names with `zajeta`/`taken` are unavailable,
+  `odrzucona` fails registration.
+- Connected domains (`service.ts`, owner-scoped, plan feature `customDomain`): validation in `src/lib/domain-name.ts`
+  (punycode, no IPs/wildcards/platform domain), optional www/apex companion, max hostnames per site (settings), first
+  domain is primary. A never-verified claim older than 48 h may be taken over by another site. `status.ts` (shared with
+  the worker): `applyHostnameState` (invalidates `host:`/`site:` tags, mails when live), `checkDomains` (worker, every
+  minute with backoff by age; active ones daily), `enforceDomainEntitlements` (plan without customDomain: mail, then
+  DISABLED after the billing grace period; the client re-enables after upgrading).
+- Purchases (`purchase.ts`, owner-scoped, feature `domainPurchase`): search over `Setting` "domains" TLDs with
+  `customerPrice` (registrar cost -> PLN, + max(markup %, minimum), + VAT, rounded up to whole zł); prices are
+  re-checked on the server; the client pays a yearly Stripe subscription (inline price, metadata `kind: "domain"`).
+  `domains/billing.ts` handles those events inside `handleBillingEvent` (never plan logic): first payment -> order
+  REGISTERING + job; later payments -> renewal job; every payment is a `Payment` of kind DOMAIN with an invoice.
+- Worker (`registration.ts`, queue `domains`): `registerDomain` (contact -> registration with autorenew off -> DNS zone
+  www CNAME [+ apex A records] -> connect `www.` as PURCHASED primary), `renewDomain`, hourly `domainMaintenance`
+  (reminders 30/7/1 days, expiry, abandoned checkouts, stuck registrations). FAILED orders wait for an admin retry.
+- UI: site tab `/sites/{id}/domains` (connect, DNS records, check now, main address, buy, auto-renew, transfer code);
+  admin `/domains` (all domains and registrations); domain pricing in admin `/settings`.
+- The worker must not import `server-only` modules: entitlements for it come from `entitlements/load.ts`.
+
 ## Published sites and caching
 
 - Rendering: `src/app/sites/[host]/[[...path]]/page.tsx` is ISR (`generateStaticParams` returns `[]`); the layout applies
@@ -206,9 +234,9 @@ src/proxy.ts                host-based routing (see above)
 src/app/(platform)/         root layout for platform hosts
   marketing/                landing (root domain)
   panel/                    client panel (app.): (auth)/..., dashboard, plans, templates, media,
-                            sites/[siteId]/(manage)/{pages,theme,template,settings,history}, editor
+                            sites/[siteId]/(manage)/{pages,theme,template,domains,settings,history}, editor
   admin/                    admin panel (admin.): login, forbidden, (protected)/ dashboard, templates, coupons,
-                            invoices, settings; (editor)/
+                            invoices, domains, settings; (editor)/
 src/app/sites/[host]/       root layout + renderer for published client sites
 src/app/api/                auth (wrapped with withPublicOrigin), email/verify, media/upload, health,
                             webhooks/stripe, internal/revalidate, invoices/[id]/pdf
@@ -236,6 +264,7 @@ src/server/                 server-only domain code
   payments/                 PaymentProvider: mock | stripe (normalized billing events)
   billing/                  billing events, dunning, owner-scoped billing service, coupons, actions
   invoicing/                InvoicingProvider: mock | fakturownia; invoice lifecycle, client/admin reads, settings
+  domains/                  HostnameProvider + DomainRegistrar adapters; connected domains, purchases, worker jobs
   cache/                    remote cache invalidation (worker -> app)
   templates/                schema, admin + client services, content mapping, preview, thumbnail job, actions
   jobs/                     BullMQ queues (enqueue helpers)

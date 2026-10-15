@@ -74,6 +74,25 @@ Stripe in test mode:
 
 Dunning (reminders and suspension after the grace period) runs hourly in `pnpm worker`.
 
+### Domains
+
+With the mocks (default) clients on Pro/Business connect domains on the site's "Domeny" tab: any
+`name.something.localhost` works locally (e.g. `moja-domena.pl.localhost`, opened at
+http://moja-domena.pl.localhost:3000), becomes active on "Sprawdź teraz" (or the worker's check) and the subdomain then
+redirects to it. Business clients can buy domains (mock registrar; names containing `zajeta` are taken); the worker
+registers them after the test payment.
+
+Production:
+
+1. Cloudflare for SaaS on the zone of `ROOT_DOMAIN`: create a proxied record for the fallback origin (e.g.
+   `sites.example.com` -> the server), set it as the custom hostnames fallback origin, and set
+   `HOSTNAME_PROVIDER=cloudflare`, `CLOUDFLARE_API_TOKEN` (SSL and Certificates: Edit), `CLOUDFLARE_ZONE_ID`,
+   `CUSTOM_DOMAIN_CNAME_TARGET=sites.example.com` (and `CUSTOM_DOMAIN_APEX_IPS` if apex proxying is enabled).
+2. Openprovider: `REGISTRAR_PROVIDER=openprovider`, `OPENPROVIDER_USERNAME`, `OPENPROVIDER_PASSWORD` (test first
+   against the sandbox with `OPENPROVIDER_API_URL`); purchased domains get `OPENPROVIDER_NAMESERVERS` and a zone in
+   Openprovider DNS.
+3. Admin `/settings`: offered extensions, markup and exchange rates.
+
 ### Invoices
 
 Invoices are issued by `pnpm worker` a moment after each payment (keep it running to see them). With
@@ -102,7 +121,7 @@ editor, change the theme and publish; then reload http://jan.localhost:3000.
 | `pnpm test`                                                          | Unit tests (Vitest); Redis tests run when `REDIS_URL` is set |
 | `pnpm test:e2e`                                                      | E2E tests (Playwright); needs a migrated and seeded database |
 | `pnpm db:migrate`, `pnpm db:seed`, `pnpm db:reset`, `pnpm db:studio` | Database                                                     |
-| `pnpm worker`                                                        | Background jobs (thumbnails, dunning, invoices, KSeF sync)   |
+| `pnpm worker`                                                        | Background jobs (thumbnails, dunning, invoices, domains)     |
 | `pnpm billing:sync-prices`                                           | Create missing Stripe prices for plan prices                 |
 
 ## CI
