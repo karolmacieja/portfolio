@@ -8,7 +8,26 @@ import type { Mailer } from "./types";
 
 export type { MailMessage, Mailer } from "./types";
 
+/** Addresses of erased accounts (see account/deletion.ts); never mailed. */
+export const ERASED_EMAIL_DOMAIN = "deleted.invalid";
+
+/** Drops mails to erased accounts, whatever job still refers to them. */
+class ErasedAddressFilter implements Mailer {
+  constructor(private readonly inner: Mailer) {}
+  get name() {
+    return this.inner.name;
+  }
+  async send(message: Parameters<Mailer["send"]>[0]) {
+    if (message.to.toLowerCase().endsWith(`@${ERASED_EMAIL_DOMAIN}`)) return;
+    await this.inner.send(message);
+  }
+}
+
 export function createMailer(env: Env): Mailer {
+  return new ErasedAddressFilter(createProviderMailer(env));
+}
+
+function createProviderMailer(env: Env): Mailer {
   switch (env.MAIL_PROVIDER) {
     case "smtp":
       return new SmtpMailer({

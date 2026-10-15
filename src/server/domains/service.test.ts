@@ -109,9 +109,10 @@ describe.skipIf(!process.env.DATABASE_URL)("custom domains (database)", async ()
     const domains = await service.listSiteDomains(userId, siteId);
     expect(domains.map((d) => d.status)).toEqual(["ACTIVE", "ACTIVE"]);
     expect(invalidated).toEqual(expect.arrayContaining([`host:${host("jan")}`, `site:${siteId}`]));
-    expect(mailer.sent.map((m) => m.subject)).toEqual([
-      expect.stringContaining(host("jan")),
-      expect.stringContaining(`www.${host("jan")}`),
+    // Domains are checked concurrently, so the mails may arrive in any order.
+    expect(mailer.sent.map((m) => m.subject.split(" ")[1]).sort()).toEqual([
+      host("jan"),
+      `www.${host("jan")}`,
     ]);
   });
 

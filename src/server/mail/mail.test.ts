@@ -55,6 +55,24 @@ describe("buildLinkMail", () => {
     expect(mail.html).not.toContain("<script>");
     expect(mail.html).toContain("&amp;b=&quot;&gt;&lt;script&gt;");
   });
+
+  it("quotes visitor text safely, sets Reply-To and uses the branded layout", async () => {
+    const mail = await buildLinkMail({
+      kind: "contactMessage",
+      to: "owner@b.pl",
+      url: "http://app.localhost:3000/messages",
+      locale: "pl",
+      brand: "Folio",
+      values: { domain: "Portfolio Anny", name: "Jan", email: "jan@x.pl" },
+      quote: "Dzień dobry!\n<img src=x onerror=alert(1)>",
+      replyTo: "jan@x.pl",
+    });
+    expect(mail.subject).toBe("Nowa wiadomość ze strony Portfolio Anny");
+    expect(mail.replyTo).toBe("jan@x.pl");
+    expect(mail.html).toContain("Folio");
+    expect(mail.html).not.toContain("<img src=x");
+    expect(mail.text).toContain("Dzień dobry!");
+  });
 });
 
 describe.skipIf(!process.env.DATABASE_URL)("mail text overrides (database)", () => {
