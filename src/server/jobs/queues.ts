@@ -7,10 +7,18 @@ import { getEnv } from "@/lib/env";
  * (`pnpm worker`, src/worker/index.ts) consumes them.
  */
 
-export const QUEUES = { thumbnails: "thumbnails", billing: "billing", invoices: "invoices" } as const;
+export const QUEUES = {
+  thumbnails: "thumbnails",
+  billing: "billing",
+  invoices: "invoices",
+  domains: "domains",
+} as const;
 
 export type ThumbnailJob = { templateId: string; versionId: string };
 export type InvoiceJob = { invoiceId: string };
+/** Domain registration/renewal of an order (the periodic checks are scheduler jobs without data). */
+export type DomainJobData = { orderId: string };
+export const DOMAIN_JOB_ATTEMPTS = 6;
 
 /** Issuing retries: 30s, 1m, 2m, 4m, 8m (stays below the 10-minute stale sweep). */
 export const INVOICE_JOB_ATTEMPTS = 6;
@@ -66,5 +74,33 @@ export async function enqueueInvoice(invoiceId: string, retryKey?: string): Prom
     );
   } catch (error) {
     console.error("Failed to enqueue invoice job", invoiceId, error);
+  }
+}
+
+/**
+ * Schedules a domain registration or renewal. Registration is deduplicated per order; renewals per
+ * order and day. Failures are logged: the worker's maintenance pass re-enqueues stuck orders.
+ */
+export async function enqueueDomainJob(
+  job: { name: "register" | "renew"; orderId: string },
+  retryKey?: string,
+) {
+  const day = new Date().toISOString().slice(0, 10);
+  const base =
+    job.name === "register" ? `domain-register-${job.orderId}` : `domain-renew-${job.orderId}-${day}`;
+  try {
+    await getQueue<DomainJobData>(QUEUES.domains).add(
+      job.name,
+      { orderId: job.orderId },
+      {
+        jobId: retryKey ? `${base}-${retryKey}` : base,
+        attempts: DOMAIN_JOB_ATTEMPTS,
+        backoff: { type: "exponential", delay: 30_000 },
+        removeOnComplete: 1000,
+        removeOnFail: 1000,
+      },
+    );
+  } catch (error) {
+    console.error("Failed to enqueue domain job", job, error);
   }
 }

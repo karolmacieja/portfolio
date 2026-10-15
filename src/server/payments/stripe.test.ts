@@ -104,6 +104,7 @@ describe("StripePaymentProvider webhooks", () => {
         currency: "PLN",
         description: "1 × Pro",
         paymentRef: "pi_1",
+        subscriptionMetadata: {},
       },
     });
     expect(apiCalls[0]).toContain("/v1/invoice_payments?invoice=in_1");

@@ -26,7 +26,8 @@ const eventId = () => id("mock_evt");
 
 export type MockCheckoutToken =
   | ({ kind: "subscription"; sessionId: string } & SubscriptionCheckoutInput)
-  | ({ kind: "payment"; sessionId: string } & PaymentCheckoutInput);
+  | ({ kind: "payment"; sessionId: string } & PaymentCheckoutInput)
+  | ({ kind: "domain"; sessionId: string } & PaymentCheckoutInput);
 
 type Emit = (event: BillingEvent) => Promise<void>;
 
@@ -42,7 +43,25 @@ async function currentSubscription(subscriptionId: string): Promise<ProviderSubs
     where: { providerSubscriptionId: subscriptionId },
     include: { user: { select: { billingCustomerId: true } } },
   });
-  if (!sub) throw new PaymentProviderError("providerError", `Unknown mock subscription ${subscriptionId}`);
+  if (!sub) {
+    // Domain renewals are subscriptions too (tracked on the domain order).
+    const order = await db.domainOrder.findUnique({
+      where: { providerSubscriptionId: subscriptionId },
+      include: { user: { select: { billingCustomerId: true } } },
+    });
+    if (!order)
+      throw new PaymentProviderError("providerError", `Unknown mock subscription ${subscriptionId}`);
+    return {
+      id: subscriptionId,
+      customerId: order.user.billingCustomerId ?? "",
+      status: SubscriptionStatus.ACTIVE,
+      priceRef: null,
+      cancelAtPeriodEnd: !order.autoRenew,
+      currentPeriodEnd: order.expiresAt,
+      trialEnd: null,
+      metadata: { kind: "domain", userId: order.userId, orderId: order.id },
+    };
+  }
   return {
     id: subscriptionId,
     customerId: sub.user.billingCustomerId ?? "",
@@ -75,6 +94,10 @@ export class MockPaymentProvider implements PaymentProvider {
 
   async createPaymentCheckout(input: PaymentCheckoutInput) {
     return this.checkout({ kind: "payment", sessionId: id("mock_cs"), ...input });
+  }
+
+  async createDomainCheckout(input: PaymentCheckoutInput) {
+    return this.checkout({ kind: "domain", sessionId: id("mock_cs"), ...input });
   }
 
   async createPortalSession(input: { returnUrl: string }) {
@@ -150,6 +173,8 @@ export class MockPaymentProvider implements PaymentProvider {
       return;
     }
 
+    if (token.kind === "domain") return this.completeDomainCheckout(token);
+
     const price = await db.planPrice.findUnique({ where: { id: token.priceRef }, include: { plan: true } });
     if (!price) throw new PaymentProviderError("providerError", "Unknown price");
     const now = new Date();
@@ -190,18 +215,81 @@ export class MockPaymentProvider implements PaymentProvider {
           currency: price.currency,
           description: `${price.plan.name} (${price.interval === BillingInterval.YEAR ? "12" : "1"} mies.)`,
           paymentRef: id("mock_pi"),
+          subscriptionMetadata: token.metadata,
         },
       });
     }
   }
 
-  /** Simulates a renewal charge for the subscription: paid (new period) or failed (past due). */
-  async simulateRenewal(subscriptionId: string, success: boolean): Promise<void> {
-    const subscription = await currentSubscription(subscriptionId);
+  private async completeDomainCheckout(token: Extract<MockCheckoutToken, { kind: "domain" }>) {
+    const subscription: ProviderSubscription = {
+      id: id("mock_sub"),
+      customerId: token.customerId,
+      status: SubscriptionStatus.ACTIVE,
+      priceRef: null,
+      cancelAtPeriodEnd: false,
+      currentPeriodEnd: addInterval(new Date(), BillingInterval.YEAR),
+      trialEnd: null,
+      metadata: token.metadata,
+    };
+    await this.emit({
+      id: eventId(),
+      type: "checkout.completed",
+      sessionId: token.sessionId,
+      mode: "subscription",
+      customerId: token.customerId,
+      subscriptionId: subscription.id,
+      amountTotal: token.amount,
+      currency: token.currency,
+      paymentRef: null,
+      metadata: token.metadata,
+    });
+    await this.emit({ id: eventId(), type: "subscription.updated", subscription });
+    await this.emit({
+      id: eventId(),
+      type: "invoice.paid",
+      invoice: {
+        id: id("mock_in"),
+        customerId: token.customerId,
+        subscriptionId: subscription.id,
+        amountPaid: token.amount,
+        amountDue: token.amount,
+        currency: token.currency,
+        description: token.name,
+        paymentRef: id("mock_pi"),
+        subscriptionMetadata: token.metadata,
+      },
+    });
+  }
+
+  /** What a renewal of the subscription charges: its plan price, or the domain order's yearly price. */
+  private async renewalCharge(subscription: ProviderSubscription) {
+    if (subscription.metadata.kind === "domain") {
+      const order = await db.domainOrder.findUnique({ where: { id: subscription.metadata.orderId ?? "" } });
+      if (!order) throw new PaymentProviderError("providerError", "Unknown domain order");
+      return {
+        amount: order.priceAmount,
+        currency: order.currency,
+        description: `Domena ${order.domainName} (1 rok)`,
+        interval: BillingInterval.YEAR,
+      };
+    }
     const price = subscription.priceRef
       ? await db.planPrice.findUnique({ where: { id: subscription.priceRef }, include: { plan: true } })
       : null;
     if (!price) throw new PaymentProviderError("providerError", "Subscription has no price");
+    return {
+      amount: price.amount,
+      currency: price.currency,
+      description: `${price.plan.name} (${price.interval === BillingInterval.YEAR ? "12" : "1"} mies.)`,
+      interval: price.interval,
+    };
+  }
+
+  /** Simulates a renewal charge for the subscription: paid (new period) or failed (past due). */
+  async simulateRenewal(subscriptionId: string, success: boolean): Promise<void> {
+    const subscription = await currentSubscription(subscriptionId);
+    const price = await this.renewalCharge(subscription);
     const invoice = {
       id: id("mock_in"),
       customerId: subscription.customerId,
@@ -209,8 +297,9 @@ export class MockPaymentProvider implements PaymentProvider {
       amountPaid: success ? price.amount : 0,
       amountDue: price.amount,
       currency: price.currency,
-      description: `${price.plan.name} (${price.interval === BillingInterval.YEAR ? "12" : "1"} mies.)`,
+      description: price.description,
       paymentRef: success ? id("mock_pi") : null,
+      subscriptionMetadata: subscription.metadata,
     };
     if (success) {
       await this.emit({ id: eventId(), type: "invoice.paid", invoice });

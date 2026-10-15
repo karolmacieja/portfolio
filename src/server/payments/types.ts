@@ -29,6 +29,8 @@ export type ProviderInvoice = {
   description: string;
   /** Charge reference (Stripe PaymentIntent) used to match refunds; null when unknown. */
   paymentRef: string | null;
+  /** Metadata of the invoice's subscription (kind "domain" marks domain renewals). */
+  subscriptionMetadata: Record<string, string>;
 };
 
 export type BillingEvent =
@@ -79,6 +81,9 @@ export type PaymentCheckoutInput = {
   metadata: Record<string, string>;
 };
 
+/** Yearly subscription for a purchased domain, priced inline (gross, renews automatically). */
+export type DomainCheckoutInput = PaymentCheckoutInput;
+
 export type PriceSyncInput = {
   planId: string;
   planName: string;
@@ -106,6 +111,7 @@ export interface PaymentProvider {
   ): Promise<string>;
   createSubscriptionCheckout(input: SubscriptionCheckoutInput): Promise<CheckoutResult>;
   createPaymentCheckout(input: PaymentCheckoutInput): Promise<CheckoutResult>;
+  createDomainCheckout(input: DomainCheckoutInput): Promise<CheckoutResult>;
   createPortalSession(input: { customerId: string; returnUrl: string }): Promise<{ url: string }>;
   /** Switches the plan price immediately with proration. */
   changeSubscriptionPrice(input: {

@@ -70,6 +70,7 @@ describe.skipIf(!process.env.DATABASE_URL)("billing events and dunning (database
       currency: "PLN",
       description: "Pro (1 mies.)",
       paymentRef: null,
+      subscriptionMetadata: {},
     },
   });
 
@@ -88,6 +89,7 @@ describe.skipIf(!process.env.DATABASE_URL)("billing events and dunning (database
       mailer,
       brand: "Test",
       enqueueInvoice: (invoiceId) => void enqueued.push(invoiceId),
+      enqueueDomainJob: () => {},
       billingUrl: "http://app.test/billing",
       now: () => now,
     };

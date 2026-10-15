@@ -8,6 +8,9 @@ import type { BillingEvent, ProviderInvoice, ProviderSubscription } from "@/serv
 
 import type { BillingDeps } from "./deps";
 import { allSiteTags, restoreSitesAfterPayment, suspendSitesForPayment } from "./sites";
+import { billingSnapshot } from "./snapshot";
+import * as domainBilling from "@/server/domains/billing";
+import { sendDomainMail } from "@/server/domains/status";
 
 /** Creates the invoice row for a paid payment and hands it to the worker. */
 async function invoicePayment(paymentId: string, deps: BillingDeps) {
@@ -56,13 +59,6 @@ async function resolvePrice(priceRef: string | null) {
   return db.planPrice.findFirst({ where: { OR: [{ id: priceRef }, { stripePriceId: priceRef }] } });
 }
 
-async function billingSnapshot(userId: string) {
-  const profile = await db.billingProfile.findUnique({ where: { userId } });
-  if (!profile) return Prisma.JsonNull;
-  const { id: _id, userId: _userId, createdAt: _c, updatedAt: _u, ...data } = profile;
-  return { ...data, taxIdVerifiedAt: data.taxIdVerifiedAt?.toISOString() ?? null } as Prisma.InputJsonObject;
-}
-
 async function onCheckoutCompleted(
   event: Extract<BillingEvent, { type: "checkout.completed" }>,
   deps: BillingDeps,
@@ -74,6 +70,10 @@ async function onCheckoutCompleted(
       where: { id: userId, billingCustomerId: null },
       data: { billingCustomerId: event.customerId },
     });
+  }
+  if (domainBilling.isDomainMetadata(event.metadata)) {
+    await domainBilling.onDomainCheckoutCompleted(event.subscriptionId, event.metadata);
+    return;
   }
   if (event.metadata.couponCode) {
     await db.coupon.updateMany({
@@ -267,6 +267,24 @@ async function onPaymentRefunded(
   if (correctionId) await deps.enqueueInvoice(correctionId);
 }
 
+function domainDeps(deps: BillingDeps): domainBilling.DomainBillingDeps {
+  return {
+    enqueueDomainJob: deps.enqueueDomainJob,
+    enqueueInvoice: deps.enqueueInvoice,
+    queueInvoiceForPayment,
+    sendRenewalFailedMail: (userId, domain) =>
+      sendDomainMail(
+        { mailer: deps.mailer, brand: deps.brand, panelUrl: deps.billingUrl },
+        userId,
+        "domainRenewalFailed",
+        {
+          domain,
+        },
+      ),
+    now: deps.now,
+  };
+}
+
 export async function handleBillingEvent(
   event: BillingEvent,
   provider: string,
@@ -287,13 +305,28 @@ export async function handleBillingEvent(
         break;
       case "subscription.updated":
       case "subscription.deleted":
-        await onSubscriptionChanged(event.subscription, event.type === "subscription.deleted", deps);
+        if (domainBilling.isDomainMetadata(event.subscription.metadata)) {
+          await domainBilling.onDomainSubscriptionChanged(
+            event.subscription,
+            event.type === "subscription.deleted",
+          );
+        } else {
+          await onSubscriptionChanged(event.subscription, event.type === "subscription.deleted", deps);
+        }
         break;
       case "invoice.paid":
-        await onInvoicePaid(event.invoice, deps);
+        if (await domainBilling.isDomainInvoice(event.invoice)) {
+          await domainBilling.onDomainInvoicePaid(event.invoice, domainDeps(deps));
+        } else {
+          await onInvoicePaid(event.invoice, deps);
+        }
         break;
       case "invoice.payment_failed":
-        await onInvoiceFailed(event.invoice, deps);
+        if (await domainBilling.isDomainInvoice(event.invoice)) {
+          await domainBilling.onDomainInvoiceFailed(event.invoice, domainDeps(deps));
+        } else {
+          await onInvoiceFailed(event.invoice, deps);
+        }
         break;
       case "payment.refunded":
         await onPaymentRefunded(event, deps);

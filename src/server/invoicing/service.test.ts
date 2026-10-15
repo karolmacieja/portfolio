@@ -76,6 +76,7 @@ describe.skipIf(!process.env.DATABASE_URL)("invoicing flow (database)", async ()
     brand: "Test",
     billingUrl: "http://app.test/billing",
     enqueueInvoice: (id: string) => void enqueued.push(id),
+    enqueueDomainJob: () => {},
   });
   const invoicingDeps = () => ({ provider, mailer, brand: "Test", billingUrl: "http://app.test/billing" });
 

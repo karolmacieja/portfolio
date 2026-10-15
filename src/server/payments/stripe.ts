@@ -57,6 +57,7 @@ export function mapStripeInvoice(invoice: Stripe.Invoice): ProviderInvoice {
     currency: invoice.currency.toUpperCase(),
     description: invoice.lines.data[0]?.description ?? invoice.number ?? "Subscription",
     paymentRef: null,
+    subscriptionMetadata: { ...(invoice.parent?.subscription_details?.metadata ?? {}) },
   };
 }
 
@@ -177,6 +178,32 @@ export class StripePaymentProvider implements PaymentProvider {
           },
         },
       ],
+      metadata: input.metadata,
+      client_reference_id: input.metadata.userId,
+      locale: "pl",
+      success_url: input.successUrl,
+      cancel_url: input.cancelUrl,
+    });
+    return { url: session.url!, sessionId: session.id };
+  }
+
+  async createDomainCheckout(input: PaymentCheckoutInput): Promise<CheckoutResult> {
+    const session = await this.stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: input.customerId,
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: input.currency.toLowerCase(),
+            unit_amount: input.amount,
+            tax_behavior: "inclusive",
+            recurring: { interval: "year" },
+            product_data: { name: input.name },
+          },
+        },
+      ],
+      subscription_data: { metadata: input.metadata },
       metadata: input.metadata,
       client_reference_id: input.metadata.userId,
       locale: "pl",

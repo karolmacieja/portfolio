@@ -73,7 +73,8 @@ export async function saveBillingProfile(userId: string, input: BillingProfileIn
   return db.billingProfile.upsert({ where: { userId }, update: data, create: { ...data, userId } });
 }
 
-async function purchaser(userId: string) {
+/** Checks purchase prerequisites (verified email, billing profile) and ensures a provider customer. */
+export async function purchaser(userId: string) {
   const user = await db.user.findUnique({ where: { id: userId } });
   if (!user) throw new BillingError("notFound");
   if (!user.emailVerified) throw new BillingError("emailNotVerified");

@@ -1,3 +1,4 @@
+import type { DomainJob } from "@/server/domains/billing";
 import type { Mailer } from "@/server/mail/types";
 
 /**
@@ -12,5 +13,7 @@ export type BillingDeps = {
   billingUrl: string;
   /** Hands an invoice to the worker (BullMQ); a periodic sweep picks up anything that was lost. */
   enqueueInvoice: (invoiceId: string) => Promise<void> | void;
+  /** Hands a domain registration/renewal to the worker. */
+  enqueueDomainJob: (job: DomainJob) => Promise<void> | void;
   now?: () => Date;
 };
