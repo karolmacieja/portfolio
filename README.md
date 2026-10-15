@@ -118,6 +118,22 @@ or team). Clients: search, notes, manual plans, refunds, blocking and "Zaloguj j
 disabled, audited). Content reports come from the "Zgłoś treść" link in every site footer and are handled under
 `/reports`; staff actions are listed under `/audit`.
 
+### Client sites: contact form, statistics, account
+
+Add the "Formularz kontaktowy" block to a page and publish: messages arrive in the panel under "Wiadomości" (and by
+mail; with `MAIL_PROVIDER=mock` the mail is printed in the server log). Pro/Business sites count views without cookies
+(tab "Statystyki"). `/account` has the data export and account deletion (14-day grace period, erased by the worker).
+The landing page, `/cennik` and the legal pages live on http://localhost:3000; legal texts are edited in admin
+`/settings`.
+
+## Documentation
+
+- `CLAUDE.md` — architecture, conventions and module map
+- `docs/decisions.md` — technical and business decisions
+- `docs/deployment.md` — production deployment (VPS + Coolify, Cloudflare)
+- `docs/integrations.md` — Stripe, Fakturownia/KSeF, Cloudflare for SaaS, Openprovider, R2, Resend, Google
+- `docs/operations.md` — backups, data retention, monitoring
+
 ## Scripts
 
 | Command                                                              | Description                                                  |

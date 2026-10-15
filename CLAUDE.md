@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 Multi-tenant SaaS for building portfolio websites (Canva-like drag & drop editor). Full product spec: `SPEC.md`.
-Technical decisions log: `docs/decisions.md`. Keep this file up to date when architecture, conventions or commands change.
+Technical decisions log: `docs/decisions.md`; deployment, integrations and operations in `docs/`. Keep this file up to date when architecture, conventions or commands change.
 Next.js 16 ships its own docs in `node_modules/next/dist/docs/` (see `AGENTS.md`); check them before using Next APIs.
 
 ## Status
@@ -17,9 +17,10 @@ Next.js 16 ships its own docs in `node_modules/next/dist/docs/` (see `AGENTS.md`
 | 6     | Invoicing (Fakturownia, KSeF): invoices, corrections, PDFs, panels     | done  |
 | 7     | Domains: Cloudflare for SaaS, Openprovider; purchase and renewals      | done  |
 | 8     | Admin panel                                                            | done  |
-| 9     | Polish                                                                 | next  |
+| 9     | Polish: forms, stats, landing/pricing, mails, RODO, deployment docs    | done  |
 
-Work in phases; after each phase run lint/typecheck/tests, summarize and wait for the owner's approval.
+Work in phases; after each phase run lint/typecheck/tests, summarize and wait for the owner's approval. All planned
+phases are done; further work comes as owner requests.
 
 ## Stack
 
@@ -65,13 +66,15 @@ with `pnpm db:deploy` and run `pnpm db:generate`.
 
 | Host                            | Internal route        | Notes                                             |
 | ------------------------------- | --------------------- | ------------------------------------------------- |
-| `{ROOT}`, `www.{ROOT}`          | `/marketing/*`        | landing (pricing etc. in Phase 9)                 |
+| `{ROOT}`, `www.{ROOT}`          | `/marketing/*`        | landing, `/cennik`, legal pages, `/report`        |
 | `app.{ROOT}`                    | `/panel/*`            | client panel; `/api/*` passes through             |
 | `admin.{ROOT}`                  | `/admin/*`            | admin panel (own login, separate session)         |
 | `{slug}.{ROOT}`, custom domains | `/sites/{hostname}/*` | published sites; ISR; no `/api` (404); strict CSP |
 | reserved/malformed labels       | 404                   | `RESERVED_SLUGS` in `src/lib/slug.ts`             |
 
 - `/api/health` and `/storage/*` are served on every host. Internal prefixes are unreachable directly.
+- Client hosts also serve `/_p/contact` (contact form POST) and `/_p/v` (view beacon): folder `%5Fp` in
+  `src/app/sites/[host]/`; `_p` can never be a page path.
 - Links between hosts use absolute URLs: `platformUrl("app", "/path")`, `siteSubdomainUrl(slug)`.
 - Inside a host, use public paths (`/login`, `/dashboard`), never internal ones (`/panel/...`).
 - Custom domains: `Domain` rows with status `ACTIVE`; locally also `config/dev-domains.json`
@@ -229,8 +232,58 @@ with `pnpm db:deploy` and run `pnpm db:generate`.
   are left to billing). `Site.suspensionNote` is shown in the panel.
 - ADMIN only: `/plans` (plans, prices with history, Stripe sync, block tiers; `src/server/admin/plans.ts`), `/staff`
   (roles; never demote the last admin or yourself), `/settings` (invoicing, billing grace, domain pricing, mail text
-  overrides in `Setting` "mailTexts").
-- Dashboard: `getDashboardMetrics()` (`src/server/admin/metrics.ts`) + SVG `BarChart` (`src/components/admin`).
+  overrides in `Setting` "mailTexts", legal documents).
+- Dashboard: `getDashboardMetrics()` (`src/server/admin/metrics.ts`) + SVG `BarChart` (`src/components/charts`).
+
+## Contact forms and statistics (client sites)
+
+- ContactForm block = plain HTML form posting to `/_p/contact` on the site's own host (no JS, pages stay static).
+  The handler (`src/app/sites/[host]/%5Fp/contact`) checks Origin/Referer host, honeypot, size, then
+  `submitContactMessage` (`src/server/contact/service.ts`): site resolved by host, page must be published and
+  contain a ContactForm, rate limits per sender hash and per site, link spam filter. Stores `ContactMessage`
+  (sender IP only as a salted hash), mails the owner (Reply-To = visitor) and 303s back to `#contact-sent` /
+  `#contact-error` (shown via CSS `:target`). Inbox: `/messages` and the site tab `/sites/{id}/messages`; CSV export
+  `/api/messages/export` with plan feature `formsExport`. Retention 2 years (daily worker job).
+- System texts in the site language reach blocks through Puck `metadata` (`siteRenderMetadata(locale)`, also passed
+  by the editor) as the `site` prop.
+- Stats (plan feature `analytics`, `PublishedSite.analytics`): published pages render a 1x1 `<img>` beacon to
+  `/_p/v?p={path}` (`src/server/stats/collect.ts`): bots/prefetches skipped, views upserted into `SiteDailyStat`,
+  daily unique visitors as `sha256(random daily salt in Redis : site : ip : ua)` in `SiteDailyVisitor`; the daily
+  worker job rolls hashes into `SiteDailyUnique` and deletes them (`stats/rollup.ts`, counts kept 25 months).
+  Days are Europe/Warsaw (`stats/day.ts`). Panel tab `/sites/{id}/stats` (`getSiteStats`, owner-scoped, SVG
+  `BarChart` from `src/components/charts`).
+
+## Account, privacy and legal
+
+- `/account` (app host): profile (name, language), password change/set, sign out everywhere, billing links, JSON
+  export (`GET /api/account/export`, `exportUserData`: no secrets), deletion. Services in `src/server/account/`.
+- Sessions end after a password change/reset or "sign out everywhere": `User.passwordChangedAt` vs the JWT's
+  `issuedAt`, checked on the 5-minute token refresh (impersonation tokens excluded).
+- Password reset: `/forgot-password` -> single-use 1 h link (`VerificationToken` with prefix `reset-password:`,
+  hashed) -> `/reset-password?token=`; never reveals whether an account exists; rate limited per email and IP.
+- Deletion (`account/deletion.ts`, worker-safe, injected `AccountDeps`): request -> `deletionScheduledAt` = +14
+  days, sites offline at once (`getPublishedSite` treats them as unpublished), renewals stopped (cancel at period
+  end, domain auto-renew off), mail; cancellable. The hourly worker job `eraseDueAccounts` cancels provider
+  subscriptions immediately (`PaymentProvider.cancelSubscription`, no refund), mails transfer codes of purchased
+  domains, removes custom hostnames and media, deletes sites/assets/billing profile/notes and anonymizes the user
+  (`deleted-{id}@deleted.invalid`, blocked). Invoices and payments stay (5 years). The mailer drops mail to
+  `@deleted.invalid`. Staff accounts can't self-delete.
+- Legal documents (`src/server/legal/`): terms and privacy policy in `Setting` "legal", edited in admin
+  `/settings` (defaults: drafts in `defaults.ts`, to be reviewed by a lawyer); placeholders `{company}` `{email}`
+  `{brand}` `{domain}` filled from seller data; rendered by `LegalText` (safe mini markup). Each terms change is a new
+  version; registration requires the checkbox and stores `termsVersion`/`termsAcceptedAt`; the dashboard asks
+  clients with an older/missing version to accept.
+- Marketing (root domain): layout with nav/footer, landing (features, published templates, steps, pricing),
+  `/cennik` (plan catalog + FAQ), `/regulamin`, `/polityka-prywatnosci`. Pricing cards come from `listActivePlans`
+  (`PricingTable`, `PlanFeatureList` shared with the panel).
+- Onboarding: the dashboard shows "Pierwsze kroki" (plan -> template -> edit and publish) until the first site.
+
+## Mail
+
+- Every transactional mail goes through `buildLinkMail` (`src/server/mail/templates.ts`): texts from
+  `messages.email.{kind}` (+ admin overrides), rendered with the React Email layout `src/server/mail/layout.tsx`
+  (HTML + plain text), optional quoted user text and `replyTo`. Add a kind to `LINK_MAIL_KINDS`, messages
+  (`email.{kind}`, `adminSettings.mailKinds.{kind}`) in both locales.
 
 ## Published sites and caching
 
@@ -252,14 +305,15 @@ prisma/                     schema.prisma, migrations/, seed.ts (users + demo si
 messages/{pl,en}.json       UI strings (pl is the source; a test enforces identical keys)
 src/proxy.ts                host-based routing (see above)
 src/app/(platform)/         root layout for platform hosts
-  marketing/                landing (root domain)
-  panel/                    client panel (app.): (auth)/..., dashboard, plans, templates, media,
-                            sites/[siteId]/(manage)/{pages,theme,template,domains,settings,history}, editor
+  marketing/                landing, cennik, regulamin, polityka-prywatnosci, report (root domain)
+  panel/                    client panel (app.): (auth)/{login,register,forgot-password,reset-password}, dashboard,
+                            account, messages, plans, templates, media, editor,
+                            sites/[siteId]/(manage)/{pages,theme,template,domains,stats,messages,settings,history}
   admin/                    admin panel (admin.): login, forbidden, (protected)/ dashboard, clients, sites, reports,
                             invoices, domains, templates, coupons, plans, staff, audit, settings; (editor)/
-src/app/sites/[host]/       root layout + renderer for published client sites
+src/app/sites/[host]/       root layout + renderer for published client sites; %5Fp/{contact,v} (form, beacon)
 src/app/api/                auth (wrapped with withPublicOrigin), email/verify, media/upload, health,
-                            webhooks/stripe, internal/revalidate, invoices/[id]/pdf
+                            webhooks/stripe, internal/revalidate, invoices/[id]/pdf, account/export, messages/export
 src/app/template-preview/   public template preview (own root layout)
 src/app/storage/            local storage file server (dev)
 src/app/global-not-found.tsx
@@ -267,7 +321,8 @@ src/auth.ts                 NextAuth instance (lazy config)
 src/blocks/                 block schemas, defaults, renderers, render config, content parsing, blocks.css
 src/themes/                 theme schema/presets/CSS vars, site fonts
 src/components/ui/          shadcn/ui primitives (hand-maintained; add via `pnpm dlx shadcn add`)
-src/components/              auth, sites, site-manager, editor (Puck), media (picker, dialog, library)
+src/components/              auth, account, sites, site-manager, editor (Puck), media, contact, charts, legal,
+                            marketing, plans, admin, action-form (generic ActionState form)
 src/i18n/                   next-intl config, request config, typed messages, getTranslator(locale)
 src/lib/                    env (zod), db (lazy Prisma proxy), redis, hosts, slug, request helpers, utils
 src/server/                 server-only domain code
@@ -275,7 +330,7 @@ src/server/                 server-only domain code
   http/                     routing table, security headers
   media/                    image processing, owner-scoped media service, actions
   storage/                  StorageProvider: local | s3
-  mail/                     Mailer adapter: mock | smtp | resend, templates
+  mail/                     Mailer adapter: mock | smtp | resend, React Email layout, templates, overrides
   rate-limit/               RateLimiter interface: Redis + in-memory
   sites/                    service (owner-scoped: sites, pages, drafts, versions, theme), public (cached reads),
                             actions, cache tags, urls
@@ -288,13 +343,18 @@ src/server/                 server-only domain code
   admin/                    staff services: clients, impersonation, plans/catalog, staff, metrics, actions
   audit/                    audit log + retention
   moderation/               DSA reports, site moderation
+  account/                  profile, password, reset, export, deletion/erasure (RODO)
+  contact/                  contact form messages (public submit, owner inbox, retention)
+  stats/                    cookie-less page views: collect, roll-up, owner reports
+  legal/                    terms/privacy documents (defaults, versions, placeholders)
   cache/                    remote cache invalidation (worker -> app)
   templates/                schema, admin + client services, content mapping, preview, thumbnail job, actions
   jobs/                     BullMQ queues (enqueue helpers)
   thumbnails/               ThumbnailRenderer: mock | playwright
 src/worker/                 background worker entry (`pnpm worker`)
 src/scripts/                one-off scripts (`billing:sync-prices`)
-tests/e2e/                  Playwright specs (+ hosts.ts URL helpers, global-setup cleanup)
+tests/e2e/                  Playwright specs (+ hosts.ts URL helpers, db.ts fixtures, global-setup cleanup)
+Dockerfile                  one image for web (`pnpm start`) and worker (`pnpm worker`); see docs/deployment.md
 ```
 
 ## Conventions
@@ -323,5 +383,5 @@ tests/e2e/                  Playwright specs (+ hosts.ts URL helpers, global-set
 
 - Roles: `CLIENT` (default), `SUPPORT`, `ADMIN`. Staff (`ADMIN`, `SUPPORT`) may enter the admin panel; finer permissions per action.
 - JWT sessions; the token re-reads role/blocked state from the DB every 5 minutes, so blocking a user (`User.blockedAt`) ends sessions within that window.
-- Email verification is not required to sign in; it will gate purchase/publish (Phases 5/2). Magic link and Google sign-ins mark the email verified.
+- Email verification is not required to sign in; it gates purchases. Magic link, Google sign-ins and password resets mark the email verified.
 - Session cookies are host-only: `app.` and `admin.` keep separate sessions.

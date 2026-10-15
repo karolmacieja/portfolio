@@ -271,3 +271,36 @@ Lightweight ADR log. Newest at the bottom. Business decisions confirmed by the o
       manual plans counted separately; churn = cancellations in the last 30 days / entitled subscriptions 30 days ago;
       monthly series (revenue net of refunds, new clients, cancellations, failed payments) over 12 months, rendered
       server-side as SVG bar charts with a table view.
+
+## Phase 9
+
+105. **Contact forms without JavaScript**: the block posts a plain HTML form to `/_p/contact` on the site's own host
+     and the handler redirects back to `#contact-sent` / `#contact-error`, shown with CSS `:target`. Published pages stay
+     static (ISR) and cookie-free, CSP keeps `form-action 'self'`. The site is resolved from the host, never from form
+     data, and only pages that actually contain a ContactForm accept messages (no open mail relay).
+106. **Anti-spam (owner)**: honeypot, Origin/Referer host check, rate limits (5/h per sender, 100/day per site), at
+     most 3 links per message; no third-party captcha. Sender IPs are stored only as salted hashes.
+107. **`_p` reserved prefix** on client hosts for platform endpoints (`%5Fp` folder): page path segments must match
+     `[a-z0-9-]`, so it can never collide with a client's page and no page name had to be reserved.
+108. **Own cookie-less statistics** instead of Plausible: a 1x1 image beacon (no JS) counts views per page and day;
+     daily unique visitors use a random per-day salt kept only in Redis (48 h), hashes are rolled up and deleted the
+     next day, so no personal data is stored and no consent banner is needed. Bots and prefetches are skipped;
+     visitors summed per day (not unique over a period). Shown for plans with `analytics`.
+109. **Contact messages kept 2 years** at most (third parties' personal data), CSV export for `formsExport` with
+     spreadsheet formula-injection protection.
+110. **Account deletion (owner)**: 14-day cancellable grace period; sites offline immediately; subscriptions cancelled
+     without refund; purchased domains stay registered until expiry with transfer codes mailed. The user row is
+     anonymized rather than deleted because invoices/payments must be kept 5 years and reference it; the mailer drops
+     mail to the anonymized address. Erasure runs in the worker and does provider steps first (retried hourly).
+111. **Session revocation** without server sessions: `User.passwordChangedAt` compared with the JWT sign-in time on
+     the 5-minute refresh (password change/reset, "sign out everywhere").
+112. **Legal documents editable by admins (owner)**: drafts written from what the platform does (to be reviewed by a
+     lawyer), placeholders filled from the invoicing seller data; a saved change to the terms is a new version that
+     signed-in clients accept from the dashboard; registration requires accepting the terms. Only essential cookies
+     (session, language) on platform hosts, none on client sites, so there is no cookie banner. Defaults are Polish
+     only (business documents; English versions can be added as admin-edited text later).
+113. **React Email for all transactional mails** through one shared layout; texts stay in next-intl messages so admin
+     overrides keep working; quoted user text is rendered as text (escaped).
+114. **One Docker image** for web and worker (worker runs TypeScript via tsx, like in development); Chromium is
+     included for template thumbnails. Migrations run as Coolify's pre-deployment command. Not built in the
+     development container (no Docker there); verify the first build on the server.
