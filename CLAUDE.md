@@ -6,21 +6,23 @@ Next.js 16 ships its own docs in `node_modules/next/dist/docs/` (see `AGENTS.md`
 
 ## Status
 
-| Phase | Scope                                                                  | State |
-| ----- | ---------------------------------------------------------------------- | ----- |
-| 0     | Foundation: Next.js, Docker Compose, Prisma, Auth.js + roles, i18n, CI | done  |
-| 1     | Multi-tenancy (host routing), Site/Page, renderer, cache               | done  |
-| 2     | Editor (Puck), blocks, themes, draft/publish, versions, media, SEO     | done  |
-| 3     | Plans & entitlements: limits, flags, block tiers, plan seed            | done  |
-| 4     | Templates: template mode, versions, gallery, copy, theme/layout change | done  |
-| 5     | Payments (Stripe): checkout, webhooks, portal, dunning, coupons        | done  |
-| 6     | Invoicing (Fakturownia, KSeF): invoices, corrections, PDFs, panels     | done  |
-| 7     | Domains: Cloudflare for SaaS, Openprovider; purchase and renewals      | done  |
-| 8     | Admin panel                                                            | done  |
-| 9     | Polish: forms, stats, landing/pricing, mails, RODO, deployment docs    | done  |
+| Phase | Scope                                                                  | State   |
+| ----- | ---------------------------------------------------------------------- | ------- |
+| 0     | Foundation: Next.js, Docker Compose, Prisma, Auth.js + roles, i18n, CI | done    |
+| 1     | Multi-tenancy (host routing), Site/Page, renderer, cache               | done    |
+| 2     | Editor (Puck), blocks, themes, draft/publish, versions, media, SEO     | done    |
+| 3     | Plans & entitlements: limits, flags, block tiers, plan seed            | done    |
+| 4     | Templates: template mode, versions, gallery, copy, theme/layout change | done    |
+| 5     | Payments (Stripe): checkout, webhooks, portal, dunning, coupons        | done    |
+| 6     | Invoicing (Fakturownia, KSeF): invoices, corrections, PDFs, panels     | done    |
+| 7     | Domains: Cloudflare for SaaS, Openprovider; purchase and renewals      | done    |
+| 8     | Admin panel                                                            | done    |
+| 9     | Polish: forms, stats, landing/pricing, mails, RODO, deployment docs    | done    |
+| 10    | Group licenses, sponsor footer (+ paid removal)                        | done    |
+| 11    | Finance: net profit per plan, revenue/profit stats, forecasts, usage   | next    |
+| 12    | Mail template editor, newsletter (consent)                             | pending |
 
-Work in phases; after each phase run lint/typecheck/tests, summarize and wait for the owner's approval. All planned
-phases are done; further work comes as owner requests.
+Work in phases; after each phase run lint/typecheck/tests, summarize and wait for the owner's approval.
 
 ## Stack
 
@@ -285,6 +287,35 @@ with `pnpm db:deploy` and run `pnpm db:generate`.
   (HTML + plain text), optional quoted user text and `replyTo`. Add a kind to `LINK_MAIL_KINDS`, messages
   (`email.{kind}`, `adminSettings.mailKinds.{kind}`) in both locales.
 
+## Group licenses
+
+- `Organization` = one license: plan, seats, source `STRIPE` (self-service, inline-priced provider subscription with
+  quantity = seats, metadata `kind: "license"`) or `MANUAL` (staff, agreed price invoiced outside Stripe, optional
+  `validUntil`), status, manager, sponsor name/url, `sponsorFooter` (staff switch for the whole license),
+  `membersCanBuyDomains`, join code (+ `joinLinkEnabled`). `OrganizationMember` (a user is in at most one org; role
+  MANAGER/MEMBER, `sponsorFooterHidden` = staff switch per member), `OrganizationInvite` (hashed token, 14 days).
+- Entitlements (`entitlements/load.ts`, `buildEntitlements`): the better of the user's own entitled subscription and
+  an active license seat (by plan `position`); `source` says which; `license` is set for members either way; a
+  license with `membersCanBuyDomains` adds `customDomain` + `domainPurchase` (the member pays for the domain). Active
+  = ACTIVE/PAST_DUE and, for manual ones, before `validUntil` (`isLicenseActive`).
+- Billing (`licenses/billing.ts`, routed from `billing/events.ts` by metadata kind): payments are `Payment` kind
+  LICENSE (paid by the manager, `organizationId`) or ADDON (sponsor removal) with VAT invoices. License status changes
+  run `applyLicenseStatus` (restore members' sites, or pause sites of members left without a plan + mail
+  `licenseEnded`). Plan dunning never pauses sites of members with an active seat; a member's own plan ending
+  doesn't either. Manual licenses expire in the hourly worker job (`licenses/maintenance.ts`).
+- Provider: `createInlineSubscriptionCheckout` (unit price × quantity, month/year) and `setSubscriptionQuantity`
+  (prorated seat changes); `ProviderSubscription.quantity`. The mock resolves license/add-on subscriptions from the DB.
+- Sponsor footer: `sponsorOf()` in `sites/public.ts` -> `PublishedSite.sponsor` -> site footer "Strona wspierana
+  przez …" (rel="sponsored"). Hidden when the license or member switch is off or the member bought the removal
+  (`SponsorRemoval`, Setting "sponsor": enabled, mode MONTHLY|ONCE, gross amount; admin `/settings`). Any change
+  invalidates the members' site tags (`memberSiteTags`).
+- Client UI (app host): `/licenses` (buy: plan with seat prices, interval, seats, sponsor), `/organization` (seat,
+  sponsor removal, upgrade hint, leave; manager: seats, renewal, settings, join link, e-mail invitations, members),
+  `/join?code=|invite=`. `/plans` lets members buy their own better plan. Admin (`licenses.manage`, SUPPORT too):
+  `/licenses` (list, create manual), `/licenses/{id}` (settings, sponsor switches, members, payments); seat prices
+  per plan on `/plans` (`Plan.seatPriceMonthly/Yearly`, null = not offered).
+- Account erasure cancels licenses the user pays for and their monthly add-on, removes memberships and invitations.
+
 ## Published sites and caching
 
 - Rendering: `src/app/sites/[host]/[[...path]]/page.tsx` is ISR (`generateStaticParams` returns `[]`); the layout applies
@@ -307,10 +338,10 @@ src/proxy.ts                host-based routing (see above)
 src/app/(platform)/         root layout for platform hosts
   marketing/                landing, cennik, regulamin, polityka-prywatnosci, report (root domain)
   panel/                    client panel (app.): (auth)/{login,register,forgot-password,reset-password}, dashboard,
-                            account, messages, plans, templates, media, editor,
+                            account, messages, plans, templates, media, editor, licenses, organization, join,
                             sites/[siteId]/(manage)/{pages,theme,template,domains,stats,messages,settings,history}
   admin/                    admin panel (admin.): login, forbidden, (protected)/ dashboard, clients, sites, reports,
-                            invoices, domains, templates, coupons, plans, staff, audit, settings; (editor)/
+                            invoices, domains, templates, coupons, plans, staff, audit, settings, licenses; (editor)/
 src/app/sites/[host]/       root layout + renderer for published client sites; %5Fp/{contact,v} (form, beacon)
 src/app/api/                auth (wrapped with withPublicOrigin), email/verify, media/upload, health,
                             webhooks/stripe, internal/revalidate, invoices/[id]/pdf, account/export, messages/export
@@ -347,6 +378,7 @@ src/server/                 server-only domain code
   contact/                  contact form messages (public submit, owner inbox, retention)
   stats/                    cookie-less page views: collect, roll-up, owner reports
   legal/                    terms/privacy documents (defaults, versions, placeholders)
+  licenses/                 group licenses: service (client), admin, billing events, settings, maintenance
   cache/                    remote cache invalidation (worker -> app)
   templates/                schema, admin + client services, content mapping, preview, thumbnail job, actions
   jobs/                     BullMQ queues (enqueue helpers)
@@ -378,6 +410,8 @@ Dockerfile                  one image for web (`pnpm start`) and worker (`pnpm w
   If the dev server gets stuck in a reload loop ("Compiled in 1ms" on every request), delete `.next` and restart.
 - Conventional Commits; small logical commits.
 - Prisma enums for client code: import from `@/generated/prisma/enums` (no runtime client).
+- next-intl key types are large: if a component reports `TS2590`/an unknown namespace for valid keys, read the labels
+  into a plain object first (`const label = { name: t("name") }`, see `components/admin/license-fields.tsx`).
 
 ## Auth model
 

@@ -20,6 +20,7 @@ export default async function globalSetup() {
   await client.connect();
   try {
     await client.query(`DELETE FROM "Site" WHERE slug LIKE 'e2e-%'`);
+    await client.query(`DELETE FROM "Organization" WHERE name LIKE 'E2E %'`);
     await client.query(`DELETE FROM "User" WHERE email LIKE 'e2e-%@example.com'`);
     await client.query(`DELETE FROM "Asset" WHERE "originalName" = 'e2e.png'`);
     await client.query(`DELETE FROM "Template" WHERE slug LIKE 'e2e-%'`);

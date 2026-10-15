@@ -304,3 +304,21 @@ Lightweight ADR log. Newest at the bottom. Business decisions confirmed by the o
 114. **One Docker image** for web and worker (worker runs TypeScript via tsx, like in development); Chromium is
      included for template thumbnails. Migrations run as Coolify's pre-deployment command. Not built in the
      development container (no Docker there); verify the first build on the server.
+
+## Phase 10
+
+115. **Group licenses: both models (owner)** — self-service (organization pays per seat through a provider
+     subscription with quantity, price per seat set per plan by the admin) and manual licenses created by staff for
+     negotiated deals (invoiced outside Stripe, optional end date). The buyer is the manager and takes a seat.
+116. **Effective plan = better of license seat and own subscription** (by plan position), so members can upgrade
+     individually without leaving the license; the license plan returns when their own plan ends. A license can let
+     members connect and buy domains even below the plan's features (they pay for the domain).
+117. **One organization per user** keeps entitlements and billing unambiguous; joining is by a shareable link
+     (switchable) or a personal e-mail invitation bound to the invited address; seats are checked under a row lock.
+118. **Sponsor footer** "Strona wspierana przez …" on members' sites, `rel="sponsored"`. Staff can switch it off
+     for a whole license or a single member for free; members can buy the removal — monthly add-on or one-time, as
+     the admin sets (owner decision), with a VAT invoice (Payment kind ADDON).
+119. **License end pauses only members left without any plan** (sites suspended for payment, mail); restoring the
+     license or buying an own plan restores them. Plan dunning never pauses sites of members with an active seat.
+120. **Inline-priced subscriptions** (`createInlineSubscriptionCheckout`) for licenses and add-ons: no catalog price
+     sync needed, the price is taken from our database at checkout; seat changes are prorated by the provider.

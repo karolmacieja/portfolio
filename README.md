@@ -126,6 +126,13 @@ mail; with `MAIL_PROVIDER=mock` the mail is printed in the server log). Pro/Busi
 The landing page, `/cennik` and the legal pages live on http://localhost:3000; legal texts are edited in admin
 `/settings`.
 
+### Group licenses
+
+`/licenses` on the app host buys a license per seat (seed: Pro 29 zł, Business 59 zł per seat and month); the
+manager shares the join link or invites by e-mail from `/organization`. Members get the plan, see the sponsor footer
+on their sites and can pay to remove it (admin `/settings`). Staff create licenses for custom deals under admin
+`/licenses`.
+
 ## Documentation
 
 - `CLAUDE.md` — architecture, conventions and module map
