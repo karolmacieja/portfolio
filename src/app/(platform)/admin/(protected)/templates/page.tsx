@@ -5,8 +5,7 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { CreateTemplateForm } from "@/components/admin/template-forms";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Role } from "@/generated/prisma/enums";
-import { requireRole } from "@/server/auth/session";
+import { requirePermission } from "@/server/auth/session";
 import { listTemplatesWithStats } from "@/server/templates/admin";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -15,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AdminTemplatesPage() {
-  await requireRole([Role.ADMIN], "/templates");
+  await requirePermission("templates.manage", "/templates");
   const [templates, t, format] = await Promise.all([
     listTemplatesWithStats(),
     getTranslations(),

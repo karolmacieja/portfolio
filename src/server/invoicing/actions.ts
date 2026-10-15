@@ -3,29 +3,29 @@
 import { refresh } from "next/cache";
 import { z } from "zod";
 
-import { Role } from "@/generated/prisma/enums";
 import { formValues, type ActionState } from "@/server/action-state";
-import { requireRole } from "@/server/auth/session";
+import { audit } from "@/server/audit";
+import { requirePermission } from "@/server/auth/session";
 
 import { resendInvoiceToKsef, retryInvoice } from "./admin";
 import { saveInvoicingSettings, VAT_RATES } from "./settings";
 
 /** Invoice administration (ADMIN; not owner-scoped). */
 
-const ADMIN_ONLY = [Role.ADMIN] as const;
 const id = z.string().min(1).max(64);
 
 export async function retryInvoiceAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  await requireRole(ADMIN_ONLY);
+  const actor = await requirePermission("invoices.manage");
   const invoiceId = id.safeParse(formData.get("invoiceId"));
   if (!invoiceId.success || !(await retryInvoice(invoiceId.data)))
     return { error: "adminInvoices.errors.notRetryable" };
+  await audit(actor, "invoice.retry", { type: "Invoice", id: invoiceId.data });
   refresh();
   return { ok: true };
 }
 
 export async function resendKsefAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  await requireRole(ADMIN_ONLY);
+  const actor = await requirePermission("invoices.manage");
   const invoiceId = id.safeParse(formData.get("invoiceId"));
   if (!invoiceId.success) return { error: "adminInvoices.errors.notRetryable" };
   try {
@@ -34,6 +34,7 @@ export async function resendKsefAction(_prev: ActionState, formData: FormData): 
     console.error("KSeF resend failed", error);
     return { error: "adminInvoices.errors.providerError" };
   }
+  await audit(actor, "invoice.ksefResend", { type: "Invoice", id: invoiceId.data });
   refresh();
   return { ok: true };
 }
@@ -59,7 +60,7 @@ export async function saveInvoicingSettingsAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole(ADMIN_ONLY);
+  const actor = await requirePermission("settings.manage");
   const values = formValues(formData);
   const parsed = settingsSchema.safeParse(values);
   if (!parsed.success) return { error: "adminSettings.errors.invalid", values };
@@ -79,6 +80,7 @@ export async function saveInvoicingSettingsAction(
       bankAccount: data.sellerBankAccount,
     },
   });
+  await audit(actor, "settings.invoicing", null, { vatRate: data.vatRate });
   refresh();
   return { ok: true, values };
 }

@@ -58,7 +58,26 @@
   },
   "admin": {
     "title": "Panel administratora",
-    "description": "Zalogowano jako {email} (rola: {role})."
+    "description": "Zalogowano jako {email} (rola: {role}).",
+    "metrics": {
+      "mrr": "MRR",
+      "gross": "brutto, płacone online",
+      "active": "Aktywne subskrypcje",
+      "pastDue": "w tym zaległe: {count}",
+      "trialing": "Okres próbny",
+      "manual": "ręczne plany: {count}",
+      "newClients": "Nowi klienci",
+      "last30": "ostatnie 30 dni",
+      "churn": "Churn",
+      "failed": "Nieudane płatności"
+    },
+    "charts": {
+      "revenue": "Przychód miesięcznie (brutto, po zwrotach)",
+      "newClients": "Nowi klienci miesięcznie",
+      "cancellations": "Anulowane subskrypcje miesięcznie",
+      "failed": "Nieudane płatności miesięcznie",
+      "table": "Pokaż tabelę"
+    }
   },
   "errors": {
     "forbiddenTitle": "Brak dostępu",
@@ -154,6 +173,30 @@
       "intro": "Domena {domain} wygasła i nie jest już odnawiana. Skontaktuj się z nami, jeśli chcesz ją przywrócić (rejestr może pozwalać na to jeszcze przez krótki czas).",
       "cta": "Przejdź do panelu",
       "ignore": "Wiadomość wygenerowana automatycznie."
+    },
+    "siteModerated": {
+      "subject": "Strona „{domain}” została wstrzymana — {brand}",
+      "intro": "Twoja strona „{domain}” została wstrzymana po weryfikacji jej treści. Uzasadnienie: {reason}. Możesz odwołać się od tej decyzji, odpowiadając na tę wiadomość.",
+      "cta": "Przejdź do panelu",
+      "ignore": "Decyzja została podjęta przez nasz zespół moderacji."
+    },
+    "siteRestored": {
+      "subject": "Strona „{domain}” została przywrócona — {brand}",
+      "intro": "Twoja strona „{domain}” jest ponownie dostępna. {reason}",
+      "cta": "Przejdź do panelu",
+      "ignore": "Wiadomość wygenerowana automatycznie."
+    },
+    "reportReceived": {
+      "subject": "Otrzymaliśmy Twoje zgłoszenie — {brand}",
+      "intro": "Dziękujemy za zgłoszenie treści na stronie „{domain}”. Rozpatrzymy je i poinformujemy Cię o decyzji.",
+      "cta": "Przejdź do serwisu",
+      "ignore": "Jeśli to nie Ty wysłałeś zgłoszenie, zignoruj tę wiadomość."
+    },
+    "reportDecision": {
+      "subject": "Decyzja w sprawie Twojego zgłoszenia — {brand}",
+      "intro": "Rozpatrzyliśmy Twoje zgłoszenie. Decyzja i uzasadnienie: {reason}",
+      "cta": "Przejdź do serwisu",
+      "ignore": "Wiadomość wygenerowana automatycznie."
     }
   },
   "site": {
@@ -162,7 +205,8 @@
     "suspendedDescription": "Ta strona została tymczasowo wstrzymana. Spróbuj ponownie później.",
     "notFoundTitle": "Nie znaleziono strony",
     "notFoundDescription": "Strona, której szukasz, nie istnieje lub została przeniesiona.",
-    "navigation": "Nawigacja"
+    "navigation": "Nawigacja",
+    "report": "Zgłoś treść"
   },
   "sites": {
     "title": "Twoje strony",
@@ -230,7 +274,8 @@
     "media": "Media",
     "unpublishedChanges": "Masz nieopublikowane zmiany.",
     "template": "Szablon",
-    "domains": "Domeny"
+    "domains": "Domeny",
+    "moderated": "Strona została wstrzymana przez moderację: {reason}. Odpowiedz na wiadomość e-mail, aby się odwołać."
   },
   "pages": {
     "title": "Podstrony",
@@ -612,7 +657,13 @@
     "coupons": "Kupony",
     "invoices": "Faktury",
     "settings": "Ustawienia",
-    "domains": "Domeny"
+    "domains": "Domeny",
+    "clients": "Klienci",
+    "sites": "Strony",
+    "reports": "Zgłoszenia",
+    "plans": "Plany",
+    "staff": "Zespół",
+    "audit": "Audit log"
   },
   "adminTemplates": {
     "title": "Szablony",
@@ -780,7 +831,8 @@
       "invalidInput": "Sprawdź poprawność wypełnionych pól.",
       "generic": "Coś poszło nie tak. Spróbuj ponownie.",
       "rateLimited": "Zbyt wiele prób. Spróbuj ponownie za kilka minut.",
-      "planRequired": "Ten szablon wymaga wyższego planu."
+      "planRequired": "Ten szablon wymaga wyższego planu.",
+      "impersonation": "Płatności są niedostępne podczas logowania jako klient."
     },
     "intervalLabel": "Okres rozliczeniowy",
     "pricesGross": "Ceny brutto (z VAT). Subskrypcję możesz anulować w każdej chwili.",
@@ -905,6 +957,35 @@
       "eurRate": "Kurs EUR → PLN",
       "usdRate": "Kurs USD → PLN",
       "maxHostnamesPerSite": "Domen na stronę"
+    },
+    "billing": "Płatności",
+    "gracePeriodDays": "Okres karencji (dni do wstrzymania stron)",
+    "reminderDays": "Przypomnienia (dni po pierwszej nieudanej płatności, np. 3, 6)",
+    "mailTexts": "Treść e-maili",
+    "mailTextsHint": "Puste pola = tekst domyślny. Dostępne zmienne: '{brand}', '{days}', '{number}', '{domain}', '{reason}'.",
+    "mailSubject": "Temat",
+    "mailIntro": "Treść",
+    "mailCta": "Tekst przycisku",
+    "mailKinds": {
+      "magicLink": "Link logowania",
+      "verifyEmail": "Potwierdzenie e-maila",
+      "paymentFailed": "Nieudana płatność",
+      "paymentReminder": "Przypomnienie o płatności",
+      "sitesSuspended": "Strony wstrzymane (płatność)",
+      "subscriptionEnded": "Koniec subskrypcji",
+      "invoiceIssued": "Faktura",
+      "correctionIssued": "Faktura korygująca",
+      "domainActive": "Domena aktywna",
+      "domainsDisabledSoon": "Domeny — koniec planu (ostrzeżenie)",
+      "domainsDisabled": "Domeny wyłączone",
+      "domainRegistered": "Domena zarejestrowana",
+      "domainRenewalReminder": "Przypomnienie o odnowieniu domeny",
+      "domainRenewalFailed": "Nieudane odnowienie domeny",
+      "domainExpired": "Domena wygasła",
+      "siteModerated": "Strona wstrzymana (moderacja)",
+      "siteRestored": "Strona przywrócona",
+      "reportReceived": "Zgłoszenie przyjęte",
+      "reportDecision": "Decyzja w sprawie zgłoszenia"
     }
   },
   "domains": {
@@ -1035,5 +1116,221 @@
     "check": "Sprawdź",
     "retry": "Ponów rejestrację",
     "queued": "Zlecono."
+  },
+  "adminAudit": {
+    "title": "Audit log",
+    "action": "Akcja (np. template.)",
+    "target": "ID obiektu",
+    "filter": "Filtruj",
+    "empty": "Brak wpisów.",
+    "system": "system",
+    "older": "Starsze",
+    "columns": {
+      "when": "Kiedy",
+      "who": "Kto",
+      "action": "Akcja",
+      "target": "Obiekt",
+      "details": "Szczegóły"
+    }
+  },
+  "adminClients": {
+    "title": "Klienci",
+    "detailTitle": "Klient",
+    "all": "Wszyscy",
+    "search": "E-mail, imię, strona lub domena",
+    "searchButton": "Szukaj",
+    "count": "{count, plural, one {# osoba} few {# osoby} other {# osób}}",
+    "previous": "Poprzednia",
+    "next": "Następna",
+    "blocked": "zablokowany",
+    "status": {
+      "subscribed": "Z planem",
+      "none": "Bez planu",
+      "pastDue": "Zaległe płatności",
+      "blocked": "Zablokowani",
+      "staff": "Zespół"
+    },
+    "columns": {
+      "client": "Klient",
+      "plan": "Plan",
+      "sites": "Strony",
+      "joined": "Dołączył"
+    },
+    "joined": "od {date}",
+    "unverified": "e-mail niepotwierdzony",
+    "blockedSince": "Zablokowany od {date}",
+    "impersonate": "Zaloguj jako klient",
+    "impersonateReason": "Powód (np. numer zgłoszenia)",
+    "block": "Zablokuj konto",
+    "unblock": "Odblokuj konto",
+    "blockConfirm": "Zablokować konto? Klient zostanie wylogowany w ciągu 5 minut.",
+    "plan": "Plan",
+    "manual": "przyznany ręcznie",
+    "providerManaged": "opłacany online",
+    "until": "do {date}",
+    "noPlan": "Brak aktywnego planu.",
+    "grantPlan": "Przyznaj plan",
+    "grantUntil": "Ważny do (opcjonalnie)",
+    "revokePlan": "Odbierz ręczny plan",
+    "revokeConfirm": "Odebrać plan przyznany ręcznie?",
+    "notes": "Notatki (widoczne tylko dla zespołu)",
+    "addNote": "Dodaj notatkę",
+    "sitesAndDomains": "Strony i domeny",
+    "published": "opublikowana",
+    "unpublished": "nieopublikowana",
+    "domainOrder": "Domena {domain}: {status}, ważna do {date}",
+    "payments": "Płatności",
+    "refunded": "zwrócono {amount}",
+    "refund": "Zwróć",
+    "refundAmount": "Kwota zwrotu (puste = całość)",
+    "refundConfirm": "Zlecić zwrot u operatora płatności? Faktura korygująca powstanie automatycznie.",
+    "refundRequested": "Zwrot zlecony.",
+    "invoices": "Faktury",
+    "impersonations": "Sesje logowania jako klient",
+    "errors": {
+      "notFound": "Nie znaleziono.",
+      "invalid": "Sprawdź poprawność pól.",
+      "selfAction": "Nie możesz wykonać tej akcji na własnym koncie.",
+      "staffOnly": "Ta akcja dotyczy członka zespołu — wymaga uprawnień administratora.",
+      "blocked": "Konto jest zablokowane.",
+      "managedByProvider": "Klient płaci online — zmień plan w jego subskrypcji (Stripe).",
+      "noManualPlan": "Klient nie ma ręcznie przyznanego planu.",
+      "notRefundable": "Tej płatności nie można zwrócić.",
+      "refundAmount": "Nieprawidłowa kwota zwrotu.",
+      "providerError": "Operator płatności zwrócił błąd.",
+      "reasonRequired": "Podaj powód (min. 3 znaki)."
+    }
+  },
+  "impersonation": {
+    "title": "Logowanie jako klient",
+    "confirm": "Zalogujesz się jako {email}.",
+    "reason": "Powód: {reason}",
+    "rules": "Sesja trwa 30 minut i jest zapisywana w audit logu. Płatności i zakupy są zablokowane.",
+    "invalid": "Link wygasł lub został już użyty. Rozpocznij sesję ponownie w panelu admina.",
+    "continue": "Kontynuuj",
+    "banner": "Działasz jako {email} (zespół: {admin}) — sesja do {until}.",
+    "end": "Zakończ"
+  },
+  "adminModeration": {
+    "reportsTitle": "Zgłoszenia treści",
+    "sitesTitle": "Strony",
+    "noReports": "Brak zgłoszeń.",
+    "suspended": "wstrzymana",
+    "reportStatus": {
+      "OPEN": "Otwarte",
+      "ACTIONED": "Zawieszone strony",
+      "DISMISSED": "Odrzucone"
+    },
+    "categories": {
+      "ILLEGAL": "Treść nielegalna",
+      "COPYRIGHT": "Prawa autorskie",
+      "PRIVACY": "Prywatność / dane osobowe",
+      "FRAUD": "Oszustwo / phishing",
+      "HATE": "Mowa nienawiści / przemoc",
+      "OTHER": "Inne"
+    },
+    "reporter": "Zgłaszający: {email}",
+    "decision": {
+      "suspend": "Wstrzymaj stronę",
+      "dismiss": "Odrzuć zgłoszenie"
+    },
+    "reasonFor": {
+      "suspend": "Uzasadnienie dla właściciela strony",
+      "dismiss": "Uzasadnienie dla zgłaszającego"
+    },
+    "resolution": "Decyzja: {reason}",
+    "all": "Wszystkie",
+    "suspendedFilter": "Wstrzymane",
+    "search": "Nazwa, adres, e-mail lub domena",
+    "searchButton": "Szukaj",
+    "published": "opublikowana",
+    "draft": "nieopublikowana",
+    "openReports": "{count, plural, one {# otwarte zgłoszenie} few {# otwarte zgłoszenia} other {# otwartych zgłoszeń}}",
+    "paymentSuspension": "Wstrzymana za brak płatności",
+    "suspend": "Wstrzymaj",
+    "unsuspend": "Przywróć",
+    "reason": {
+      "PAYMENT": "brak płatności",
+      "MODERATION": "moderacja",
+      "placeholder": "Uzasadnienie (wysyłane do właściciela)"
+    },
+    "errors": {
+      "reasonRequired": "Podaj uzasadnienie (min. 5 znaków).",
+      "notFound": "Nie znaleziono.",
+      "alreadyResolved": "Zgłoszenie jest już rozpatrzone.",
+      "notModerated": "Ta strona nie jest wstrzymana przez moderację."
+    }
+  },
+  "report": {
+    "title": "Zgłoś treść",
+    "intro": "Zgłaszasz treść opublikowaną na stronie „{site}”. Rozpatrzymy zgłoszenie bez zbędnej zwłoki.",
+    "unknownSite": "Nie znaleziono strony, której dotyczy zgłoszenie.",
+    "url": "Adres strony z treścią",
+    "category": "Rodzaj naruszenia",
+    "description": "Opis — dlaczego treść narusza prawo lub regulamin",
+    "email": "Twój e-mail (opcjonalnie — poinformujemy Cię o decyzji)",
+    "privacy": "Twój adres IP nie jest zapisywany. E-mail wykorzystamy tylko do odpowiedzi na zgłoszenie.",
+    "submit": "Wyślij zgłoszenie",
+    "sent": "Dziękujemy — zgłoszenie zostało przyjęte.",
+    "categories": {
+      "ILLEGAL": "Treść nielegalna",
+      "COPYRIGHT": "Prawa autorskie",
+      "PRIVACY": "Prywatność / dane osobowe",
+      "FRAUD": "Oszustwo / phishing",
+      "HATE": "Mowa nienawiści / przemoc",
+      "OTHER": "Inne"
+    },
+    "errors": {
+      "invalid": "Uzupełnij formularz (opis min. 10 znaków).",
+      "rateLimited": "Zbyt wiele zgłoszeń. Spróbuj później."
+    }
+  },
+  "adminPlans": {
+    "title": "Plany",
+    "save": "Zapisz",
+    "create": "Utwórz plan",
+    "saved": "Zapisano.",
+    "newPlan": "Nowy plan",
+    "inactive": "nieaktywny",
+    "subscribers": "{count, plural, one {# subskrybent} few {# subskrybenci} other {# subskrybentów}}",
+    "syncPrices": "Synchronizuj ceny ze Stripe",
+    "synced": "Zsynchronizowano.",
+    "setPrice": "Ustaw cenę",
+    "notSynced": "cena nie jest jeszcze w Stripe",
+    "previous": "poprzednie: {prices}",
+    "unlimited": "bez limitu",
+    "interval": {
+      "MONTH": "Cena miesięczna (zł brutto)",
+      "YEAR": "Cena roczna (zł brutto)"
+    },
+    "blockTiers": "Wymagany poziom bloków",
+    "fields": {
+      "name": "Nazwa",
+      "slug": "Identyfikator",
+      "position": "Kolejność",
+      "trialDays": "Dni próbne",
+      "maxSites": "Strony",
+      "maxPagesPerSite": "Podstrony na stronę",
+      "maxProjects": "Projekty",
+      "storageMb": "Miejsce (MB)",
+      "description": "Opis",
+      "isActive": "Aktywny (w sprzedaży)"
+    }
+  },
+  "adminStaff": {
+    "title": "Zespół",
+    "add": "Dodaj osobę do zespołu",
+    "grant": "Nadaj rolę",
+    "saved": "Zapisano.",
+    "email": "E-mail istniejącego konta",
+    "role": "Rola",
+    "change": "Zmień",
+    "blocked": "zablokowany",
+    "hint": "Osoba musi mieć konto. Rola „Klient” usuwa z zespołu. Nie można odebrać roli ostatniemu administratorowi.",
+    "roles": {
+      "ADMIN": "Administrator",
+      "SUPPORT": "Wsparcie",
+      "CLIENT": "Klient"
+    }
   }
 }

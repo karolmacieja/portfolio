@@ -5,9 +5,8 @@ import { CreateCouponForm } from "@/components/admin/coupon-forms";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Role } from "@/generated/prisma/enums";
 import { formatMoney } from "@/lib/format";
-import { requireRole } from "@/server/auth/session";
+import { requirePermission } from "@/server/auth/session";
 import { deactivateCouponAction } from "@/server/billing/actions";
 import { listCoupons } from "@/server/billing/coupons";
 
@@ -17,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function AdminCouponsPage() {
-  await requireRole([Role.ADMIN], "/coupons");
+  await requirePermission("coupons.manage", "/coupons");
   const [coupons, t, format, locale] = await Promise.all([
     listCoupons(),
     getTranslations("coupons"),

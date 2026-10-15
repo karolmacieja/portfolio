@@ -58,7 +58,26 @@
   },
   "admin": {
     "title": "Admin panel",
-    "description": "Signed in as {email} (role: {role})."
+    "description": "Signed in as {email} (role: {role}).",
+    "metrics": {
+      "mrr": "MRR",
+      "gross": "gross, paid online",
+      "active": "Active subscriptions",
+      "pastDue": "past due: {count}",
+      "trialing": "Trialing",
+      "manual": "manual plans: {count}",
+      "newClients": "New clients",
+      "last30": "last 30 days",
+      "churn": "Churn",
+      "failed": "Failed payments"
+    },
+    "charts": {
+      "revenue": "Revenue per month (gross, after refunds)",
+      "newClients": "New clients per month",
+      "cancellations": "Canceled subscriptions per month",
+      "failed": "Failed payments per month",
+      "table": "Show table"
+    }
   },
   "errors": {
     "forbiddenTitle": "Access denied",
@@ -154,6 +173,30 @@
       "intro": "Domain {domain} has expired and is no longer renewed. Contact us if you want it back (the registry may still allow it for a short time).",
       "cta": "Go to your account",
       "ignore": "This message was generated automatically."
+    },
+    "siteModerated": {
+      "subject": "Site \"{domain}\" was suspended — {brand}",
+      "intro": "Your site \"{domain}\" was suspended after a review of its content. Reason: {reason}. You can appeal by replying to this message.",
+      "cta": "Go to your account",
+      "ignore": "The decision was made by our moderation team."
+    },
+    "siteRestored": {
+      "subject": "Site \"{domain}\" was restored — {brand}",
+      "intro": "Your site \"{domain}\" is available again. {reason}",
+      "cta": "Go to your account",
+      "ignore": "This message was generated automatically."
+    },
+    "reportReceived": {
+      "subject": "We received your report — {brand}",
+      "intro": "Thank you for reporting content on the site \"{domain}\". We'll review it and let you know about the decision.",
+      "cta": "Go to the website",
+      "ignore": "If you didn't send this report, ignore this message."
+    },
+    "reportDecision": {
+      "subject": "Decision on your report — {brand}",
+      "intro": "We reviewed your report. Decision and reasons: {reason}",
+      "cta": "Go to the website",
+      "ignore": "This message was generated automatically."
     }
   },
   "site": {
@@ -162,7 +205,8 @@
     "suspendedDescription": "This site has been temporarily suspended. Please try again later.",
     "notFoundTitle": "Page not found",
     "notFoundDescription": "The page you are looking for doesn't exist or has been moved.",
-    "navigation": "Navigation"
+    "navigation": "Navigation",
+    "report": "Report content"
   },
   "sites": {
     "title": "Your sites",
@@ -230,7 +274,8 @@
     "media": "Media",
     "unpublishedChanges": "You have unpublished changes.",
     "template": "Template",
-    "domains": "Domains"
+    "domains": "Domains",
+    "moderated": "The site was suspended by moderation: {reason}. Reply to the email to appeal."
   },
   "pages": {
     "title": "Pages",
@@ -612,7 +657,13 @@
     "coupons": "Coupons",
     "invoices": "Invoices",
     "settings": "Settings",
-    "domains": "Domains"
+    "domains": "Domains",
+    "clients": "Clients",
+    "sites": "Sites",
+    "reports": "Reports",
+    "plans": "Plans",
+    "staff": "Team",
+    "audit": "Audit log"
   },
   "adminTemplates": {
     "title": "Templates",
@@ -780,7 +831,8 @@
       "invalidInput": "Please check the highlighted fields.",
       "generic": "Something went wrong. Please try again.",
       "rateLimited": "Too many attempts. Try again in a few minutes.",
-      "planRequired": "This template requires a higher plan."
+      "planRequired": "This template requires a higher plan.",
+      "impersonation": "Payments are unavailable while signed in as the client."
     },
     "intervalLabel": "Billing period",
     "pricesGross": "Prices include VAT. You can cancel your subscription at any time.",
@@ -905,6 +957,35 @@
       "eurRate": "EUR → PLN rate",
       "usdRate": "USD → PLN rate",
       "maxHostnamesPerSite": "Domains per site"
+    },
+    "billing": "Payments",
+    "gracePeriodDays": "Grace period (days until sites are suspended)",
+    "reminderDays": "Reminders (days after the first failed payment, e.g. 3, 6)",
+    "mailTexts": "Email texts",
+    "mailTextsHint": "Empty fields = default text. Variables: '{brand}', '{days}', '{number}', '{domain}', '{reason}'.",
+    "mailSubject": "Subject",
+    "mailIntro": "Body",
+    "mailCta": "Button text",
+    "mailKinds": {
+      "magicLink": "Sign-in link",
+      "verifyEmail": "Email confirmation",
+      "paymentFailed": "Payment failed",
+      "paymentReminder": "Payment reminder",
+      "sitesSuspended": "Sites suspended (payment)",
+      "subscriptionEnded": "Subscription ended",
+      "invoiceIssued": "Invoice",
+      "correctionIssued": "Corrective invoice",
+      "domainActive": "Domain live",
+      "domainsDisabledSoon": "Domains — plan ended (warning)",
+      "domainsDisabled": "Domains switched off",
+      "domainRegistered": "Domain registered",
+      "domainRenewalReminder": "Domain renewal reminder",
+      "domainRenewalFailed": "Domain renewal failed",
+      "domainExpired": "Domain expired",
+      "siteModerated": "Site suspended (moderation)",
+      "siteRestored": "Site restored",
+      "reportReceived": "Report received",
+      "reportDecision": "Report decision"
     }
   },
   "domains": {
@@ -1035,5 +1116,221 @@
     "check": "Check",
     "retry": "Retry registration",
     "queued": "Queued."
+  },
+  "adminAudit": {
+    "title": "Audit log",
+    "action": "Action (e.g. template.)",
+    "target": "Object id",
+    "filter": "Filter",
+    "empty": "No entries.",
+    "system": "system",
+    "older": "Older",
+    "columns": {
+      "when": "When",
+      "who": "Who",
+      "action": "Action",
+      "target": "Object",
+      "details": "Details"
+    }
+  },
+  "adminClients": {
+    "title": "Clients",
+    "detailTitle": "Client",
+    "all": "All",
+    "search": "Email, name, site or domain",
+    "searchButton": "Search",
+    "count": "{count, plural, one {# person} other {# people}}",
+    "previous": "Previous",
+    "next": "Next",
+    "blocked": "blocked",
+    "status": {
+      "subscribed": "With a plan",
+      "none": "Without a plan",
+      "pastDue": "Past due",
+      "blocked": "Blocked",
+      "staff": "Team"
+    },
+    "columns": {
+      "client": "Client",
+      "plan": "Plan",
+      "sites": "Sites",
+      "joined": "Joined"
+    },
+    "joined": "since {date}",
+    "unverified": "email not verified",
+    "blockedSince": "Blocked since {date}",
+    "impersonate": "Sign in as client",
+    "impersonateReason": "Reason (e.g. ticket number)",
+    "block": "Block account",
+    "unblock": "Unblock account",
+    "blockConfirm": "Block the account? The client is signed out within 5 minutes.",
+    "plan": "Plan",
+    "manual": "granted manually",
+    "providerManaged": "paid online",
+    "until": "until {date}",
+    "noPlan": "No active plan.",
+    "grantPlan": "Grant plan",
+    "grantUntil": "Valid until (optional)",
+    "revokePlan": "Revoke manual plan",
+    "revokeConfirm": "Revoke the manually granted plan?",
+    "notes": "Notes (team only)",
+    "addNote": "Add note",
+    "sitesAndDomains": "Sites and domains",
+    "published": "published",
+    "unpublished": "unpublished",
+    "domainOrder": "Domain {domain}: {status}, valid until {date}",
+    "payments": "Payments",
+    "refunded": "refunded {amount}",
+    "refund": "Refund",
+    "refundAmount": "Refund amount (empty = all)",
+    "refundConfirm": "Request a refund from the payment provider? The correction invoice is issued automatically.",
+    "refundRequested": "Refund requested.",
+    "invoices": "Invoices",
+    "impersonations": "Sign-ins as the client",
+    "errors": {
+      "notFound": "Not found.",
+      "invalid": "Please check the fields.",
+      "selfAction": "You can't do this on your own account.",
+      "staffOnly": "This concerns a team member — administrator rights are required.",
+      "blocked": "The account is blocked.",
+      "managedByProvider": "The client pays online — change the plan in their subscription (Stripe).",
+      "noManualPlan": "The client has no manually granted plan.",
+      "notRefundable": "This payment can't be refunded.",
+      "refundAmount": "Invalid refund amount.",
+      "providerError": "The payment provider returned an error.",
+      "reasonRequired": "Give a reason (at least 3 characters)."
+    }
+  },
+  "impersonation": {
+    "title": "Sign in as client",
+    "confirm": "You'll be signed in as {email}.",
+    "reason": "Reason: {reason}",
+    "rules": "The session lasts 30 minutes and is recorded in the audit log. Payments and purchases are blocked.",
+    "invalid": "The link has expired or was already used. Start the session again in the admin panel.",
+    "continue": "Continue",
+    "banner": "Acting as {email} (team: {admin}) — session until {until}.",
+    "end": "End"
+  },
+  "adminModeration": {
+    "reportsTitle": "Content reports",
+    "sitesTitle": "Sites",
+    "noReports": "No reports.",
+    "suspended": "suspended",
+    "reportStatus": {
+      "OPEN": "Open",
+      "ACTIONED": "Sites suspended",
+      "DISMISSED": "Dismissed"
+    },
+    "categories": {
+      "ILLEGAL": "Illegal content",
+      "COPYRIGHT": "Copyright",
+      "PRIVACY": "Privacy / personal data",
+      "FRAUD": "Fraud / phishing",
+      "HATE": "Hate speech / violence",
+      "OTHER": "Other"
+    },
+    "reporter": "Reporter: {email}",
+    "decision": {
+      "suspend": "Suspend site",
+      "dismiss": "Dismiss report"
+    },
+    "reasonFor": {
+      "suspend": "Statement of reasons for the site owner",
+      "dismiss": "Statement of reasons for the reporter"
+    },
+    "resolution": "Decision: {reason}",
+    "all": "All",
+    "suspendedFilter": "Suspended",
+    "search": "Name, address, email or domain",
+    "searchButton": "Search",
+    "published": "published",
+    "draft": "unpublished",
+    "openReports": "{count, plural, one {# open report} other {# open reports}}",
+    "paymentSuspension": "Suspended for non-payment",
+    "suspend": "Suspend",
+    "unsuspend": "Restore",
+    "reason": {
+      "PAYMENT": "non-payment",
+      "MODERATION": "moderation",
+      "placeholder": "Reason (sent to the owner)"
+    },
+    "errors": {
+      "reasonRequired": "Give a reason (at least 5 characters).",
+      "notFound": "Not found.",
+      "alreadyResolved": "The report is already resolved.",
+      "notModerated": "This site isn't suspended by moderation."
+    }
+  },
+  "report": {
+    "title": "Report content",
+    "intro": "You're reporting content published on the site \"{site}\". We'll review the report without undue delay.",
+    "unknownSite": "The site this report is about wasn't found.",
+    "url": "Address of the page with the content",
+    "category": "Type of violation",
+    "description": "Description — why the content is illegal or against the terms",
+    "email": "Your email (optional — we'll tell you the decision)",
+    "privacy": "Your IP address is not stored. We use the email only to reply to the report.",
+    "submit": "Send report",
+    "sent": "Thank you — the report was received.",
+    "categories": {
+      "ILLEGAL": "Illegal content",
+      "COPYRIGHT": "Copyright",
+      "PRIVACY": "Privacy / personal data",
+      "FRAUD": "Fraud / phishing",
+      "HATE": "Hate speech / violence",
+      "OTHER": "Other"
+    },
+    "errors": {
+      "invalid": "Complete the form (description at least 10 characters).",
+      "rateLimited": "Too many reports. Try again later."
+    }
+  },
+  "adminPlans": {
+    "title": "Plans",
+    "save": "Save",
+    "create": "Create plan",
+    "saved": "Saved.",
+    "newPlan": "New plan",
+    "inactive": "inactive",
+    "subscribers": "{count, plural, one {# subscriber} other {# subscribers}}",
+    "syncPrices": "Sync prices to Stripe",
+    "synced": "Synced.",
+    "setPrice": "Set price",
+    "notSynced": "price not in Stripe yet",
+    "previous": "previous: {prices}",
+    "unlimited": "unlimited",
+    "interval": {
+      "MONTH": "Monthly price (PLN gross)",
+      "YEAR": "Yearly price (PLN gross)"
+    },
+    "blockTiers": "Required block tiers",
+    "fields": {
+      "name": "Name",
+      "slug": "Identifier",
+      "position": "Order",
+      "trialDays": "Trial days",
+      "maxSites": "Sites",
+      "maxPagesPerSite": "Pages per site",
+      "maxProjects": "Projects",
+      "storageMb": "Storage (MB)",
+      "description": "Description",
+      "isActive": "Active (for sale)"
+    }
+  },
+  "adminStaff": {
+    "title": "Team",
+    "add": "Add a team member",
+    "grant": "Grant role",
+    "saved": "Saved.",
+    "email": "Email of an existing account",
+    "role": "Role",
+    "change": "Change",
+    "blocked": "blocked",
+    "hint": "The person needs an account. The \"Client\" role removes them from the team. The last administrator can't be demoted.",
+    "roles": {
+      "ADMIN": "Administrator",
+      "SUPPORT": "Support",
+      "CLIENT": "Client"
+    }
   }
 }

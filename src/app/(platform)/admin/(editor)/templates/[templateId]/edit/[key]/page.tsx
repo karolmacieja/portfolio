@@ -3,9 +3,8 @@ import { notFound } from "next/navigation";
 
 import { parseRenderableContent } from "@/blocks/content";
 import { PageEditor } from "@/components/editor/site-editor";
-import { Role } from "@/generated/prisma/enums";
 import { platformUrl } from "@/lib/env";
-import { requireRole } from "@/server/auth/session";
+import { requirePermission } from "@/server/auth/session";
 import { publishTemplateFromEditorAction, saveTemplatePageAction } from "@/server/templates/actions";
 import { getTemplateForAdmin } from "@/server/templates/admin";
 import { TemplateError } from "@/server/templates/errors";
@@ -18,7 +17,7 @@ export default async function TemplateEditorPage({
   params,
 }: PageProps<"/admin/templates/[templateId]/edit/[key]">) {
   const { templateId, key } = await params;
-  await requireRole([Role.ADMIN], `/templates/${templateId}/edit/${key}`);
+  await requirePermission("templates.manage", `/templates/${templateId}/edit/${key}`);
   let template: Awaited<ReturnType<typeof getTemplateForAdmin>>;
   try {
     template = await getTemplateForAdmin(templateId);

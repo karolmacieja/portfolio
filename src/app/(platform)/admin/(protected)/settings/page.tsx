@@ -4,9 +4,15 @@ import { getTranslations } from "next-intl/server";
 import { DomainSettingsForm } from "@/components/admin/domain-admin-forms";
 import { InvoicingSettingsForm } from "@/components/admin/invoice-forms";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Role } from "@/generated/prisma/enums";
-import { requireRole } from "@/server/auth/session";
+import { requirePermission } from "@/server/auth/session";
+import { ActionForm } from "@/components/admin/action-form";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { saveBillingSettingsAction, saveMailTextAction } from "@/server/admin/catalog-actions";
+import { getBillingSettings } from "@/server/billing/settings";
 import { getDomainSettings } from "@/server/domains/settings";
+import { getMailOverrides } from "@/server/mail/overrides";
+import { LINK_MAIL_KINDS } from "@/server/mail/templates";
 import { getInvoicingSettings, VAT_RATES } from "@/server/invoicing/settings";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -16,10 +22,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** Platform settings (ADMIN). Phase 6: invoicing (VAT rate, seller data); more in Phase 8. */
 export default async function AdminSettingsPage() {
-  await requireRole([Role.ADMIN], "/settings");
-  const [settings, domainSettings, t] = await Promise.all([
+  await requirePermission("settings.manage", "/settings");
+  const [settings, domainSettings, billing, overrides, t] = await Promise.all([
     getInvoicingSettings(),
     getDomainSettings(),
+    getBillingSettings(),
+    getMailOverrides(),
     getTranslations("adminSettings"),
   ]);
   const { seller } = settings;
@@ -47,6 +55,97 @@ export default async function AdminSettingsPage() {
               sellerBankAccount: seller.bankAccount,
             }}
           />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("billing")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ActionForm
+            action={saveBillingSettingsAction}
+            hidden={{}}
+            label={t("save")}
+            success={t("saved")}
+            testId="billing-settings-form"
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="billing-grace">{t("gracePeriodDays")}</Label>
+                <Input
+                  id="billing-grace"
+                  name="gracePeriodDays"
+                  type="number"
+                  min={0}
+                  max={60}
+                  defaultValue={billing.gracePeriodDays}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="billing-reminders">{t("reminderDays")}</Label>
+                <Input
+                  id="billing-reminders"
+                  name="reminderDays"
+                  defaultValue={billing.reminderDays.join(", ")}
+                />
+              </div>
+            </div>
+          </ActionForm>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("mailTexts")}</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <p className="text-sm text-muted-foreground">{t("mailTextsHint")}</p>
+          {(["pl", "en"] as const).flatMap((locale) =>
+            LINK_MAIL_KINDS.map((kind) => {
+              const override = overrides[locale]?.[kind] ?? {};
+              return (
+                <details
+                  key={`${locale}-${kind}`}
+                  className="rounded-md border p-3"
+                  open={Boolean(override.subject || override.intro || override.cta)}
+                >
+                  <summary className="cursor-pointer text-sm">
+                    {locale.toUpperCase()} · {t(`mailKinds.${kind}`)}
+                  </summary>
+                  <ActionForm
+                    action={saveMailTextAction}
+                    hidden={{ locale, kind }}
+                    label={t("save")}
+                    success={t("saved")}
+                    className="mt-3 grid gap-2"
+                  >
+                    <Input
+                      name="subject"
+                      defaultValue={override.subject ?? ""}
+                      placeholder={t("mailSubject")}
+                      aria-label={t("mailSubject")}
+                      maxLength={200}
+                    />
+                    <textarea
+                      name="intro"
+                      defaultValue={override.intro ?? ""}
+                      placeholder={t("mailIntro")}
+                      aria-label={t("mailIntro")}
+                      maxLength={2000}
+                      rows={3}
+                      className="rounded-md border bg-background p-2 text-sm"
+                    />
+                    <Input
+                      name="cta"
+                      defaultValue={override.cta ?? ""}
+                      placeholder={t("mailCta")}
+                      aria-label={t("mailCta")}
+                      maxLength={100}
+                    />
+                  </ActionForm>
+                </details>
+              );
+            }),
+          )}
         </CardContent>
       </Card>
       <Card>

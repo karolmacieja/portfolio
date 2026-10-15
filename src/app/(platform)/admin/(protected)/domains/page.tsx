@@ -6,11 +6,10 @@ import { AdminCheckDomainButton, RetryDomainOrderButton } from "@/components/adm
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DomainOrderStatus, DomainStatus, Role } from "@/generated/prisma/enums";
+import { DomainOrderStatus, DomainStatus } from "@/generated/prisma/enums";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { STAFF_ROLES } from "@/server/auth/roles";
-import { requireRole } from "@/server/auth/session";
+import { requirePermission } from "@/server/auth/session";
 import { listAllDomainOrders, listAllDomains } from "@/server/domains/admin";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -20,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** All custom domains (DNS/SSL state) and domain registrations; staff view, admins retry registrations. */
 export default async function AdminDomainsPage({ searchParams }: PageProps<"/admin/domains">) {
-  const user = await requireRole(STAFF_ROLES, "/domains");
+  await requirePermission("domains.manage", "/domains");
   const params = await searchParams;
   const status = Object.values(DomainStatus).find((s) => s === params.status);
   const q = typeof params.q === "string" ? params.q.trim().slice(0, 100) : "";
@@ -166,9 +165,7 @@ export default async function AdminDomainsPage({ searchParams }: PageProps<"/adm
                   )}
                 </td>
                 <td className="px-4 py-2">
-                  {user.role === Role.ADMIN && order.status === DomainOrderStatus.FAILED && (
-                    <RetryDomainOrderButton orderId={order.id} />
-                  )}
+                  {order.status === DomainOrderStatus.FAILED && <RetryDomainOrderButton orderId={order.id} />}
                 </td>
               </tr>
             ))}

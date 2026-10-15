@@ -6,9 +6,10 @@ import { z } from "zod";
 
 import { lockRulesSchema } from "@/blocks/locks";
 import { imageUrlSchema } from "@/blocks/schemas";
-import { Role, TemplateStatus } from "@/generated/prisma/enums";
+import { TemplateStatus } from "@/generated/prisma/enums";
 import { formValues, type ActionState } from "@/server/action-state";
-import { requireRole } from "@/server/auth/session";
+import { audit } from "@/server/audit";
+import { requirePermission } from "@/server/auth/session";
 import { enqueueThumbnail } from "@/server/jobs/queues";
 import { invalidateTags } from "@/server/sites/invalidate";
 import { themeSchema } from "@/themes/theme";
@@ -16,9 +17,21 @@ import { themeSchema } from "@/themes/theme";
 import * as admin from "./admin";
 import { TemplateError } from "./errors";
 
-/** Template authoring actions: ADMIN only. */
+/** Template authoring actions: staff with templates.manage. Changes are audited (not autosaves). */
 
-const ADMIN_ONLY = [Role.ADMIN] as const;
+const staff = () => requirePermission("templates.manage");
+
+/** Records the action when it succeeded and passes the result through. */
+async function audited(
+  result: ActionState,
+  actor: { id: string },
+  action: string,
+  templateId: string,
+  metadata?: Record<string, unknown>,
+) {
+  if (result.ok) await audit(actor, action, { type: "Template", id: templateId }, metadata);
+  return result;
+}
 const id = z.string().min(1).max(64);
 
 async function run(
@@ -43,7 +56,7 @@ async function run(
 }
 
 export async function createTemplateAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  await requireRole(ADMIN_ONLY);
+  const actor = await staff();
   const values = formValues(formData);
   const parsed = z
     .object({
@@ -60,6 +73,7 @@ export async function createTemplateAction(_prev: ActionState, formData: FormDat
     if (error instanceof TemplateError) return { error: `templates.errors.${error.code}`, values };
     throw error;
   }
+  await audit(actor, "template.create", { type: "Template", id: templateId }, { slug: parsed.data.slug });
   redirect(`/templates/${templateId}`);
 }
 
@@ -93,27 +107,34 @@ const metaSchema = z.object({
 });
 
 export async function updateTemplateMetaAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  await requireRole(ADMIN_ONLY);
+  const actor = await staff();
   const values = formValues(formData);
   const parsed = metaSchema.safeParse(values);
   if (!parsed.success) return { error: "templates.errors.slugInvalid", values };
   const { templateId, isNew, isFeatured, isPremium, price, ...meta } = parsed.data;
   const zloty = Number((price ?? "").replace(",", "."));
-  return run(
-    () =>
-      admin.updateTemplateMeta(templateId, {
-        ...meta,
-        isNew: isNew === "on",
-        isFeatured: isFeatured === "on",
-        isPremium: isPremium === "on",
-        priceAmount: Number.isFinite(zloty) && zloty > 0 ? Math.round(zloty * 100) : null,
-      }),
-    values,
+  const data = {
+    ...meta,
+    isNew: isNew === "on",
+    isFeatured: isFeatured === "on",
+    isPremium: isPremium === "on",
+    priceAmount: Number.isFinite(zloty) && zloty > 0 ? Math.round(zloty * 100) : null,
+  };
+  return audited(
+    await run(() => admin.updateTemplateMeta(templateId, data), values),
+    actor,
+    "template.update",
+    templateId,
+    {
+      accessTier: data.accessTier,
+      isPremium: data.isPremium,
+      priceAmount: data.priceAmount,
+    },
   );
 }
 
 export async function addTemplatePageAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  await requireRole(ADMIN_ONLY);
+  await staff();
   const values = formValues(formData);
   const parsed = z
     .object({ templateId: id, title: z.string().trim().min(1).max(120), path: z.string().max(200) })
@@ -124,14 +145,14 @@ export async function addTemplatePageAction(_prev: ActionState, formData: FormDa
 }
 
 export async function removeTemplatePageAction(formData: FormData): Promise<void> {
-  await requireRole(ADMIN_ONLY);
+  await staff();
   await run(() =>
     admin.removeTemplatePage(id.parse(formData.get("templateId")), id.parse(formData.get("key"))),
   );
 }
 
 export async function saveTemplateThemeAction(templateId: string, theme: unknown): Promise<ActionState> {
-  await requireRole(ADMIN_ONLY);
+  await staff();
   const parsed = themeSchema.safeParse(theme);
   if (!parsed.success) return { error: "templates.errors.invalidContent" };
   return run(() => admin.saveTemplateTheme(templateId, parsed.data));
@@ -146,7 +167,7 @@ export async function saveTemplatePageAction(
   content: unknown,
   lockRules: unknown,
 ): Promise<EditorResult> {
-  await requireRole(ADMIN_ONLY);
+  await staff();
   const rules = lockRulesSchema.safeParse(lockRules ?? {});
   try {
     await admin.saveTemplatePage(templateId, key, content, rules.success ? rules.data : {});
@@ -170,11 +191,12 @@ export async function publishTemplateFromEditorAction(
   content: unknown,
   lockRules: unknown,
 ): Promise<EditorResult> {
-  const user = await requireRole(ADMIN_ONLY);
+  const user = await staff();
   const saved = await saveTemplatePageAction(templateId, key, content, lockRules);
   if (!saved.ok) return saved;
   try {
     invalidateTags((await publish(templateId, user.id)).invalidate);
+    await audit(user, "template.publish", { type: "Template", id: templateId });
     return { ok: true };
   } catch (error) {
     if (error instanceof TemplateError) return { ok: false, error: error.code, details: error.details };
@@ -183,21 +205,31 @@ export async function publishTemplateFromEditorAction(
 }
 
 export async function publishTemplateAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  const user = await requireRole(ADMIN_ONLY);
-  return run(() => publish(id.parse(formData.get("templateId")), user.id));
+  const user = await staff();
+  const templateId = id.parse(formData.get("templateId"));
+  return audited(await run(() => publish(templateId, user.id)), user, "template.publish", templateId);
 }
 
 export async function setTemplateStatusAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  await requireRole(ADMIN_ONLY);
+  const actor = await staff();
   const status = z.enum([TemplateStatus.PUBLISHED, TemplateStatus.ARCHIVED]).parse(formData.get("status"));
-  return run(() => admin.setTemplateStatus(id.parse(formData.get("templateId")), status));
+  const templateId = id.parse(formData.get("templateId"));
+  return audited(
+    await run(() => admin.setTemplateStatus(templateId, status)),
+    actor,
+    "template.status",
+    templateId,
+    {
+      status,
+    },
+  );
 }
 
 export async function addTemplateOverrideAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireRole(ADMIN_ONLY);
+  const actor = await staff();
   const values = formValues(formData);
   const parsed = z
     .object({
@@ -208,7 +240,7 @@ export async function addTemplateOverrideAction(
     .safeParse(values);
   if (!parsed.success) return { error: "templates.errors.notFound", values };
   const { templateId, planId, userEmail } = parsed.data;
-  return run(
+  const result = await run(
     () =>
       admin.addTemplateOverride(templateId, {
         planId: planId || undefined,
@@ -216,9 +248,12 @@ export async function addTemplateOverrideAction(
       }),
     values,
   );
+  return audited(result, actor, "template.override.add", templateId, { planId, userEmail });
 }
 
 export async function removeTemplateOverrideAction(formData: FormData): Promise<void> {
-  await requireRole(ADMIN_ONLY);
-  await run(() => admin.removeTemplateOverride(id.parse(formData.get("overrideId"))));
+  const actor = await staff();
+  const overrideId = id.parse(formData.get("overrideId"));
+  const result = await run(() => admin.removeTemplateOverride(overrideId));
+  if (result.ok) await audit(actor, "template.override.remove", { type: "TemplateOverride", id: overrideId });
 }

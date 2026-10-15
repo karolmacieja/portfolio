@@ -12,10 +12,9 @@ import { ThemeEditor } from "@/components/site-manager/theme-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Role } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { platformUrl } from "@/lib/env";
-import { requireRole } from "@/server/auth/session";
+import { requirePermission } from "@/server/auth/session";
 import {
   removeTemplateOverrideAction,
   removeTemplatePageAction,
@@ -29,7 +28,7 @@ import "@/blocks/blocks.css";
 
 export default async function AdminTemplatePage({ params }: PageProps<"/admin/templates/[templateId]">) {
   const { templateId } = await params;
-  await requireRole([Role.ADMIN], `/templates/${templateId}`);
+  await requirePermission("templates.manage", `/templates/${templateId}`);
   let template: Awaited<ReturnType<typeof getTemplateForAdmin>>;
   try {
     template = await getTemplateForAdmin(templateId);

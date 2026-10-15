@@ -6,11 +6,10 @@ import { InvoiceActionButton } from "@/components/admin/invoice-forms";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { InvoiceStatus, KsefStatus, Role } from "@/generated/prisma/enums";
+import { InvoiceStatus, KsefStatus } from "@/generated/prisma/enums";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { STAFF_ROLES } from "@/server/auth/roles";
-import { requireRole } from "@/server/auth/session";
+import { requirePermission } from "@/server/auth/session";
 import { invoiceAttentionCounts, listInvoices } from "@/server/invoicing/admin";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -23,7 +22,7 @@ const KSEF = Object.values(KsefStatus);
 
 /** All invoices with issuing/KSeF status; FAILED = "needs manual review". Staff may view, admins act. */
 export default async function AdminInvoicesPage({ searchParams }: PageProps<"/admin/invoices">) {
-  const user = await requireRole(STAFF_ROLES, "/invoices");
+  await requirePermission("invoices.manage", "/invoices");
   const params = await searchParams;
   const status = STATUSES.find((s) => s === params.status);
   const ksef = KSEF.find((s) => s === params.ksef);
@@ -36,7 +35,6 @@ export default async function AdminInvoicesPage({ searchParams }: PageProps<"/ad
     getFormatter(),
     getLocale(),
   ]);
-  const isAdmin = user.role === Role.ADMIN;
   const filterLink = (next: { status?: string; ksef?: string }) => {
     const search = new URLSearchParams();
     if (next.status) search.set("status", next.status);
@@ -162,10 +160,10 @@ export default async function AdminInvoicesPage({ searchParams }: PageProps<"/ad
                           PDF
                         </a>
                       )}
-                      {isAdmin && invoice.status === "FAILED" && (
+                      {invoice.status === "FAILED" && (
                         <InvoiceActionButton invoiceId={invoice.id} kind="retry" />
                       )}
-                      {isAdmin && invoice.status === "ISSUED" && invoice.ksefStatus === "ERROR" && (
+                      {invoice.status === "ISSUED" && invoice.ksefStatus === "ERROR" && (
                         <InvoiceActionButton invoiceId={invoice.id} kind="ksef" />
                       )}
                     </div>
