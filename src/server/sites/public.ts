@@ -35,6 +35,8 @@ export type PublishedSite = {
   /** Published theme JSON; parse with parseTheme(). */
   theme: unknown;
   navigation: { path: string; title: string; updatedAt: string }[];
+  /** Active primary custom domain: every other host of the site redirects to it. */
+  primaryHost: string | null;
 };
 
 export type PublishedPage = {
@@ -84,6 +86,11 @@ export function getPublishedSite(siteId: string): Promise<PublishedSite | null> 
             orderBy: [{ position: "asc" }, { createdAt: "asc" }],
             select: { path: true, title: true, publishedAt: true },
           },
+          domains: {
+            where: { isPrimary: true, status: DomainStatus.ACTIVE },
+            select: { hostname: true },
+            take: 1,
+          },
         },
       });
       if (!site) return null;
@@ -105,6 +112,7 @@ export function getPublishedSite(siteId: string): Promise<PublishedSite | null> 
           title: page.title,
           updatedAt: (page.publishedAt ?? site.updatedAt).toISOString(),
         })),
+        primaryHost: site.domains[0]?.hostname ?? null,
       };
     },
     ["published-site", siteId],

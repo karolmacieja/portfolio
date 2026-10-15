@@ -34,7 +34,14 @@ type LinkMailKind =
   | "sitesSuspended"
   | "subscriptionEnded"
   | "invoiceIssued"
-  | "correctionIssued";
+  | "correctionIssued"
+  | "domainActive"
+  | "domainsDisabledSoon"
+  | "domainsDisabled"
+  | "domainRegistered"
+  | "domainRenewalReminder"
+  | "domainRenewalFailed"
+  | "domainExpired";
 
 export async function buildLinkMail(params: {
   kind: LinkMailKind;
@@ -42,7 +49,7 @@ export async function buildLinkMail(params: {
   url: string;
   locale: Locale;
   brand: string;
-  values?: { days?: number; number?: string };
+  values?: { days?: number; number?: string; domain?: string };
   attachments?: MailMessage["attachments"];
 }): Promise<MailMessage> {
   const messages = await loadMessages(params.locale);
@@ -51,6 +58,7 @@ export async function buildLinkMail(params: {
     brand: params.brand,
     days: String(params.values?.days ?? ""),
     number: params.values?.number ?? "",
+    domain: params.values?.domain ?? "",
   };
   const parts = { intro: t("intro", values), cta: t("cta"), url: params.url, ignore: t("ignore") };
   return {

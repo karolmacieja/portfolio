@@ -3,6 +3,8 @@ import type { NextRequest } from "next/server";
 import { getEnv } from "@/lib/env";
 import { getRequestOrigin } from "@/lib/request";
 
+import { customDomainUrl } from "@/server/sites/urls";
+
 import { loadSiteForHost } from "../data";
 
 function escapeXml(value: string) {
@@ -13,7 +15,10 @@ export async function GET(request: NextRequest, { params }: RouteContext<"/sites
   const site = await loadSiteForHost((await params).host);
   if (!site?.published || site.suspended) return new Response("Not Found", { status: 404 });
 
-  const origin = getRequestOrigin(request.headers, getEnv().APP_PROTOCOL);
+  // URLs always use the site's main address (the primary domain when it has one).
+  const origin = site.primaryHost
+    ? customDomainUrl(site.primaryHost, "")
+    : getRequestOrigin(request.headers, getEnv().APP_PROTOCOL);
   const urls = site.noIndex
     ? []
     : site.navigation.map(

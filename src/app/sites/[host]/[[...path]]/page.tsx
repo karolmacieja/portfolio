@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { Render } from "@puckeditor/core/rsc";
 
 import { renderConfig } from "@/blocks/config";
 import { parseRenderableContent } from "@/blocks/content";
 import { getTranslator } from "@/i18n/translator";
 import { getPublishedPage } from "@/server/sites/public";
+import { customDomainUrl } from "@/server/sites/urls";
 
 import { loadSiteForHost } from "../data";
 
@@ -24,6 +25,10 @@ async function load(params: Params) {
   const site = await loadSiteForHost(host);
   if (!site || !site.published) return null;
   const pagePath = (path ?? []).map((segment) => decodeURIComponent(segment)).join("/");
+  // A site with an active primary domain is served only there; the subdomain and other domains redirect.
+  if (site.primaryHost && decodeURIComponent(host) !== site.primaryHost) {
+    permanentRedirect(customDomainUrl(site.primaryHost, `/${(path ?? []).join("/")}`));
+  }
   const page = site.suspended ? null : await getPublishedPage(site.id, pagePath);
   return { site, page };
 }
