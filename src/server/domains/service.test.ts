@@ -109,11 +109,11 @@ describe.skipIf(!process.env.DATABASE_URL)("custom domains (database)", async ()
     const domains = await service.listSiteDomains(userId, siteId);
     expect(domains.map((d) => d.status)).toEqual(["ACTIVE", "ACTIVE"]);
     expect(invalidated).toEqual(expect.arrayContaining([`host:${host("jan")}`, `site:${siteId}`]));
-    // Domains are checked concurrently, so the mails may arrive in any order.
-    expect(mailer.sent.map((m) => m.subject.split(" ")[1]).sort()).toEqual([
-      host("jan"),
-      `www.${host("jan")}`,
-    ]);
+    // Domains are checked concurrently, so the mails may arrive in any order. checkDomains also sees domains of
+    // test files running in parallel, so only this test's hostnames are compared.
+    const mine = new Set([host("jan"), `www.${host("jan")}`]);
+    const mailed = mailer.sent.map((m) => m.subject.split(" ")[1]).filter((name) => mine.has(name ?? ""));
+    expect(mailed.sort()).toEqual([host("jan"), `www.${host("jan")}`]);
   });
 
   it("keeps other tenants out and protects verified hostnames, releasing stale claims", async () => {
