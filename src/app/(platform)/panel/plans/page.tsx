@@ -3,15 +3,15 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { ChangePlanForm, CheckoutForm, ResendVerificationButton } from "@/components/billing/billing-forms";
+import { PlanFeatureList } from "@/components/plans/plan-features";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatMegabytes, formatMoney } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { requireUser } from "@/server/auth/session";
 import { getBillingOverview } from "@/server/billing/service";
-import { PLAN_FEATURES } from "@/server/entitlements";
 import { listActivePlans } from "@/server/plans/service";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -103,22 +103,7 @@ export default async function PlansPage({ searchParams }: PageProps<"/panel/plan
                     </p>
                   )}
                 </div>
-                <ul className="grid gap-1 text-sm">
-                  <li>{t("plans.limits.maxSites", { count: plan.maxSites })}</li>
-                  <li>{t("plans.limits.maxPagesPerSite", { count: plan.maxPagesPerSite })}</li>
-                  <li>
-                    {plan.maxProjects === null
-                      ? t("plans.limits.maxProjectsUnlimited")
-                      : t("plans.limits.maxProjects", { count: plan.maxProjects })}
-                  </li>
-                  <li>{t("plans.limits.storageMb", { size: formatMegabytes(plan.storageMb, locale) })}</li>
-                  {plan.accessTiers.map((tier) => (
-                    <li key={tier}>{t(`plans.tiers.${tier}`)}</li>
-                  ))}
-                  {PLAN_FEATURES.filter((feature) => plan.features[feature]).map((feature) => (
-                    <li key={feature}>✓ {t(`plans.features.${feature}`)}</li>
-                  ))}
-                </ul>
+                <PlanFeatureList plan={plan} />
               </CardContent>
               <CardFooter className="grid gap-2">
                 {!price || currentPrice ? null : !entitled ? (

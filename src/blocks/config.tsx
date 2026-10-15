@@ -24,9 +24,15 @@ const components = Object.fromEntries(
     type,
     {
       defaultProps: blockDefaults[type],
-      render: (({ puck, ...props }: { puck?: { isEditing?: boolean } } & Record<string, unknown>) => {
+      render: (({
+        puck,
+        ...props
+      }: { puck?: { isEditing?: boolean; metadata?: Record<string, unknown> } } & Record<
+        string,
+        unknown
+      >) => {
         const Component = Blocks[type] as unknown as AnyRender;
-        return <Component {...props} editMode={Boolean(puck?.isEditing)} />;
+        return <Component {...props} editMode={Boolean(puck?.isEditing)} site={puck?.metadata} />;
       }) as AnyRender,
     },
   ]),

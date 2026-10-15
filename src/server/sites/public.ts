@@ -32,6 +32,8 @@ export type PublishedSite = {
   faviconUrl: string | null;
   /** "Made with {BRAND}" footer; hidden on plans with the removeBranding feature. */
   showBranding: boolean;
+  /** Plan feature `analytics`: published pages carry the cookie-less view beacon. */
+  analytics: boolean;
   /** Published theme JSON; parse with parseTheme(). */
   theme: unknown;
   navigation: { path: string; title: string; updatedAt: string }[];
@@ -91,6 +93,7 @@ export function getPublishedSite(siteId: string): Promise<PublishedSite | null> 
             select: { hostname: true },
             take: 1,
           },
+          owner: { select: { deletionScheduledAt: true } },
         },
       });
       if (!site) return null;
@@ -99,13 +102,15 @@ export function getPublishedSite(siteId: string): Promise<PublishedSite | null> 
         id: site.id,
         name: site.name,
         locale: site.locale,
-        published: site.publishedAt !== null,
+        // A pending account deletion takes the client's sites offline at once.
+        published: site.publishedAt !== null && !site.owner.deletionScheduledAt,
         suspended: site.status === SiteStatus.SUSPENDED,
         suspensionReason: site.suspensionReason,
         description: site.description,
         noIndex: site.noIndex,
         faviconUrl: site.faviconUrl,
         showBranding: !can(entitlements, "removeBranding"),
+        analytics: can(entitlements, "analytics"),
         theme: site.themePublished,
         navigation: site.pages.map((page) => ({
           path: page.path,

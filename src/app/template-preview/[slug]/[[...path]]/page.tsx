@@ -3,6 +3,7 @@ import { Render } from "@puckeditor/core/rsc";
 
 import { renderConfig } from "@/blocks/config";
 import { parseRenderableContent } from "@/blocks/content";
+import { siteRenderMetadata } from "@/server/sites/render-metadata";
 import { parseTemplatePages } from "@/server/templates/schema";
 import { getTemplatePreview } from "@/server/templates/public";
 
@@ -22,5 +23,5 @@ export default async function TemplatePreviewPage({
   const page = parseTemplatePages(preview.pages).find((p) => p.path === pagePath);
   const content = page ? parseRenderableContent(page.content) : null;
   if (!content) notFound();
-  return <Render config={renderConfig} data={content} />;
+  return <Render config={renderConfig} data={content} metadata={await siteRenderMetadata("pl")} />;
 }

@@ -9,7 +9,7 @@ import { db } from "@/lib/db";
  * trials are reported separately); yearly prices count as 1/12 per month.
  */
 
-export type MonthPoint = { month: string; value: number };
+export type MonthPoint = { key: string; value: number };
 
 function lastMonths(count: number, now: Date): string[] {
   return Array.from({ length: count }, (_, i) => {
@@ -25,7 +25,7 @@ function bucket(months: string[], rows: { at: Date | null; value: number }[]): M
     const key = row.at.toISOString().slice(0, 7);
     if (totals.has(key)) totals.set(key, totals.get(key)! + row.value);
   }
-  return months.map((month) => ({ month, value: totals.get(month)! }));
+  return months.map((month) => ({ key: month, value: totals.get(month)! }));
 }
 
 export async function getDashboardMetrics(now = new Date()) {

@@ -5,10 +5,15 @@ import { DomainSettingsForm } from "@/components/admin/domain-admin-forms";
 import { InvoicingSettingsForm } from "@/components/admin/invoice-forms";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requirePermission } from "@/server/auth/session";
-import { ActionForm } from "@/components/admin/action-form";
+import { ActionForm } from "@/components/action-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { saveBillingSettingsAction, saveMailTextAction } from "@/server/admin/catalog-actions";
+import {
+  saveBillingSettingsAction,
+  saveLegalDocumentAction,
+  saveMailTextAction,
+} from "@/server/admin/catalog-actions";
+import { getLegalDocument, LEGAL_KINDS } from "@/server/legal/service";
 import { getBillingSettings } from "@/server/billing/settings";
 import { getDomainSettings } from "@/server/domains/settings";
 import { getMailOverrides } from "@/server/mail/overrides";
@@ -20,16 +25,19 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("title") };
 }
 
-/** Platform settings (ADMIN). Phase 6: invoicing (VAT rate, seller data); more in Phase 8. */
+/** Platform settings (ADMIN): invoicing, billing, legal documents, mail texts, domain pricing. */
 export default async function AdminSettingsPage() {
   await requirePermission("settings.manage", "/settings");
-  const [settings, domainSettings, billing, overrides, t] = await Promise.all([
+  const [settings, domainSettings, billing, overrides, terms, privacy, t] = await Promise.all([
     getInvoicingSettings(),
     getDomainSettings(),
     getBillingSettings(),
     getMailOverrides(),
+    getLegalDocument("terms"),
+    getLegalDocument("privacy"),
     getTranslations("adminSettings"),
   ]);
+  const legal = { terms, privacy };
   const { seller } = settings;
   return (
     <main className="mx-auto grid max-w-4xl gap-6 px-6 py-8">
@@ -93,6 +101,40 @@ export default async function AdminSettingsPage() {
           </ActionForm>
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("legal")}</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <p className="text-sm text-muted-foreground">{t("legalHint")}</p>
+          {LEGAL_KINDS.map((kind) => (
+            <details key={kind} className="rounded-md border p-3" data-testid={`legal-${kind}`}>
+              <summary className="cursor-pointer text-sm">
+                {t(`legalKinds.${kind}`)} ·{" "}
+                {legal[kind].isDefault
+                  ? t("legalDraft")
+                  : t("legalVersion", { version: legal[kind].version })}
+              </summary>
+              <ActionForm
+                action={saveLegalDocumentAction}
+                hidden={{ kind }}
+                label={t("save")}
+                success={t("saved")}
+                className="mt-3 grid gap-2"
+              >
+                <textarea
+                  name="content"
+                  defaultValue={legal[kind].content}
+                  aria-label={t(`legalKinds.${kind}`)}
+                  rows={20}
+                  className="rounded-md border bg-background p-2 font-mono text-xs"
+                />
+              </ActionForm>
+            </details>
+          ))}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>{t("mailTexts")}</CardTitle>

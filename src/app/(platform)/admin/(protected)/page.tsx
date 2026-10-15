@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { BarChart } from "@/components/admin/bar-chart";
+import { BarChart } from "@/components/charts/bar-chart";
 import { formatMoney } from "@/lib/format";
 import { getDashboardMetrics } from "@/server/admin/metrics";
 import { hasPermission } from "@/server/auth/permissions";
@@ -91,7 +91,7 @@ export default async function AdminPage() {
               title={t("charts.revenue")}
               points={metrics.revenue}
               format={money}
-              monthLabel={monthLabel}
+              label={monthLabel}
               tableLabel={t("charts.table")}
               testId="chart-revenue"
             />
@@ -99,21 +99,21 @@ export default async function AdminPage() {
               title={t("charts.newClients")}
               points={metrics.newClients}
               format={count}
-              monthLabel={monthLabel}
+              label={monthLabel}
               tableLabel={t("charts.table")}
             />
             <BarChart
               title={t("charts.cancellations")}
               points={metrics.cancellations}
               format={count}
-              monthLabel={monthLabel}
+              label={monthLabel}
               tableLabel={t("charts.table")}
             />
             <BarChart
               title={t("charts.failed")}
               points={metrics.failedPayments}
               format={count}
-              monthLabel={monthLabel}
+              label={monthLabel}
               tableLabel={t("charts.table")}
             />
           </div>

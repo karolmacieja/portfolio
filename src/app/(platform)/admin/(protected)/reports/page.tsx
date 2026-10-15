@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
 
-import { ActionForm } from "@/components/admin/action-form";
+import { ActionForm } from "@/components/action-form";
 import { Badge } from "@/components/ui/badge";
 import { AbuseReportStatus } from "@/generated/prisma/enums";
 import { cn } from "@/lib/utils";

@@ -9,7 +9,7 @@ import type { ActionState } from "@/server/action-state";
 type Action = (prev: ActionState, formData: FormData) => Promise<ActionState>;
 
 /**
- * A small staff form: hidden fields, optional inputs, one submit button, optional confirmation and
+ * A small form: hidden fields, optional inputs, one submit button, optional confirmation and
  * the action's success/error message.
  */
 export function ActionForm({

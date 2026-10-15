@@ -9,7 +9,12 @@ import { EditorPlaceholder, Paragraphs, Section, SectionHeading, SiteImage, Site
  * inside the editor, where empty blocks show a placeholder instead of disappearing.
  */
 
-type Ctx = { editMode?: boolean };
+/** Translated system texts of the published site (passed as Puck `metadata`, see `siteRenderMetadata`). */
+export type SiteRenderMetadata = {
+  contact?: Record<"name" | "email" | "message" | "submit" | "sent" | "error" | "honeypot", string>;
+};
+
+type Ctx = { editMode?: boolean; site?: SiteRenderMetadata };
 type Props<K extends keyof BlockProps> = BlockProps[K] & Ctx;
 
 const gridCols = {
@@ -282,20 +287,66 @@ export function Testimonials({ heading, items, editMode }: Props<"Testimonials">
   );
 }
 
-/** Visual form only; submissions (storage, inbox, email, anti-spam) are wired up in Phase 9. */
-export function ContactForm({ heading, description, submitLabel }: Props<"ContactForm">) {
+/**
+ * Plain HTML form posting to /_p/contact on the site's own host (no JavaScript, the page stays static).
+ * The handler redirects back with #contact-sent / #contact-error, shown via CSS :target.
+ */
+export function ContactForm({ heading, description, submitLabel, editMode, site }: Props<"ContactForm">) {
+  const labels = site?.contact;
   return (
     <Section>
       <div className="site-container-narrow">
         <SectionHeading>{heading}</SectionHeading>
         {description && <Paragraphs text={description} className="site-muted mb-6" />}
-        <form className="grid gap-4">
-          <input className="site-input" name="name" placeholder="Imię / Name" disabled />
-          <input className="site-input" name="email" type="email" placeholder="E-mail" disabled />
-          <textarea className="site-input min-h-32" name="message" placeholder="…" disabled />
+        <form className="grid gap-4" method="post" action="/_p/contact" data-testid="contact-form">
+          <p id="contact-sent" className="site-form-notice" role="status">
+            {labels?.sent}
+          </p>
+          <p id="contact-error" className="site-form-notice site-form-notice-error" role="alert">
+            {labels?.error}
+          </p>
+          <label className="grid gap-1">
+            <span className="site-muted text-sm">{labels?.name ?? "Imię / Name"}</span>
+            <input
+              className="site-input"
+              name="name"
+              required
+              maxLength={200}
+              autoComplete="name"
+              disabled={editMode}
+            />
+          </label>
+          <label className="grid gap-1">
+            <span className="site-muted text-sm">{labels?.email ?? "E-mail"}</span>
+            <input
+              className="site-input"
+              name="email"
+              type="email"
+              required
+              maxLength={200}
+              autoComplete="email"
+              disabled={editMode}
+            />
+          </label>
+          <label className="grid gap-1">
+            <span className="site-muted text-sm">{labels?.message ?? "…"}</span>
+            <textarea
+              className="site-input min-h-32"
+              name="message"
+              required
+              minLength={2}
+              maxLength={5000}
+              disabled={editMode}
+            />
+          </label>
+          {/* Honeypot: hidden from people, filled in by bots. */}
+          <label className="site-hp" aria-hidden="true">
+            {labels?.honeypot}
+            <input name="website" tabIndex={-1} autoComplete="off" />
+          </label>
           <div>
-            <button type="button" className="site-btn" disabled>
-              {submitLabel || "→"}
+            <button type={editMode ? "button" : "submit"} className="site-btn" disabled={editMode}>
+              {submitLabel || labels?.submit || "→"}
             </button>
           </div>
         </form>

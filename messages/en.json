@@ -44,14 +44,16 @@
       "invalidInput": "Please check the highlighted fields.",
       "generic": "Something went wrong. Please try again.",
       "accessDenied": "Access denied.",
-      "oauthAccountNotLinked": "This email is already linked to a different sign-in method."
+      "oauthAccountNotLinked": "This email is already linked to a different sign-in method.",
+      "termsRequired": "Accept the terms of service to create an account."
     },
     "passwordRules": {
       "tooShort": "Password must be at least 10 characters long.",
       "tooLong": "Password is too long.",
       "needsLetter": "Password must contain a letter.",
       "needsDigit": "Password must contain a digit."
-    }
+    },
+    "acceptTerms": "I accept the <terms>terms of service</terms> and have read the <privacy>privacy policy</privacy>."
   },
   "dashboard": {
     "title": "Welcome, {name}!"
@@ -197,6 +199,31 @@
       "intro": "We reviewed your report. Decision and reasons: {reason}",
       "cta": "Go to the website",
       "ignore": "This message was generated automatically."
+    },
+    "footer": "A message from {brand}.",
+    "contactMessage": {
+      "subject": "New message from {domain}",
+      "intro": "{name} ({email}) wrote through the contact form on {domain}. You can reply to this email directly.",
+      "cta": "Open messages",
+      "ignore": "The message is also saved in your panel."
+    },
+    "passwordReset": {
+      "subject": "Set a new password — {brand}",
+      "intro": "We received a request to change the password of your account. The link is valid for one hour and works once.",
+      "cta": "Set a new password",
+      "ignore": "If this wasn't you, ignore this message — your password stays the same."
+    },
+    "accountDeletionScheduled": {
+      "subject": "Your account will be deleted in {days} days — {brand}",
+      "intro": "As requested, we will delete your account and all its data in {days} days. Your sites are already offline and your plan and domains will not renew. Until then you can cancel the deletion on your account page.",
+      "cta": "Cancel deletion",
+      "ignore": "Invoices are kept for 5 years as required by tax law."
+    },
+    "accountDeleted": {
+      "subject": "Your account has been deleted — {brand}",
+      "intro": "We deleted your account, sites and files. Subscriptions have ended. Domains you bought from us stay registered until the end of the paid period — below are the transfer codes to move them to another registrar.",
+      "cta": "Go to the website",
+      "ignore": "Invoices are kept for 5 years as required by tax law."
     }
   },
   "site": {
@@ -206,7 +233,16 @@
     "notFoundTitle": "Page not found",
     "notFoundDescription": "The page you are looking for doesn't exist or has been moved.",
     "navigation": "Navigation",
-    "report": "Report content"
+    "report": "Report content",
+    "contact": {
+      "name": "Name",
+      "email": "Email",
+      "message": "Message",
+      "submit": "Send",
+      "sent": "Thank you! Your message has been sent.",
+      "error": "The message could not be sent. Check the fields and try again later.",
+      "honeypot": "Leave this field empty"
+    }
   },
   "sites": {
     "title": "Your sites",
@@ -275,7 +311,9 @@
     "unpublishedChanges": "You have unpublished changes.",
     "template": "Template",
     "domains": "Domains",
-    "moderated": "The site was suspended by moderation: {reason}. Reply to the email to appeal."
+    "moderated": "The site was suspended by moderation: {reason}. Reply to the email to appeal.",
+    "stats": "Statistics",
+    "messages": "Messages"
   },
   "pages": {
     "title": "Pages",
@@ -947,7 +985,8 @@
       "zw": "zw — VAT exempt"
     },
     "errors": {
-      "invalid": "Please check the fields."
+      "invalid": "Please check the fields.",
+      "legalTooShort": "The document is too short."
     },
     "domains": "Domains",
     "domainFields": {
@@ -985,8 +1024,20 @@
       "siteModerated": "Site suspended (moderation)",
       "siteRestored": "Site restored",
       "reportReceived": "Report received",
-      "reportDecision": "Report decision"
-    }
+      "reportDecision": "Report decision",
+      "contactMessage": "Contact form message",
+      "passwordReset": "Password reset",
+      "accountDeletionScheduled": "Account deletion scheduled",
+      "accountDeleted": "Account deleted"
+    },
+    "legal": "Terms and privacy policy",
+    "legalHint": "A draft based on how the service works — have a lawyer review it before launch. Format: \"## \" heading, \"- \" list item, blank line between paragraphs. Placeholders '{company}', '{email}', '{brand}', '{domain}' are filled with the seller data from the invoicing settings. Every change to the terms is a new version: signed-in clients are asked to accept it.",
+    "legalKinds": {
+      "terms": "Terms of service",
+      "privacy": "Privacy policy"
+    },
+    "legalDraft": "default draft (not saved)",
+    "legalVersion": "version {version}"
   },
   "domains": {
     "title": "Domains",
@@ -1331,6 +1382,225 @@
       "ADMIN": "Administrator",
       "SUPPORT": "Support",
       "CLIENT": "Client"
+    }
+  },
+  "messages": {
+    "title": "Messages",
+    "description": "Messages sent through the contact forms on your sites. You also get a copy of each by email.",
+    "back": "Dashboard",
+    "empty": "No messages yet. Add the \"Contact form\" block to your site.",
+    "new": "New",
+    "meta": "{site} · {path} · {date}",
+    "markRead": "Mark as read",
+    "markUnread": "Mark as unread",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this message?",
+    "nav": "Messages",
+    "navUnread": "Messages ({count})",
+    "errors": {
+      "notFound": "Message not found."
+    },
+    "exportCsv": "Download CSV",
+    "exportLocked": "Exporting messages to CSV is available on higher plans.",
+    "exportUpgrade": "See plans"
+  },
+  "stats": {
+    "title": "Statistics",
+    "description": "Last 30 days. Counted without cookies or stored IP addresses — visitors are recognised within a single day only.",
+    "locked": "Visit statistics are available on higher plans.",
+    "upgrade": "See plans",
+    "views": "Page views (30 days)",
+    "visitors": "Visitors (daily sum, 30 days)",
+    "viewsChart": "Page views per day",
+    "visitorsChart": "Visitors per day",
+    "table": "Show table",
+    "topPages": "Most viewed pages",
+    "empty": "No data yet — statistics appear after the first visits."
+  },
+  "account": {
+    "title": "Account",
+    "back": "Dashboard",
+    "nav": "Account",
+    "profile": "Profile",
+    "name": "Name",
+    "language": "Panel and email language",
+    "save": "Save",
+    "saved": "Saved.",
+    "emailLine": "Email address: {email}.",
+    "emailVerified": "Verified.",
+    "emailNotVerified": "Not verified — check your inbox.",
+    "email": "Email address",
+    "password": "Password",
+    "noPassword": "You sign in with a link or Google. You can also set a password.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "passwordHint": "At least 10 characters, including a letter and a digit.",
+    "changePassword": "Change password",
+    "setPassword": "Set password",
+    "passwordChanged": "Password changed. Other devices will be signed out.",
+    "billingTitle": "Billing details and payments",
+    "billingDescription": "Buyer details on invoices, plan, payments and invoices.",
+    "billingProfile": "Billing details",
+    "billingOverview": "Payments and invoices",
+    "sessions": "Sessions",
+    "sessionsDescription": "Sign out on all devices, e.g. after losing a phone (within a few minutes).",
+    "signOutEverywhere": "Sign out everywhere",
+    "exportTitle": "Data export",
+    "exportDescription": "Download all data we keep about you (account, sites, content, messages, payments, invoices) as a JSON file.",
+    "exportButton": "Download data",
+    "deleteTitle": "Delete account",
+    "deleteDescription": "Your sites go offline at once and your plan and domains stop renewing. After {days} days we delete the account, sites, files and messages; subscriptions end without a refund. Purchased domains stay registered until the end of the paid period and we email their transfer codes. Invoices are kept for 5 years (tax law).",
+    "confirmEmail": "Type your email address to confirm",
+    "deleteSubmit": "Delete account",
+    "deleteConfirm": "Really delete the account? Your sites go offline immediately.",
+    "deletionScheduled": "Your account will be deleted on {date}. Your sites are offline. If you change your mind, cancel the deletion — resume your plan and domain renewals under Billing.",
+    "cancelDeletion": "Cancel deletion",
+    "forgotTitle": "Forgot your password?",
+    "forgotDescription": "Enter your account email — we will send a link to set a new password.",
+    "sendResetLink": "Send link",
+    "resetSent": "If an account with this address exists, we sent a password reset link. Check your inbox (the link is valid for an hour).",
+    "backToLogin": "Back to sign in",
+    "forgotLink": "Forgot your password?",
+    "resetTitle": "Set a new password",
+    "resetDescription": "After saving we sign you in and sign out other devices.",
+    "errors": {
+      "invalid": "Check the fields.",
+      "invalidEmail": "Enter a valid email address.",
+      "wrongPassword": "Wrong password.",
+      "rateLimited": "Too many attempts. Try again later.",
+      "resetInvalid": "The password reset link is invalid or has expired.",
+      "confirmEmail": "The email address doesn't match your account.",
+      "impersonation": "This is not available while signed in as the client.",
+      "notFound": "Account not found.",
+      "alreadyScheduled": "Account deletion is already scheduled.",
+      "notScheduled": "Account deletion is not scheduled.",
+      "staffAccount": "Team accounts are removed by an administrator.",
+      "provider": "Renewals could not be stopped at the payment provider. Try again later."
+    }
+  },
+  "marketing": {
+    "nav": {
+      "label": "Menu",
+      "templates": "Templates",
+      "pricing": "Pricing",
+      "signIn": "Sign in",
+      "register": "Create account"
+    },
+    "footer": {
+      "label": "Information",
+      "copyright": "© {year} {brand}",
+      "terms": "Terms of service",
+      "privacy": "Privacy policy"
+    },
+    "hero": {
+      "pricing": "See pricing",
+      "note": "Editing is free — you only pay to publish."
+    },
+    "features": {
+      "title": "Everything a portfolio needs",
+      "editor": {
+        "title": "Drag & drop editor",
+        "text": "Build sections from ready blocks: galleries, projects, CV, testimonials, a contact form. Preview on phone, tablet and desktop."
+      },
+      "templates": {
+        "title": "Designer templates",
+        "text": "Start from a template and change colours, fonts and layout in one click without losing content."
+      },
+      "domain": {
+        "title": "Your own domain",
+        "text": "Your site works right away on our domain. Connect your own domain or buy one from us — SSL is set up automatically."
+      },
+      "stats": {
+        "title": "Cookie-free statistics",
+        "text": "See how many people visit your portfolio, with no cookie banners and no visitor tracking."
+      },
+      "contact": {
+        "title": "Contact form",
+        "text": "Messages from clients arrive in your inbox and panel. The form is protected against spam."
+      },
+      "invoices": {
+        "title": "VAT invoices and KSeF",
+        "text": "Every payment comes with an invoice, sent to KSeF automatically. Pay by card, BLIK or transfer."
+      }
+    },
+    "templates": {
+      "title": "Templates",
+      "subtitle": "Pick a starting point — change everything in the editor.",
+      "preview": "Preview",
+      "new": "New",
+      "premium": "Premium"
+    },
+    "steps": {
+      "title": "How it works",
+      "account": {
+        "title": "Create an account",
+        "text": "Just an email — no card."
+      },
+      "template": {
+        "title": "Choose a template",
+        "text": "Add your projects, photos and description."
+      },
+      "publish": {
+        "title": "Publish",
+        "text": "Pick a plan and share your portfolio at your own address."
+      }
+    },
+    "pricing": {
+      "title": "Pricing",
+      "subtitle": "Pick a plan to start — change it any time.",
+      "cta": "Get started"
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "trial": {
+        "q": "Can I try it for free?",
+        "a": "Yes. The account and editing are free, and every plan has a trial period. We charge only after it ends."
+      },
+      "publish": {
+        "q": "Do I have to pay to build a site?",
+        "a": "No. A paid plan is needed only to publish the site at a public address."
+      },
+      "cancel": {
+        "q": "How do I cancel?",
+        "a": "Cancel the subscription in the panel under Billing. The plan stays active until the end of the paid period."
+      },
+      "invoices": {
+        "q": "Will I get an invoice?",
+        "a": "Yes, every payment gets a VAT invoice, sent to KSeF and by email. Enter your billing details (including a company tax ID) in the panel."
+      },
+      "domain": {
+        "q": "Can I use my own domain?",
+        "a": "Higher plans let you connect your own domain or buy a new one in the panel. The domain stays yours, also after changing the plan."
+      },
+      "data": {
+        "q": "What about my data?",
+        "a": "Download or delete your data any time in the account settings. Details in the privacy policy."
+      }
+    },
+    "legal": {
+      "terms": "Terms of service",
+      "privacy": "Privacy policy",
+      "updated": "Last updated: {date}"
+    }
+  },
+  "onboarding": {
+    "title": "Getting started",
+    "termsUpdated": "We updated the <terms>terms of service</terms>. Please read and accept the new version.",
+    "termsMissing": "Accept the <terms>terms of service</terms> to use the service.",
+    "acceptTerms": "I accept the terms",
+    "plan": {
+      "title": "Choose a plan",
+      "text": "Editing is free; a plan is needed to publish. You can choose it later.",
+      "cta": "See plans"
+    },
+    "template": {
+      "title": "Choose a template",
+      "text": "Start from a ready design or a blank site (form below).",
+      "cta": "Browse templates"
+    },
+    "publish": {
+      "title": "Add content and publish",
+      "text": "Drag blocks in the editor, add projects and click “Publish”."
     }
   }
 }

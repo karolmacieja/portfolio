@@ -71,6 +71,7 @@ test("new user registers and lands on the dashboard", async ({ page }) => {
   await page.getByLabel("Imię i nazwisko").fill("Anna Nowak");
   await page.getByLabel("Adres e-mail").fill(email);
   await page.getByLabel("Hasło").fill("bezpieczne-haslo-1");
+  await page.getByTestId("terms-checkbox").check();
   await page.getByRole("button", { name: "Załóż konto" }).click();
 
   await expect(page).toHaveURL(/\/dashboard$/);
@@ -83,6 +84,7 @@ test("registration rejects a weak password", async ({ page }) => {
   await page.getByLabel("Imię i nazwisko").fill("Anna Nowak");
   await page.getByLabel("Adres e-mail").fill("weak@example.com");
   await page.getByLabel("Hasło").fill("short1");
+  await page.getByTestId("terms-checkbox").check();
   await page.getByRole("button", { name: "Załóż konto" }).click();
   await expect(page.getByText("Hasło musi mieć co najmniej 10 znaków.")).toBeVisible();
 });

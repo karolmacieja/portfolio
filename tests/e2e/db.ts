@@ -72,3 +72,35 @@ export async function createPremiumTemplate(priceAmount: number): Promise<string
   );
   return slug;
 }
+
+/** Publishes a one-page site (home page with the given blocks) owned by `email`; returns its slug. */
+export async function createPublishedSite(
+  email: string,
+  blocks: object[],
+): Promise<{ siteId: string; slug: string }> {
+  const slug = `e2e-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const content = JSON.stringify({ content: blocks, root: { props: {} } });
+  const [site] = await sql<{ id: string }>(
+    `INSERT INTO "Site" (id, "ownerId", name, slug, "publishedAt", "updatedAt")
+     SELECT gen_random_uuid()::text, id, 'Strona E2E', $2, now(), now() FROM "User" WHERE email = $1 RETURNING id`,
+    [email, slug],
+  );
+  if (!site) throw new Error(`User ${email} is missing`);
+  await sql(
+    `INSERT INTO "Page" (id, "siteId", path, title, "draftContent", "publishedContent", "publishedAt", "updatedAt")
+     VALUES (gen_random_uuid()::text, $1, '', 'Start', $2::jsonb, $2::jsonb, now(), now())`,
+    [site.id, content],
+  );
+  return { siteId: site.id, slug };
+}
+
+/** A password reset link as the mail would carry it (the database keeps only the token's hash). */
+export async function createPasswordResetLink(email: string): Promise<string> {
+  const { createHash, randomBytes } = await import("node:crypto");
+  const token = randomBytes(32).toString("base64url");
+  await sql(
+    `INSERT INTO "VerificationToken" (identifier, token, expires) VALUES ($1, $2, now() + interval '1 hour')`,
+    [`reset-password:${email}`, createHash("sha256").update(token).digest("hex")],
+  );
+  return `/reset-password?token=${encodeURIComponent(token)}`;
+}

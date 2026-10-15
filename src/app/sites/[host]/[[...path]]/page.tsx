@@ -6,6 +6,7 @@ import { renderConfig } from "@/blocks/config";
 import { parseRenderableContent } from "@/blocks/content";
 import { getTranslator } from "@/i18n/translator";
 import { getPublishedPage } from "@/server/sites/public";
+import { siteRenderMetadata } from "@/server/sites/render-metadata";
 import { customDomainUrl } from "@/server/sites/urls";
 
 import { loadSiteForHost } from "../data";
@@ -73,5 +74,21 @@ export default async function SitePage({ params }: { params: Params }) {
   const content = parseRenderableContent(data.page.content);
   if (!content) notFound();
 
-  return <Render config={renderConfig} data={content} />;
+  return (
+    <>
+      <Render config={renderConfig} data={content} metadata={await siteRenderMetadata(data.site.locale)} />
+      {data.site.analytics && (
+        // Cookie-less view counter (see src/server/stats/collect.ts).
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={`/_p/v?p=${encodeURIComponent(data.page.path)}`}
+          alt=""
+          width={1}
+          height={1}
+          className="site-beacon"
+          data-testid="stats-beacon"
+        />
+      )}
+    </>
+  );
 }

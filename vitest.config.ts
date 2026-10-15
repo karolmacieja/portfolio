@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => ({
   },
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts", "prisma/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx", "prisma/**/*.test.ts"],
     clearMocks: true,
     // Loads .env (and .env.test / .env.test.local overrides) so DB/Redis-backed tests can run locally.
     // Point DATABASE_URL at a separate database in .env.test.local to keep dev data apart.

@@ -1,25 +1,133 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
+import { PricingTable } from "@/components/marketing/pricing";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { db } from "@/lib/db";
 import { getEnv, platformUrl } from "@/lib/env";
 
-// Placeholder landing page; the marketing site is built in Phase 9.
-export default async function HomePage() {
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("home");
+  return { title: { absolute: `${getEnv().BRAND_NAME} — ${t("title")}` }, description: t("subtitle") };
+}
+
+const FEATURES = ["editor", "templates", "domain", "stats", "contact", "invoices"] as const;
+const STEPS = ["account", "template", "publish"] as const;
+
+/** Landing page: hero, features, template showcase, steps, pricing. */
+export default async function HomePage({ searchParams }: PageProps<"/marketing">) {
+  const { interval } = await searchParams;
   const t = await getTranslations();
+  const templates = await db.template.findMany({
+    where: { status: "PUBLISHED" },
+    orderBy: [{ isFeatured: "desc" }, { position: "asc" }, { createdAt: "asc" }],
+    take: 6,
+    select: { slug: true, name: true, description: true, thumbnailUrl: true, isPremium: true, isNew: true },
+  });
+
   return (
-    <main className="mx-auto flex min-h-dvh max-w-3xl flex-col items-center justify-center gap-6 px-6 text-center">
-      <p className="text-sm font-medium text-muted-foreground">{getEnv().BRAND_NAME}</p>
-      <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">{t("home.title")}</h1>
-      <p className="text-lg text-muted-foreground">{t("home.subtitle")}</p>
-      <div className="flex gap-3">
-        <Button asChild size="lg">
-          <Link href={platformUrl("app", "/register")}>{t("home.cta")}</Link>
-        </Button>
-        <Button asChild size="lg" variant="outline">
-          <Link href={platformUrl("app", "/login")}>{t("common.signIn")}</Link>
-        </Button>
-      </div>
+    <main>
+      <section className="mx-auto grid max-w-4xl justify-items-center gap-6 px-6 py-20 text-center">
+        <h1 className="text-4xl font-bold tracking-tight sm:text-6xl" data-testid="home-title">
+          {t("home.title")}
+        </h1>
+        <p className="max-w-2xl text-lg text-muted-foreground">{t("home.subtitle")}</p>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Button asChild size="lg">
+            <a href={platformUrl("app", "/register")}>{t("home.cta")}</a>
+          </Button>
+          <Button asChild size="lg" variant="outline">
+            <Link href="/cennik">{t("marketing.hero.pricing")}</Link>
+          </Button>
+        </div>
+        <p className="text-sm text-muted-foreground">{t("marketing.hero.note")}</p>
+      </section>
+
+      <section className="bg-muted/40">
+        <div className="mx-auto grid max-w-6xl gap-8 px-6 py-16">
+          <h2 className="text-center text-3xl font-semibold">{t("marketing.features.title")}</h2>
+          <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((feature) => (
+              <li key={feature} className="grid gap-2 rounded-lg border bg-background p-6">
+                <h3 className="font-semibold">{t(`marketing.features.${feature}.title`)}</h3>
+                <p className="text-sm text-muted-foreground">{t(`marketing.features.${feature}.text`)}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {templates.length > 0 && (
+        <section id="szablony" className="mx-auto grid max-w-6xl scroll-mt-8 gap-8 px-6 py-16">
+          <div className="grid gap-2 text-center">
+            <h2 className="text-3xl font-semibold">{t("marketing.templates.title")}</h2>
+            <p className="text-muted-foreground">{t("marketing.templates.subtitle")}</p>
+          </div>
+          <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-testid="home-templates">
+            {templates.map((template) => (
+              <li key={template.slug} className="overflow-hidden rounded-lg border">
+                <a
+                  href={`/template-preview/${template.slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group grid"
+                >
+                  <div className="aspect-[4/3] bg-muted">
+                    {template.thumbnailUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={template.thumbnailUrl}
+                        alt=""
+                        className="h-full w-full object-cover object-top transition group-hover:opacity-90"
+                        loading="lazy"
+                      />
+                    )}
+                  </div>
+                  <div className="grid gap-1 p-4">
+                    <p className="flex items-center gap-2 font-medium">
+                      {template.name}
+                      {template.isNew && <Badge variant="secondary">{t("marketing.templates.new")}</Badge>}
+                      {template.isPremium && (
+                        <Badge variant="outline">{t("marketing.templates.premium")}</Badge>
+                      )}
+                    </p>
+                    {template.description && (
+                      <p className="line-clamp-2 text-sm text-muted-foreground">{template.description}</p>
+                    )}
+                    <span className="text-sm underline-offset-4 group-hover:underline">
+                      {t("marketing.templates.preview")} →
+                    </span>
+                  </div>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className="bg-muted/40">
+        <div className="mx-auto grid max-w-5xl gap-8 px-6 py-16">
+          <h2 className="text-center text-3xl font-semibold">{t("marketing.steps.title")}</h2>
+          <ol className="grid gap-6 sm:grid-cols-3">
+            {STEPS.map((step, index) => (
+              <li key={step} className="grid gap-2 text-center">
+                <span className="mx-auto flex size-10 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground">
+                  {index + 1}
+                </span>
+                <h3 className="font-semibold">{t(`marketing.steps.${step}.title`)}</h3>
+                <p className="text-sm text-muted-foreground">{t(`marketing.steps.${step}.text`)}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section id="cennik" className="mx-auto grid max-w-6xl scroll-mt-8 gap-8 px-6 py-16">
+        <h2 className="text-center text-3xl font-semibold">{t("marketing.pricing.title")}</h2>
+        <PricingTable interval={interval === "year" ? "yearly" : "monthly"} basePath="/" />
+      </section>
     </main>
   );
 }

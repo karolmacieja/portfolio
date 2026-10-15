@@ -12,6 +12,7 @@ import { requirePermission } from "@/server/auth/session";
 import { billingSettingsSchema } from "@/server/billing/settings";
 import { ACCESS_TIERS, PLAN_FEATURES } from "@/server/entitlements";
 import { saveMailOverride } from "@/server/mail/overrides";
+import { LEGAL_KINDS, saveLegalDocument } from "@/server/legal/service";
 import { LINK_MAIL_KINDS } from "@/server/mail/templates";
 import { invalidateTags } from "@/server/sites/invalidate";
 
@@ -193,4 +194,16 @@ export async function saveMailTextAction(_prev: ActionState, formData: FormData)
   await audit(actor, "settings.mailText", null, { locale, kind });
   refresh();
   return { ok: true, values };
+}
+
+export async function saveLegalDocumentAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const actor = await requirePermission("settings.manage");
+  const parsed = z
+    .object({ kind: z.enum(LEGAL_KINDS), content: z.string().trim().min(50).max(100_000) })
+    .safeParse(formValues(formData));
+  if (!parsed.success) return { error: "adminSettings.errors.legalTooShort" };
+  const version = await saveLegalDocument(parsed.data.kind, parsed.data.content);
+  await audit(actor, "settings.legal", null, { kind: parsed.data.kind, version });
+  refresh();
+  return { ok: true };
 }

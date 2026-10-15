@@ -23,4 +23,8 @@ export const RATE_LIMITS = {
   domainChangesPerUser: { limit: 30, windowMs: 10 * 60_000 },
   domainAuthCodePerUser: { limit: 5, windowMs: 60 * 60_000 },
   abuseReportPerIp: { limit: 5, windowMs: 60 * 60_000 },
+  contactPerSender: { limit: 5, windowMs: 60 * 60_000 },
+  contactPerSite: { limit: 100, windowMs: 24 * 60 * 60_000 },
+  passwordResetPerEmail: { limit: 3, windowMs: 60 * 60_000 },
+  passwordResetPerIp: { limit: 10, windowMs: 60 * 60_000 },
 } as const;

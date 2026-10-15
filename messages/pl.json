@@ -44,14 +44,16 @@
       "invalidInput": "Sprawdź poprawność wypełnionych pól.",
       "generic": "Coś poszło nie tak. Spróbuj ponownie.",
       "accessDenied": "Brak dostępu.",
-      "oauthAccountNotLinked": "Ten e-mail jest już powiązany z innym sposobem logowania."
+      "oauthAccountNotLinked": "Ten e-mail jest już powiązany z innym sposobem logowania.",
+      "termsRequired": "Zaakceptuj regulamin, aby założyć konto."
     },
     "passwordRules": {
       "tooShort": "Hasło musi mieć co najmniej 10 znaków.",
       "tooLong": "Hasło jest za długie.",
       "needsLetter": "Hasło musi zawierać literę.",
       "needsDigit": "Hasło musi zawierać cyfrę."
-    }
+    },
+    "acceptTerms": "Akceptuję <terms>regulamin</terms> i zapoznałem(-am) się z <privacy>polityką prywatności</privacy>."
   },
   "dashboard": {
     "title": "Witaj, {name}!"
@@ -197,6 +199,31 @@
       "intro": "Rozpatrzyliśmy Twoje zgłoszenie. Decyzja i uzasadnienie: {reason}",
       "cta": "Przejdź do serwisu",
       "ignore": "Wiadomość wygenerowana automatycznie."
+    },
+    "footer": "Wiadomość od {brand}.",
+    "contactMessage": {
+      "subject": "Nowa wiadomość ze strony {domain}",
+      "intro": "{name} ({email}) napisał(a) przez formularz kontaktowy na stronie {domain}. Możesz odpowiedzieć bezpośrednio na tego maila.",
+      "cta": "Otwórz wiadomości",
+      "ignore": "Wiadomość jest też zapisana w panelu."
+    },
+    "passwordReset": {
+      "subject": "Ustaw nowe hasło — {brand}",
+      "intro": "Otrzymaliśmy prośbę o zmianę hasła do Twojego konta. Link jest ważny przez godzinę i działa jeden raz.",
+      "cta": "Ustaw nowe hasło",
+      "ignore": "Jeśli to nie Ty, zignoruj tę wiadomość — Twoje hasło się nie zmieni."
+    },
+    "accountDeletionScheduled": {
+      "subject": "Twoje konto zostanie usunięte za {days} dni — {brand}",
+      "intro": "Zgodnie z Twoją prośbą usuniemy konto i wszystkie dane za {days} dni. Twoje strony są już niedostępne, a plan i domeny nie zostaną odnowione. Do tego czasu możesz anulować usunięcie na stronie konta.",
+      "cta": "Anuluj usunięcie",
+      "ignore": "Faktury przechowujemy przez 5 lat, jak wymagają przepisy podatkowe."
+    },
+    "accountDeleted": {
+      "subject": "Konto zostało usunięte — {brand}",
+      "intro": "Usunęliśmy Twoje konto, strony i pliki. Subskrypcje zostały zakończone. Jeśli masz kupione u nas domeny, pozostają zarejestrowane do końca opłaconego okresu — poniżej kody transferu, którymi przeniesiesz je do innego rejestratora.",
+      "cta": "Przejdź do serwisu",
+      "ignore": "Faktury przechowujemy przez 5 lat, jak wymagają przepisy podatkowe."
     }
   },
   "site": {
@@ -206,7 +233,16 @@
     "notFoundTitle": "Nie znaleziono strony",
     "notFoundDescription": "Strona, której szukasz, nie istnieje lub została przeniesiona.",
     "navigation": "Nawigacja",
-    "report": "Zgłoś treść"
+    "report": "Zgłoś treść",
+    "contact": {
+      "name": "Imię i nazwisko",
+      "email": "E-mail",
+      "message": "Wiadomość",
+      "submit": "Wyślij",
+      "sent": "Dziękujemy! Wiadomość została wysłana.",
+      "error": "Nie udało się wysłać wiadomości. Sprawdź pola i spróbuj ponownie później.",
+      "honeypot": "Nie wypełniaj tego pola"
+    }
   },
   "sites": {
     "title": "Twoje strony",
@@ -275,7 +311,9 @@
     "unpublishedChanges": "Masz nieopublikowane zmiany.",
     "template": "Szablon",
     "domains": "Domeny",
-    "moderated": "Strona została wstrzymana przez moderację: {reason}. Odpowiedz na wiadomość e-mail, aby się odwołać."
+    "moderated": "Strona została wstrzymana przez moderację: {reason}. Odpowiedz na wiadomość e-mail, aby się odwołać.",
+    "stats": "Statystyki",
+    "messages": "Wiadomości"
   },
   "pages": {
     "title": "Podstrony",
@@ -947,7 +985,8 @@
       "zw": "zw — zwolniony z VAT"
     },
     "errors": {
-      "invalid": "Sprawdź poprawność pól."
+      "invalid": "Sprawdź poprawność pól.",
+      "legalTooShort": "Treść dokumentu jest za krótka."
     },
     "domains": "Domeny",
     "domainFields": {
@@ -985,8 +1024,20 @@
       "siteModerated": "Strona wstrzymana (moderacja)",
       "siteRestored": "Strona przywrócona",
       "reportReceived": "Zgłoszenie przyjęte",
-      "reportDecision": "Decyzja w sprawie zgłoszenia"
-    }
+      "reportDecision": "Decyzja w sprawie zgłoszenia",
+      "contactMessage": "Wiadomość z formularza kontaktowego",
+      "passwordReset": "Reset hasła",
+      "accountDeletionScheduled": "Zaplanowane usunięcie konta",
+      "accountDeleted": "Konto usunięte"
+    },
+    "legal": "Regulamin i polityka prywatności",
+    "legalHint": "Szkic przygotowany na podstawie działania serwisu — przed startem zweryfikuj go z prawnikiem. Format: „## ” nagłówek, „- ” punkt listy, pusta linia między akapitami. Znaczniki '{company}', '{email}', '{brand}', '{domain}' wypełniamy danymi sprzedawcy z ustawień faktur. Każda zmiana regulaminu to nowa wersja: zalogowani klienci zobaczą prośbę o akceptację.",
+    "legalKinds": {
+      "terms": "Regulamin",
+      "privacy": "Polityka prywatności"
+    },
+    "legalDraft": "szkic domyślny (niezapisany)",
+    "legalVersion": "wersja {version}"
   },
   "domains": {
     "title": "Domeny",
@@ -1331,6 +1382,225 @@
       "ADMIN": "Administrator",
       "SUPPORT": "Wsparcie",
       "CLIENT": "Klient"
+    }
+  },
+  "messages": {
+    "title": "Wiadomości",
+    "description": "Wiadomości wysłane przez formularze kontaktowe na Twoich stronach. Kopię każdej dostajesz też mailem.",
+    "back": "Pulpit",
+    "empty": "Nie masz jeszcze żadnych wiadomości. Dodaj blok „Formularz kontaktowy” na swojej stronie.",
+    "new": "Nowa",
+    "meta": "{site} · {path} · {date}",
+    "markRead": "Oznacz jako przeczytaną",
+    "markUnread": "Oznacz jako nieprzeczytaną",
+    "delete": "Usuń",
+    "deleteConfirm": "Usunąć tę wiadomość?",
+    "nav": "Wiadomości",
+    "navUnread": "Wiadomości ({count})",
+    "errors": {
+      "notFound": "Nie znaleziono wiadomości."
+    },
+    "exportCsv": "Pobierz CSV",
+    "exportLocked": "Eksport wiadomości do CSV jest dostępny w wyższych planach.",
+    "exportUpgrade": "Zobacz plany"
+  },
+  "stats": {
+    "title": "Statystyki",
+    "description": "Ostatnie 30 dni. Liczymy bez ciasteczek i bez zapisywania adresów IP — odwiedzający rozpoznawani są tylko w obrębie jednego dnia.",
+    "locked": "Statystyki odwiedzin są dostępne w wyższych planach.",
+    "upgrade": "Zobacz plany",
+    "views": "Wyświetlenia (30 dni)",
+    "visitors": "Odwiedzający (suma dzienna, 30 dni)",
+    "viewsChart": "Wyświetlenia dziennie",
+    "visitorsChart": "Odwiedzający dziennie",
+    "table": "Pokaż tabelę",
+    "topPages": "Najczęściej oglądane podstrony",
+    "empty": "Brak danych — statystyki pojawią się po pierwszych odwiedzinach."
+  },
+  "account": {
+    "title": "Konto",
+    "back": "Pulpit",
+    "nav": "Konto",
+    "profile": "Profil",
+    "name": "Imię i nazwisko",
+    "language": "Język panelu i maili",
+    "save": "Zapisz",
+    "saved": "Zapisano.",
+    "emailLine": "Adres e-mail: {email}.",
+    "emailVerified": "Potwierdzony.",
+    "emailNotVerified": "Niepotwierdzony — sprawdź skrzynkę.",
+    "email": "Adres e-mail",
+    "password": "Hasło",
+    "noPassword": "Logujesz się linkiem lub kontem Google. Możesz też ustawić hasło.",
+    "currentPassword": "Obecne hasło",
+    "newPassword": "Nowe hasło",
+    "passwordHint": "Co najmniej 10 znaków, w tym litera i cyfra.",
+    "changePassword": "Zmień hasło",
+    "setPassword": "Ustaw hasło",
+    "passwordChanged": "Hasło zostało zmienione. Inne urządzenia zostaną wylogowane.",
+    "billingTitle": "Dane do faktur i płatności",
+    "billingDescription": "Dane nabywcy na fakturach, plan, płatności i faktury.",
+    "billingProfile": "Dane do faktur",
+    "billingOverview": "Płatności i faktury",
+    "sessions": "Sesje",
+    "sessionsDescription": "Wyloguj się na wszystkich urządzeniach, np. po zgubieniu telefonu (w ciągu kilku minut).",
+    "signOutEverywhere": "Wyloguj wszędzie",
+    "exportTitle": "Eksport danych",
+    "exportDescription": "Pobierz wszystkie dane, które o Tobie przechowujemy (konto, strony, treści, wiadomości, płatności, faktury), w pliku JSON.",
+    "exportButton": "Pobierz dane",
+    "deleteTitle": "Usunięcie konta",
+    "deleteDescription": "Strony przestaną być dostępne od razu, plan i domeny nie będą odnawiane. Po {days} dniach usuniemy konto, strony, pliki i wiadomości; subskrypcje zakończą się bez zwrotu. Kupione domeny pozostaną zarejestrowane do końca opłaconego okresu, a kody transferu wyślemy mailem. Faktury przechowujemy 5 lat (przepisy podatkowe).",
+    "confirmEmail": "Wpisz swój adres e-mail, aby potwierdzić",
+    "deleteSubmit": "Usuń konto",
+    "deleteConfirm": "Na pewno usunąć konto? Strony od razu przestaną działać.",
+    "deletionScheduled": "Konto zostanie usunięte {date}. Strony są niedostępne. Jeśli zmienisz zdanie, anuluj usunięcie — plan i odnowienia domen wznowisz w zakładce Płatności.",
+    "cancelDeletion": "Anuluj usunięcie",
+    "forgotTitle": "Nie pamiętasz hasła?",
+    "forgotDescription": "Podaj adres e-mail konta — wyślemy link do ustawienia nowego hasła.",
+    "sendResetLink": "Wyślij link",
+    "resetSent": "Jeśli konto o tym adresie istnieje, wysłaliśmy link do zmiany hasła. Sprawdź skrzynkę (link jest ważny godzinę).",
+    "backToLogin": "Wróć do logowania",
+    "forgotLink": "Nie pamiętasz hasła?",
+    "resetTitle": "Ustaw nowe hasło",
+    "resetDescription": "Po zapisaniu zalogujemy Cię, a inne urządzenia zostaną wylogowane.",
+    "errors": {
+      "invalid": "Sprawdź poprawność pól.",
+      "invalidEmail": "Podaj poprawny adres e-mail.",
+      "wrongPassword": "Nieprawidłowe hasło.",
+      "rateLimited": "Zbyt wiele prób. Spróbuj ponownie za jakiś czas.",
+      "resetInvalid": "Link do zmiany hasła jest nieprawidłowy lub wygasł.",
+      "confirmEmail": "Wpisany adres e-mail nie zgadza się z adresem konta.",
+      "impersonation": "Ta operacja jest niedostępna podczas logowania jako klient.",
+      "notFound": "Nie znaleziono konta.",
+      "alreadyScheduled": "Usunięcie konta jest już zaplanowane.",
+      "notScheduled": "Usunięcie konta nie jest zaplanowane.",
+      "staffAccount": "Konta zespołu usuwa administrator.",
+      "provider": "Nie udało się zatrzymać odnowień u operatora płatności. Spróbuj ponownie później."
+    }
+  },
+  "marketing": {
+    "nav": {
+      "label": "Menu",
+      "templates": "Szablony",
+      "pricing": "Cennik",
+      "signIn": "Zaloguj się",
+      "register": "Załóż konto"
+    },
+    "footer": {
+      "label": "Informacje",
+      "copyright": "© {year} {brand}",
+      "terms": "Regulamin",
+      "privacy": "Polityka prywatności"
+    },
+    "hero": {
+      "pricing": "Zobacz cennik",
+      "note": "Edycja jest bezpłatna — płacisz dopiero, gdy publikujesz."
+    },
+    "features": {
+      "title": "Wszystko, czego potrzebuje portfolio",
+      "editor": {
+        "title": "Edytor „przeciągnij i upuść”",
+        "text": "Układaj sekcje z gotowych bloków: galerie, projekty, CV, opinie, formularz kontaktowy. Podgląd na telefonie, tablecie i komputerze."
+      },
+      "templates": {
+        "title": "Szablony od projektantów",
+        "text": "Zacznij od gotowego szablonu i zmieniaj kolory, fonty i układ jednym kliknięciem, bez utraty treści."
+      },
+      "domain": {
+        "title": "Własna domena",
+        "text": "Strona działa od razu pod adresem w naszej domenie. Możesz podłączyć własną domenę lub kupić ją u nas — certyfikat SSL konfigurujemy automatycznie."
+      },
+      "stats": {
+        "title": "Statystyki bez ciasteczek",
+        "text": "Sprawdzaj, ile osób odwiedza Twoje portfolio, bez banerów cookies i bez śledzenia odwiedzających."
+      },
+      "contact": {
+        "title": "Formularz kontaktowy",
+        "text": "Wiadomości od klientów trafiają do Twojej skrzynki i panelu. Chronimy formularz przed spamem."
+      },
+      "invoices": {
+        "title": "Faktury VAT i KSeF",
+        "text": "Za każdą płatność dostajesz fakturę, automatycznie przekazaną do KSeF. Płacisz kartą, BLIK-iem lub przelewem."
+      }
+    },
+    "templates": {
+      "title": "Szablony",
+      "subtitle": "Wybierz punkt wyjścia — wszystko zmienisz w edytorze.",
+      "preview": "Podgląd",
+      "new": "Nowość",
+      "premium": "Premium"
+    },
+    "steps": {
+      "title": "Jak to działa",
+      "account": {
+        "title": "Załóż konto",
+        "text": "Wystarczy e-mail — bez karty."
+      },
+      "template": {
+        "title": "Wybierz szablon",
+        "text": "Dodaj swoje projekty, zdjęcia i opis."
+      },
+      "publish": {
+        "title": "Opublikuj",
+        "text": "Wybierz plan i udostępnij portfolio pod swoim adresem."
+      }
+    },
+    "pricing": {
+      "title": "Cennik",
+      "subtitle": "Wybierz plan na start — zmienisz go w każdej chwili.",
+      "cta": "Zacznij"
+    },
+    "faq": {
+      "title": "Najczęstsze pytania",
+      "trial": {
+        "q": "Czy mogę wypróbować za darmo?",
+        "a": "Tak. Konto i edycja stron są bezpłatne, a każdy plan ma okres próbny. Płatność pobieramy dopiero po jego zakończeniu."
+      },
+      "publish": {
+        "q": "Czy muszę płacić, żeby zbudować stronę?",
+        "a": "Nie. Płatny plan jest potrzebny dopiero do publikacji strony pod publicznym adresem."
+      },
+      "cancel": {
+        "q": "Jak zrezygnować?",
+        "a": "Subskrypcję anulujesz w panelu w zakładce Płatności. Plan działa do końca opłaconego okresu."
+      },
+      "invoices": {
+        "q": "Czy dostanę fakturę?",
+        "a": "Tak, za każdą płatność wystawiamy fakturę VAT, przesyłamy ją do KSeF i mailem. Dane do faktury (także firmowe z NIP) podajesz w panelu."
+      },
+      "domain": {
+        "q": "Czy mogę mieć własną domenę?",
+        "a": "W wyższych planach podłączysz własną domenę albo kupisz nową bezpośrednio w panelu. Domena jest Twoja, także po zmianie planu."
+      },
+      "data": {
+        "q": "Co z moimi danymi?",
+        "a": "Dane możesz w każdej chwili pobrać lub usunąć w ustawieniach konta. Szczegóły w polityce prywatności."
+      }
+    },
+    "legal": {
+      "terms": "Regulamin",
+      "privacy": "Polityka prywatności",
+      "updated": "Ostatnia zmiana: {date}"
+    }
+  },
+  "onboarding": {
+    "title": "Pierwsze kroki",
+    "termsUpdated": "Zmieniliśmy <terms>regulamin</terms>. Zapoznaj się z nową wersją i zaakceptuj ją.",
+    "termsMissing": "Zaakceptuj <terms>regulamin</terms>, aby korzystać z serwisu.",
+    "acceptTerms": "Akceptuję regulamin",
+    "plan": {
+      "title": "Wybierz plan",
+      "text": "Edycja jest bezpłatna; plan jest potrzebny do publikacji. Możesz wybrać go później.",
+      "cta": "Zobacz plany"
+    },
+    "template": {
+      "title": "Wybierz szablon",
+      "text": "Zacznij od gotowego projektu albo pustej strony (formularz poniżej).",
+      "cta": "Przeglądaj szablony"
+    },
+    "publish": {
+      "title": "Dodaj treści i opublikuj",
+      "text": "W edytorze przeciągaj bloki, dodaj projekty i kliknij „Opublikuj”."
     }
   }
 }

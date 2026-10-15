@@ -101,6 +101,7 @@ export function PageEditor({
 }: Props) {
   const t = useTranslations("editor");
   const tBlocks = useTranslations("blocks");
+  const tContact = useTranslations("site.contact");
   const tErrors = useTranslations(errorNamespace);
   const messages = useMessages();
   const router = useRouter();
@@ -202,6 +203,17 @@ export function PageEditor({
       onChange={onChange}
       onPublish={() => void publish()}
       dictionary={messages.puck}
+      metadata={{
+        contact: {
+          name: tContact("name"),
+          email: tContact("email"),
+          message: tContact("message"),
+          submit: tContact("submit"),
+          sent: tContact("sent"),
+          error: tContact("error"),
+          honeypot: tContact("honeypot"),
+        },
+      }}
       headerTitle={pageTitle}
       headerPath={`/${pagePath}`}
       height="100dvh"

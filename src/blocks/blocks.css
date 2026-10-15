@@ -84,6 +84,39 @@
   font: inherit;
 }
 
+/* Contact form outcome, shown when the redirect targets #contact-sent / #contact-error. */
+.site-form-notice {
+  display: none;
+  padding: 0.75rem 1rem;
+  border-radius: var(--site-radius, 0.5rem);
+  background: color-mix(in srgb, var(--site-primary, #111111) 12%, transparent);
+  scroll-margin-top: 6rem;
+}
+
+.site-form-notice:target {
+  display: block;
+}
+
+.site-form-notice-error {
+  background: color-mix(in srgb, #dc2626 14%, transparent);
+}
+
+.site-beacon {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.site-hp {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 .site-placeholder {
   display: flex;
   align-items: center;
