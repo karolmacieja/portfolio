@@ -322,3 +322,18 @@ Lightweight ADR log. Newest at the bottom. Business decisions confirmed by the o
      license or buying an own plan restores them. Plan dunning never pauses sites of members with an active seat.
 120. **Inline-priced subscriptions** (`createInlineSubscriptionCheckout`) for licenses and add-ons: no catalog price
      sync needed, the price is taken from our database at checkout; seat changes are prorated by the provider.
+
+## Phase 11
+
+121. **Net profit per price (owner: VAT, payment fee, server cost per client, other fixed costs)**: VAT out first,
+     fee on the gross amount (% + fixed per charge, so yearly prices pay the fixed part once), then the client's
+     share of costs for the billed period. Server cost per client = bill ÷ active paying clients, or a fixed amount
+     (admin choice). The calculation is a pure module so the admin sees it live while typing a price.
+122. **Profit history from our own payments**, not the provider: refunds reduce revenue in the month of the
+     payment, the provider keeps its fee; VAT from the current rate (exact per-invoice VAT stays in the invoicing
+     system); fixed costs use the current settings for every month (no cost history yet).
+123. **Forecast = simple, explainable model**: MRR × (1 − monthly churn) + average new MRR of the last 3 months, plus
+     average one-time sales; assumptions are printed next to the charts. Finance pages are ADMIN-only (cost data).
+124. **Server forecast from daily snapshots**: a least-squares trend over 90 days against capacities the admin sets
+     (DB disk, storage budget, monthly page views, published sites), warning at a chosen percentage. The first
+     history is reconstructed from creation dates so the page is useful before 90 days of snapshots exist.

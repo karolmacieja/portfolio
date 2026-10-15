@@ -6,21 +6,21 @@ Next.js 16 ships its own docs in `node_modules/next/dist/docs/` (see `AGENTS.md`
 
 ## Status
 
-| Phase | Scope                                                                  | State   |
-| ----- | ---------------------------------------------------------------------- | ------- |
-| 0     | Foundation: Next.js, Docker Compose, Prisma, Auth.js + roles, i18n, CI | done    |
-| 1     | Multi-tenancy (host routing), Site/Page, renderer, cache               | done    |
-| 2     | Editor (Puck), blocks, themes, draft/publish, versions, media, SEO     | done    |
-| 3     | Plans & entitlements: limits, flags, block tiers, plan seed            | done    |
-| 4     | Templates: template mode, versions, gallery, copy, theme/layout change | done    |
-| 5     | Payments (Stripe): checkout, webhooks, portal, dunning, coupons        | done    |
-| 6     | Invoicing (Fakturownia, KSeF): invoices, corrections, PDFs, panels     | done    |
-| 7     | Domains: Cloudflare for SaaS, Openprovider; purchase and renewals      | done    |
-| 8     | Admin panel                                                            | done    |
-| 9     | Polish: forms, stats, landing/pricing, mails, RODO, deployment docs    | done    |
-| 10    | Group licenses, sponsor footer (+ paid removal)                        | done    |
-| 11    | Finance: net profit per plan, revenue/profit stats, forecasts, usage   | next    |
-| 12    | Mail template editor, newsletter (consent)                             | pending |
+| Phase | Scope                                                                  | State |
+| ----- | ---------------------------------------------------------------------- | ----- |
+| 0     | Foundation: Next.js, Docker Compose, Prisma, Auth.js + roles, i18n, CI | done  |
+| 1     | Multi-tenancy (host routing), Site/Page, renderer, cache               | done  |
+| 2     | Editor (Puck), blocks, themes, draft/publish, versions, media, SEO     | done  |
+| 3     | Plans & entitlements: limits, flags, block tiers, plan seed            | done  |
+| 4     | Templates: template mode, versions, gallery, copy, theme/layout change | done  |
+| 5     | Payments (Stripe): checkout, webhooks, portal, dunning, coupons        | done  |
+| 6     | Invoicing (Fakturownia, KSeF): invoices, corrections, PDFs, panels     | done  |
+| 7     | Domains: Cloudflare for SaaS, Openprovider; purchase and renewals      | done  |
+| 8     | Admin panel                                                            | done  |
+| 9     | Polish: forms, stats, landing/pricing, mails, RODO, deployment docs    | done  |
+| 10    | Group licenses, sponsor footer (+ paid removal)                        | done  |
+| 11    | Finance: net profit per plan, revenue/profit stats, forecasts, usage   | done  |
+| 12    | Mail template editor, newsletter (consent)                             | next  |
 
 Work in phases; after each phase run lint/typecheck/tests, summarize and wait for the owner's approval.
 
@@ -220,7 +220,8 @@ with `pnpm db:deploy` and run `pnpm db:generate`.
 ## Admin panel
 
 - Permissions (`src/server/auth/permissions.ts`): staff pages and actions call `requirePermission(permission)`; the nav
-  is filtered the same way. SUPPORT has everything except `plans.manage`, `settings.manage`, `staff.manage` (ADMIN).
+  is filtered the same way. SUPPORT has everything except `finance.view`, `plans.manage`, `settings.manage`,
+  `staff.manage` (ADMIN).
 - Every staff mutation calls `audit()` (`src/server/audit`); `/audit` lists it; retention 2 years (daily worker job).
 - Clients (`src/server/admin/clients.ts`, not owner-scoped): `/clients` (search by email/name/slug/domain, filters),
   `/clients/{id}` (subscriptions, payments with refunds via `PaymentProvider.refund`, invoices, sites, domains, notes,
@@ -316,6 +317,27 @@ with `pnpm db:deploy` and run `pnpm db:generate`.
   per plan on `/plans` (`Plan.seatPriceMonthly/Yearly`, null = not offered).
 - Account erasure cancels licenses the user pays for and their monthly add-on, removes memberships and invitations.
 
+## Finance and usage
+
+- Costs (Setting "finance", admin `/settings`, `finance/settings.ts`): payment fee % + fixed per charge,
+  infrastructure bill (split over active paying clients, or a fixed amount per client), other fixed monthly costs.
+  VAT comes from the invoicing settings (`salesVatRate`). Active clients = paying provider subscribers + seats of
+  active licenses (`countActiveClients`).
+- `finance/economics.ts` (pure, also used in the browser): `priceEconomics(gross, months, inputs, units)` -> net, VAT,
+  fee, cost, profit, margin. Admin `/plans` shows it live under every price and seat price (`PriceInput`); plans have
+  `highlights` ("what's in the plan", shown first on pricing cards) and `isFeatured`.
+- Profit report (`finance/report.ts` pure + `finance/load.ts`): 12 months of paid payments by source (SUBSCRIPTION,
+  LICENSE, TEMPLATE, DOMAIN, ADDON) net of refunds, VAT (none for reverse charge), fees (kept on refunds), domain
+  registrar costs (converted with the domain exchange rates), fixed costs; MRR by source (plans, licenses, domains
+  /12, monthly add-ons); forecast MRR(m+1) = MRR × (1 − churn) + new MRR (3-month average) + one-time sales; break-even.
+  Admin `/finance` (permission `finance.view`, ADMIN only).
+- Usage (`finance/usage.ts`, worker-safe): `UsageSnapshot` per day (clients, paying, sites, published, storage, DB
+  size via `pg_database_size`, page views) taken by the daily worker job before the stats roll-up; an empty history is
+  backfilled from creation dates. Capacity (Setting "capacity": DB GB, storage GB, monthly page views, published
+  sites, warn %) + `capacity-forecast.ts` (least-squares daily trend, days to warning/full, 10-year horizon). Admin
+  `/usage` (`clients.view`); per-client usage (`getClientUsage`) on the dashboard and the admin client card.
+- `BarChart` (`components/charts`) supports negative values (zero line), used for losses.
+
 ## Published sites and caching
 
 - Rendering: `src/app/sites/[host]/[[...path]]/page.tsx` is ISR (`generateStaticParams` returns `[]`); the layout applies
@@ -341,7 +363,8 @@ src/app/(platform)/         root layout for platform hosts
                             account, messages, plans, templates, media, editor, licenses, organization, join,
                             sites/[siteId]/(manage)/{pages,theme,template,domains,stats,messages,settings,history}
   admin/                    admin panel (admin.): login, forbidden, (protected)/ dashboard, clients, sites, reports,
-                            invoices, domains, templates, coupons, plans, staff, audit, settings, licenses; (editor)/
+                            invoices, domains, templates, coupons, plans, staff, audit, settings, licenses, finance,
+                            usage; (editor)/
 src/app/sites/[host]/       root layout + renderer for published client sites; %5Fp/{contact,v} (form, beacon)
 src/app/api/                auth (wrapped with withPublicOrigin), email/verify, media/upload, health,
                             webhooks/stripe, internal/revalidate, invoices/[id]/pdf, account/export, messages/export
@@ -379,6 +402,7 @@ src/server/                 server-only domain code
   stats/                    cookie-less page views: collect, roll-up, owner reports
   legal/                    terms/privacy documents (defaults, versions, placeholders)
   licenses/                 group licenses: service (client), admin, billing events, settings, maintenance
+  finance/                  cost settings, unit economics, profit report + forecast, usage snapshots, capacity
   cache/                    remote cache invalidation (worker -> app)
   templates/                schema, admin + client services, content mapping, preview, thumbnail job, actions
   jobs/                     BullMQ queues (enqueue helpers)
