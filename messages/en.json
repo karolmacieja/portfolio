@@ -76,6 +76,30 @@
       "intro": "Thanks for signing up! Please confirm your email address by clicking the link below.",
       "cta": "Confirm email address",
       "ignore": "If you didn't create an account, you can ignore this email."
+    },
+    "paymentFailed": {
+      "subject": "Payment failed — {brand}",
+      "intro": "We couldn't charge your plan. Update your payment method to keep your site running.",
+      "cta": "Update payment",
+      "ignore": "If you've already paid, please ignore this email."
+    },
+    "paymentReminder": {
+      "subject": "Payment reminder — {brand}",
+      "intro": "Your plan's payment is still overdue. If it isn't settled within {days} days, your sites will be temporarily suspended.",
+      "cta": "Settle payment",
+      "ignore": "If you've already paid, please ignore this email."
+    },
+    "sitesSuspended": {
+      "subject": "Your sites have been suspended — {brand}",
+      "intro": "Due to a missing payment your sites have been temporarily suspended. They will be restored automatically once you pay.",
+      "cta": "Pay subscription",
+      "ignore": "Your data and content are safe."
+    },
+    "subscriptionEnded": {
+      "subject": "Your subscription has ended — {brand}",
+      "intro": "Your subscription has ended and your sites have been suspended. Choose a plan to restore them.",
+      "cta": "Choose a plan",
+      "ignore": "Your data and content are safe."
     }
   },
   "site": {
@@ -432,8 +456,6 @@
     "perMonth": "{price} / month",
     "perYear": "{price} / year",
     "trial": "{days}-day free trial",
-    "choose": "Choose plan",
-    "comingSoon": "Online payments are coming soon.",
     "currentBadge": "Current",
     "status": {
       "TRIALING": "Trial until {date}",
@@ -486,7 +508,6 @@
     "preview": "Preview",
     "use": "Use template",
     "locked": "Available on a higher plan",
-    "premiumLocked": "Premium template — purchase coming soon",
     "upgrade": "Upgrade plan",
     "empty": "No templates in this category.",
     "startFromTemplate": "Start from a template",
@@ -532,7 +553,8 @@
   },
   "adminNav": {
     "dashboard": "Dashboard",
-    "templates": "Templates"
+    "templates": "Templates",
+    "coupons": "Coupons"
   },
   "adminTemplates": {
     "title": "Templates",
@@ -592,5 +614,149 @@
     "lockDrag": "Lock moving",
     "lockDelete": "Lock removing",
     "lockHint": "Select a block in the preview to set its locks."
+  },
+  "billing": {
+    "title": "Billing and subscription",
+    "nav": "Billing",
+    "currentPlan": "Plan",
+    "noPlan": "You don't have an active subscription.",
+    "choosePlan": "Choose a plan",
+    "changePlan": "Change plan",
+    "status": {
+      "TRIALING": "Trial",
+      "ACTIVE": "Active",
+      "PAST_DUE": "Payment overdue",
+      "UNPAID": "Unpaid",
+      "INCOMPLETE": "Incomplete",
+      "INCOMPLETE_EXPIRED": "Expired",
+      "CANCELED": "Canceled"
+    },
+    "renews": "Renews: {date}",
+    "trialEnds": "Trial ends: {date}",
+    "endsAt": "Subscription ends: {date}",
+    "pastDue": "Your payment failed. Update your payment method to avoid your sites being suspended.",
+    "cancel": "Cancel at period end",
+    "cancelConfirm": "Cancel your subscription? Your plan stays active until the end of the paid period.",
+    "resume": "Resume subscription",
+    "portal": "Manage payments",
+    "portalHint": "Change card, payment history at the provider.",
+    "manualSubscription": "This subscription was granted manually — plan changes go through an administrator.",
+    "profile": "Billing details",
+    "profileMissing": "Fill in your billing details before purchasing.",
+    "editProfile": "Edit billing details",
+    "payments": "Payment history",
+    "noPayments": "No payments yet.",
+    "paymentStatus": {
+      "PAID": "Paid",
+      "FAILED": "Failed",
+      "REFUNDED": "Refunded"
+    },
+    "interval": {
+      "MONTH": "monthly",
+      "YEAR": "yearly"
+    },
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "yearlySave": "2 months free",
+    "coupon": "Discount code",
+    "buy": "Choose",
+    "switchTo": "Switch to this plan",
+    "switchConfirm": "Change your plan? The price difference will be prorated.",
+    "switched": "Your plan has been changed.",
+    "saved": "Saved.",
+    "verifyEmail": "Resend verification link",
+    "verificationSent": "We sent a verification link. Check your inbox.",
+    "successTitle": "Thank you!",
+    "successText": "Your payment was received. Your plan will be activated in a moment.",
+    "successActive": "Your plan is active: {plan}.",
+    "successPending": "Waiting for confirmation from the payment provider…",
+    "refresh": "Refresh",
+    "goToDashboard": "Go to dashboard",
+    "buyTemplate": "Buy for {price}",
+    "purchased": "Template purchased — you can use it now.",
+    "profileForm": {
+      "type": "Type",
+      "PERSON": "Individual",
+      "COMPANY": "Company",
+      "fullName": "Full name",
+      "companyName": "Company name",
+      "taxId": "NIP (Polish tax id)",
+      "euVatId": "EU VAT number (companies outside Poland)",
+      "line1": "Street and number",
+      "line2": "Apartment / additional info",
+      "postalCode": "Postal code",
+      "city": "City",
+      "country": "Country (code, e.g. PL)",
+      "save": "Save details",
+      "reverseCharge": "VAT reverse charge (verified EU VAT number)."
+    },
+    "mock": {
+      "checkoutTitle": "Test payment",
+      "checkoutHint": "This is a simulated payment provider (development mode). No money will be charged.",
+      "item": "Item",
+      "amount": "Amount",
+      "trial": "Trial: {days} days (no charge now)",
+      "coupon": "Discount code: {code}",
+      "pay": "Pay (test)",
+      "cancel": "Cancel",
+      "portalTitle": "Test payment portal",
+      "renewOk": "Simulate successful renewal",
+      "renewFail": "Simulate failed payment",
+      "end": "Simulate subscription end",
+      "back": "Back",
+      "done": "Done."
+    },
+    "errors": {
+      "notFound": "Not found.",
+      "emailNotVerified": "Confirm your email address before purchasing.",
+      "billingProfileRequired": "Fill in your billing details before purchasing.",
+      "alreadySubscribed": "You already have an active subscription — change your plan instead.",
+      "noSubscription": "You don't have a subscription managed online.",
+      "priceNotSynced": "This plan isn't available for purchase yet. Please contact us.",
+      "couponInvalid": "The discount code is invalid or expired.",
+      "taxIdInvalid": "Invalid NIP.",
+      "euVatIdInvalid": "Invalid or unverified EU VAT number.",
+      "alreadyPurchased": "You already own this template.",
+      "notPremium": "This template is not paid.",
+      "invalidInput": "Please check the highlighted fields.",
+      "generic": "Something went wrong. Please try again.",
+      "rateLimited": "Too many attempts. Try again in a few minutes.",
+      "planRequired": "This template requires a higher plan."
+    },
+    "intervalLabel": "Billing period",
+    "pricesGross": "Prices include VAT. You can cancel your subscription at any time.",
+    "paymentDate": "Date",
+    "paymentDescription": "Description",
+    "amount": "Amount",
+    "paymentStatusLabel": "Status"
+  },
+  "coupons": {
+    "title": "Coupons",
+    "code": "Code",
+    "name": "Name",
+    "percentOff": "Discount %",
+    "amountOff": "Fixed discount (PLN)",
+    "duration": "Duration",
+    "durationOption": {
+      "ONCE": "Once",
+      "REPEATING": "For N months",
+      "FOREVER": "Forever"
+    },
+    "durationInMonths": "Months",
+    "maxRedemptions": "Max redemptions",
+    "expiresAt": "Valid until",
+    "create": "Create coupon",
+    "created": "Coupon created.",
+    "deactivate": "Deactivate",
+    "active": "Active",
+    "inactive": "Inactive",
+    "redeemed": "Redeemed",
+    "empty": "No coupons.",
+    "errors": {
+      "codeTaken": "A coupon with this code already exists.",
+      "invalid": "Check the coupon (give a % or a fixed discount)."
+    },
+    "discount": "Discount",
+    "status": "Status"
   }
 }

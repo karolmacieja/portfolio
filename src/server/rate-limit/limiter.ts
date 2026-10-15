@@ -17,4 +17,6 @@ export const RATE_LIMITS = {
   signInPerIp: { limit: 30, windowMs: 15 * 60_000 },
   registerPerIp: { limit: 5, windowMs: 60 * 60_000 },
   magicLinkPerEmail: { limit: 5, windowMs: 15 * 60_000 },
+  verifyEmailPerUser: { limit: 3, windowMs: 15 * 60_000 },
+  checkoutPerUser: { limit: 20, windowMs: 15 * 60_000 },
 } as const;

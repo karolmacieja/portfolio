@@ -76,6 +76,30 @@
       "intro": "Dziękujemy za rejestrację! Potwierdź swój adres e-mail, klikając poniższy link.",
       "cta": "Potwierdź adres e-mail",
       "ignore": "Jeśli to nie Ty zakładałeś konto, zignoruj tę wiadomość."
+    },
+    "paymentFailed": {
+      "subject": "Nie udało się pobrać płatności — {brand}",
+      "intro": "Nie udało się pobrać opłaty za Twój plan. Zaktualizuj metodę płatności, aby Twoja strona działała bez przerwy.",
+      "cta": "Zaktualizuj płatność",
+      "ignore": "Jeśli już opłaciłeś subskrypcję, zignoruj tę wiadomość."
+    },
+    "paymentReminder": {
+      "subject": "Przypomnienie o płatności — {brand}",
+      "intro": "Płatność za Twój plan nadal jest zaległa. Jeśli nie zostanie uregulowana w ciągu {days} dni, Twoje strony zostaną tymczasowo wstrzymane.",
+      "cta": "Ureguluj płatność",
+      "ignore": "Jeśli już opłaciłeś subskrypcję, zignoruj tę wiadomość."
+    },
+    "sitesSuspended": {
+      "subject": "Twoje strony zostały wstrzymane — {brand}",
+      "intro": "Z powodu braku płatności Twoje strony zostały tymczasowo wstrzymane. Po opłaceniu subskrypcji zostaną automatycznie przywrócone.",
+      "cta": "Opłać subskrypcję",
+      "ignore": "Twoje dane i treści są bezpieczne."
+    },
+    "subscriptionEnded": {
+      "subject": "Twoja subskrypcja wygasła — {brand}",
+      "intro": "Twoja subskrypcja wygasła, a Twoje strony zostały wstrzymane. Wybierz plan, aby je przywrócić.",
+      "cta": "Wybierz plan",
+      "ignore": "Twoje dane i treści są bezpieczne."
     }
   },
   "site": {
@@ -432,8 +456,6 @@
     "perMonth": "{price} / mies.",
     "perYear": "{price} / rok",
     "trial": "{days} dni za darmo",
-    "choose": "Wybierz plan",
-    "comingSoon": "Płatności online będą dostępne wkrótce.",
     "currentBadge": "Aktualny",
     "status": {
       "TRIALING": "Okres próbny do {date}",
@@ -486,7 +508,6 @@
     "preview": "Podgląd",
     "use": "Użyj szablonu",
     "locked": "Dostępny w wyższym planie",
-    "premiumLocked": "Szablon premium — zakup będzie dostępny wkrótce",
     "upgrade": "Ulepsz plan",
     "empty": "Brak szablonów w tej kategorii.",
     "startFromTemplate": "Zacznij od szablonu",
@@ -532,7 +553,8 @@
   },
   "adminNav": {
     "dashboard": "Pulpit",
-    "templates": "Szablony"
+    "templates": "Szablony",
+    "coupons": "Kupony"
   },
   "adminTemplates": {
     "title": "Szablony",
@@ -592,5 +614,149 @@
     "lockDrag": "Zablokuj przesuwanie",
     "lockDelete": "Zablokuj usuwanie",
     "lockHint": "Zaznacz blok na podglądzie, aby ustawić blokady."
+  },
+  "billing": {
+    "title": "Płatności i subskrypcja",
+    "nav": "Płatności",
+    "currentPlan": "Plan",
+    "noPlan": "Nie masz aktywnej subskrypcji.",
+    "choosePlan": "Wybierz plan",
+    "changePlan": "Zmień plan",
+    "status": {
+      "TRIALING": "Okres próbny",
+      "ACTIVE": "Aktywna",
+      "PAST_DUE": "Zaległa płatność",
+      "UNPAID": "Nieopłacona",
+      "INCOMPLETE": "Niedokończona",
+      "INCOMPLETE_EXPIRED": "Wygasła",
+      "CANCELED": "Anulowana"
+    },
+    "renews": "Odnowienie: {date}",
+    "trialEnds": "Okres próbny do: {date}",
+    "endsAt": "Subskrypcja wygaśnie: {date}",
+    "pastDue": "Płatność się nie powiodła. Zaktualizuj metodę płatności, aby uniknąć wstrzymania stron.",
+    "cancel": "Anuluj na koniec okresu",
+    "cancelConfirm": "Anulować subskrypcję? Plan będzie aktywny do końca opłaconego okresu.",
+    "resume": "Wznów subskrypcję",
+    "portal": "Zarządzaj płatnościami",
+    "portalHint": "Zmiana karty, historia płatności u operatora.",
+    "manualSubscription": "Ta subskrypcja została przyznana ręcznie — zmiany planu przez administratora.",
+    "profile": "Dane do faktury",
+    "profileMissing": "Uzupełnij dane do faktury przed zakupem.",
+    "editProfile": "Edytuj dane do faktury",
+    "payments": "Historia płatności",
+    "noPayments": "Brak płatności.",
+    "paymentStatus": {
+      "PAID": "Opłacona",
+      "FAILED": "Nieudana",
+      "REFUNDED": "Zwrócona"
+    },
+    "interval": {
+      "MONTH": "miesięcznie",
+      "YEAR": "rocznie"
+    },
+    "monthly": "Miesięcznie",
+    "yearly": "Rocznie",
+    "yearlySave": "2 miesiące gratis",
+    "coupon": "Kod rabatowy",
+    "buy": "Wybierz",
+    "switchTo": "Przejdź na ten plan",
+    "switchConfirm": "Zmienić plan? Różnica w cenie zostanie rozliczona proporcjonalnie.",
+    "switched": "Plan został zmieniony.",
+    "saved": "Zapisano.",
+    "verifyEmail": "Wyślij link weryfikacyjny ponownie",
+    "verificationSent": "Wysłaliśmy link weryfikacyjny. Sprawdź skrzynkę.",
+    "successTitle": "Dziękujemy!",
+    "successText": "Płatność została przyjęta. Twój plan zostanie aktywowany w ciągu kilku chwil.",
+    "successActive": "Twój plan jest aktywny: {plan}.",
+    "successPending": "Czekamy na potwierdzenie od operatora płatności…",
+    "refresh": "Odśwież",
+    "goToDashboard": "Przejdź do panelu",
+    "buyTemplate": "Kup za {price}",
+    "purchased": "Szablon kupiony — możesz go teraz użyć.",
+    "profileForm": {
+      "type": "Rodzaj",
+      "PERSON": "Osoba prywatna",
+      "COMPANY": "Firma",
+      "fullName": "Imię i nazwisko",
+      "companyName": "Nazwa firmy",
+      "taxId": "NIP",
+      "euVatId": "Numer VAT UE (firmy spoza Polski)",
+      "line1": "Ulica i numer",
+      "line2": "Lokal / dodatkowe informacje",
+      "postalCode": "Kod pocztowy",
+      "city": "Miejscowość",
+      "country": "Kraj (kod, np. PL)",
+      "save": "Zapisz dane",
+      "reverseCharge": "Odwrotne obciążenie VAT (zweryfikowany numer VAT UE)."
+    },
+    "mock": {
+      "checkoutTitle": "Testowa płatność",
+      "checkoutHint": "To jest symulacja operatora płatności (tryb deweloperski). Żadne pieniądze nie zostaną pobrane.",
+      "item": "Pozycja",
+      "amount": "Kwota",
+      "trial": "Okres próbny: {days} dni (bez opłaty teraz)",
+      "coupon": "Kod rabatowy: {code}",
+      "pay": "Zapłać (test)",
+      "cancel": "Anuluj",
+      "portalTitle": "Testowy portal płatności",
+      "renewOk": "Symuluj udane odnowienie",
+      "renewFail": "Symuluj nieudaną płatność",
+      "end": "Symuluj wygaśnięcie subskrypcji",
+      "back": "Wróć",
+      "done": "Gotowe."
+    },
+    "errors": {
+      "notFound": "Nie znaleziono.",
+      "emailNotVerified": "Potwierdź adres e-mail przed zakupem.",
+      "billingProfileRequired": "Uzupełnij dane do faktury przed zakupem.",
+      "alreadySubscribed": "Masz już aktywną subskrypcję — zmień plan zamiast kupować nowy.",
+      "noSubscription": "Nie masz subskrypcji zarządzanej online.",
+      "priceNotSynced": "Ten plan nie jest jeszcze dostępny do zakupu. Skontaktuj się z nami.",
+      "couponInvalid": "Kod rabatowy jest nieprawidłowy lub wygasł.",
+      "taxIdInvalid": "Nieprawidłowy NIP.",
+      "euVatIdInvalid": "Nieprawidłowy lub niezweryfikowany numer VAT UE.",
+      "alreadyPurchased": "Ten szablon jest już kupiony.",
+      "notPremium": "Ten szablon nie jest płatny.",
+      "invalidInput": "Sprawdź poprawność wypełnionych pól.",
+      "generic": "Coś poszło nie tak. Spróbuj ponownie.",
+      "rateLimited": "Zbyt wiele prób. Spróbuj ponownie za kilka minut.",
+      "planRequired": "Ten szablon wymaga wyższego planu."
+    },
+    "intervalLabel": "Okres rozliczeniowy",
+    "pricesGross": "Ceny brutto (z VAT). Subskrypcję możesz anulować w każdej chwili.",
+    "paymentDate": "Data",
+    "paymentDescription": "Opis",
+    "amount": "Kwota",
+    "paymentStatusLabel": "Status"
+  },
+  "coupons": {
+    "title": "Kupony",
+    "code": "Kod",
+    "name": "Nazwa",
+    "percentOff": "Rabat %",
+    "amountOff": "Rabat kwotowy (zł)",
+    "duration": "Czas trwania",
+    "durationOption": {
+      "ONCE": "Jednorazowo",
+      "REPEATING": "Przez N miesięcy",
+      "FOREVER": "Na zawsze"
+    },
+    "durationInMonths": "Liczba miesięcy",
+    "maxRedemptions": "Limit użyć",
+    "expiresAt": "Ważny do",
+    "create": "Utwórz kupon",
+    "created": "Kupon utworzony.",
+    "deactivate": "Dezaktywuj",
+    "active": "Aktywny",
+    "inactive": "Nieaktywny",
+    "redeemed": "Użyto",
+    "empty": "Brak kuponów.",
+    "errors": {
+      "codeTaken": "Kupon o tym kodzie już istnieje.",
+      "invalid": "Sprawdź dane kuponu (podaj rabat % albo kwotowy)."
+    },
+    "discount": "Rabat",
+    "status": "Status"
   }
 }

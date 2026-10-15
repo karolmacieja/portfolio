@@ -17,7 +17,7 @@ export type RouteDecision =
   | { action: "notFound" };
 
 /** Routes served on every host: infrastructure probes and locally stored media (dev storage). */
-const GLOBAL_PATHS = ["/api/health"];
+const GLOBAL_PATHS = ["/api/health", "/api/internal/revalidate"];
 const GLOBAL_PREFIXES = ["/storage/"];
 /** Routes with their own root layout, served as-is on platform hosts (not on client hosts). */
 const PLATFORM_PREFIXES = ["/template-preview/"];

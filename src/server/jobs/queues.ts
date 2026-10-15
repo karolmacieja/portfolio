@@ -7,7 +7,7 @@ import { getEnv } from "@/lib/env";
  * (`pnpm worker`, src/worker/index.ts) consumes them.
  */
 
-export const QUEUES = { thumbnails: "thumbnails" } as const;
+export const QUEUES = { thumbnails: "thumbnails", billing: "billing" } as const;
 
 export type ThumbnailJob = { templateId: string; versionId: string };
 
