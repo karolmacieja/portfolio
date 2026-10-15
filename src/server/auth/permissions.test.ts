@@ -8,6 +8,7 @@ describe("hasPermission", () => {
   it("gives ADMIN everything and SUPPORT all but roles, settings and the plan catalog", () => {
     for (const permission of PERMISSIONS) expect(hasPermission(Role.ADMIN, permission)).toBe(true);
     expect(PERMISSIONS.filter((p) => !hasPermission(Role.SUPPORT, p))).toEqual([
+      "finance.view",
       "plans.manage",
       "settings.manage",
       "staff.manage",

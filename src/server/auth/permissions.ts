@@ -16,6 +16,7 @@ export const PERMISSIONS = [
   "coupons.manage",
   "templates.manage",
   "licenses.manage",
+  "finance.view",
   "audit.view",
   "plans.manage",
   "settings.manage",
@@ -23,7 +24,13 @@ export const PERMISSIONS = [
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
-const ADMIN_ONLY: ReadonlySet<Permission> = new Set(["plans.manage", "settings.manage", "staff.manage"]);
+// Profit and cost figures are business-sensitive like the settings they come from.
+const ADMIN_ONLY: ReadonlySet<Permission> = new Set([
+  "plans.manage",
+  "settings.manage",
+  "staff.manage",
+  "finance.view",
+]);
 
 export function hasPermission(role: Role | null | undefined, permission: Permission): boolean {
   if (role === Role.ADMIN) return true;

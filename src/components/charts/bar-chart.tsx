@@ -31,8 +31,13 @@ export function BarChart({
   const top = 8;
   const plotWidth = width - left - 8;
   const plotHeight = height - top - bottom;
-  const max = Math.max(...points.map((p) => p.value), 1);
-  // A middle gridline only when it falls on a distinct whole value.
+  // Domain always includes zero; negative values (losses) hang below the zero line.
+  const values = points.map((p) => p.value);
+  const lo = Math.min(0, ...values);
+  const hi = Math.max(lo < 0 ? 0 : 1, ...values);
+  const y = (value: number) => top + (plotHeight * (hi - value)) / (hi - lo);
+  // Gridlines at the extremes and zero; a middle one only when it falls on a distinct whole value.
+  const ticks = [...new Set([lo, 0, hi, ...(lo === 0 && hi >= 2 ? [hi / 2] : [])])].sort((a, b) => a - b);
   const band = plotWidth / points.length;
   const barWidth = Math.max(4, band * 0.62);
   const radius = 4;
@@ -41,26 +46,34 @@ export function BarChart({
     <figure className="grid gap-2" data-testid={testId}>
       <figcaption className="text-sm font-medium">{title}</figcaption>
       <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full" role="img" aria-label={title}>
-        {(max >= 2 ? [0, 0.5, 1] : [0, 1]).map((ratio) => {
-          const y = top + plotHeight * (1 - ratio);
-          return (
-            <g key={ratio}>
-              <line x1={left} x2={width - 8} y1={y} y2={y} className="stroke-border" strokeWidth={1} />
-              <text x={left - 6} y={y + 4} textAnchor="end" className="fill-muted-foreground text-[10px]">
-                {format(Math.round(max * ratio))}
-              </text>
-            </g>
-          );
-        })}
+        {ticks.map((tick) => (
+          <g key={tick}>
+            <line
+              x1={left}
+              x2={width - 8}
+              y1={y(tick)}
+              y2={y(tick)}
+              className={tick === 0 && lo < 0 ? "stroke-muted-foreground" : "stroke-border"}
+              strokeWidth={1}
+            />
+            <text x={left - 6} y={y(tick) + 4} textAnchor="end" className="fill-muted-foreground text-[10px]">
+              {format(Math.round(tick))}
+            </text>
+          </g>
+        ))}
         {points.map((point, i) => {
-          const h = (point.value / max) * plotHeight;
           const x = left + i * band + (band - barWidth) / 2;
-          const y = top + plotHeight - h;
+          const zero = y(0);
+          const end = y(point.value);
+          const h = Math.abs(end - zero);
           const r = Math.min(radius, h, barWidth / 2);
+          // 4px rounded data end (top for gains, bottom for losses), square on the zero line.
           const d =
             h <= 0
               ? ""
-              : `M${x},${top + plotHeight} V${y + r} Q${x},${y} ${x + r},${y} H${x + barWidth - r} Q${x + barWidth},${y} ${x + barWidth},${y + r} V${top + plotHeight} Z`;
+              : point.value > 0
+                ? `M${x},${zero} V${end + r} Q${x},${end} ${x + r},${end} H${x + barWidth - r} Q${x + barWidth},${end} ${x + barWidth},${end + r} V${zero} Z`
+                : `M${x},${zero} V${end - r} Q${x},${end} ${x + r},${end} H${x + barWidth - r} Q${x + barWidth},${end} ${x + barWidth},${end - r} V${zero} Z`;
           return (
             <g key={point.key}>
               {/* Hit target taller and wider than the bar, for the tooltip. */}
