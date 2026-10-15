@@ -5,7 +5,7 @@ import { loadMessages } from "@/i18n/messages";
 
 import type { MailMessage } from "./types";
 
-// Plain templates for auth mails. Phase 9 replaces them with React Email.
+// Plain templates for auth and billing mails. Phase 9 replaces them with React Email.
 
 function escapeHtml(value: string): string {
   return value
@@ -27,7 +27,14 @@ function layout(parts: { intro: string; cta: string; url: string; ignore: string
 }
 
 type LinkMailKind =
-  "magicLink" | "verifyEmail" | "paymentFailed" | "paymentReminder" | "sitesSuspended" | "subscriptionEnded";
+  | "magicLink"
+  | "verifyEmail"
+  | "paymentFailed"
+  | "paymentReminder"
+  | "sitesSuspended"
+  | "subscriptionEnded"
+  | "invoiceIssued"
+  | "correctionIssued";
 
 export async function buildLinkMail(params: {
   kind: LinkMailKind;
@@ -35,16 +42,22 @@ export async function buildLinkMail(params: {
   url: string;
   locale: Locale;
   brand: string;
-  values?: { days?: number };
+  values?: { days?: number; number?: string };
+  attachments?: MailMessage["attachments"];
 }): Promise<MailMessage> {
   const messages = await loadMessages(params.locale);
   const t = createTranslator({ locale: params.locale, messages, namespace: `email.${params.kind}` });
-  const values = { brand: params.brand, days: String(params.values?.days ?? "") };
+  const values = {
+    brand: params.brand,
+    days: String(params.values?.days ?? ""),
+    number: params.values?.number ?? "",
+  };
   const parts = { intro: t("intro", values), cta: t("cta"), url: params.url, ignore: t("ignore") };
   return {
     to: params.to,
-    subject: t("subject", { brand: params.brand }),
+    subject: t("subject", values),
     text: `${parts.intro}\n\n${parts.url}\n\n${parts.ignore}`,
     html: layout(parts),
+    ...(params.attachments ? { attachments: params.attachments } : {}),
   };
 }

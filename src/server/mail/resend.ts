@@ -14,7 +14,16 @@ export class ResendMailer implements Mailer {
   }
 
   async send(message: MailMessage): Promise<void> {
-    const { error } = await this.client.emails.send({ from: this.from, ...message });
+    const { attachments, ...rest } = message;
+    const { error } = await this.client.emails.send({
+      from: this.from,
+      ...rest,
+      attachments: attachments?.map((file) => ({
+        filename: file.filename,
+        content: file.content,
+        contentType: file.contentType,
+      })),
+    });
     if (error) throw new Error(`Resend error: ${error.name}: ${error.message}`);
   }
 }

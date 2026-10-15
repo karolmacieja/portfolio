@@ -64,10 +64,25 @@ export const envSchema = z
     // EU VAT id verification for company billing profiles: mock (checksum/format only) or vies (EU VIES service).
     TAX_ID_PROVIDER: z.enum(["mock", "vies"]).default("mock"),
 
+    // Invoices: mock = PDF generated locally + simulated KSeF, fakturownia = Fakturownia API (KSeF sending).
+    INVOICING_PROVIDER: z.enum(["mock", "fakturownia"]).default("mock"),
+    // Account domain, e.g. "mojafirma" (-> mojafirma.fakturownia.pl) or a full host.
+    FAKTUROWNIA_DOMAIN: optionalString,
+    FAKTUROWNIA_API_TOKEN: optionalString,
+    // Optional department (seller data and numbering) id from Fakturownia settings.
+    FAKTUROWNIA_DEPARTMENT_ID: optionalString,
+    // Send invoices to KSeF on creation (gov_save_and_send). Disable for accounts without KSeF configured.
+    FAKTUROWNIA_KSEF: z
+      .enum(["true", "false"])
+      .default("true")
+      .transform((value) => value === "true"),
+
     // Template thumbnails (background worker): mock = generated image, playwright = screenshot of the preview.
     THUMBNAIL_PROVIDER: z.enum(["mock", "playwright"]).default("mock"),
     // Optional path to a Chromium binary for the playwright renderer (otherwise Playwright's bundled browser).
     PLAYWRIGHT_CHROMIUM_EXECUTABLE: optionalString,
+    // Port of the worker's health endpoint (GET /health); empty = no endpoint.
+    WORKER_HEALTH_PORT: z.preprocess(emptyToUndefined, z.coerce.number().int().min(1).max(65535).optional()),
   })
   .superRefine((env, ctx) => {
     if (env.MAIL_PROVIDER === "smtp" && !env.SMTP_HOST) {
@@ -111,6 +126,24 @@ export const envSchema = z
         code: "custom",
         path: ["PAYMENTS_PROVIDER"],
         message: "mock payments are not allowed in production",
+      });
+    }
+    if (env.INVOICING_PROVIDER === "fakturownia") {
+      for (const key of ["FAKTUROWNIA_DOMAIN", "FAKTUROWNIA_API_TOKEN"] as const) {
+        if (!env[key]) {
+          ctx.addIssue({
+            code: "custom",
+            path: [key],
+            message: "Required when INVOICING_PROVIDER=fakturownia",
+          });
+        }
+      }
+    }
+    if (env.APP_ENV === "production" && env.INVOICING_PROVIDER === "mock") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["INVOICING_PROVIDER"],
+        message: "mock invoicing is not allowed in production",
       });
     }
     if (env.APP_ENV === "production" && env.THUMBNAIL_PROVIDER === "mock") {

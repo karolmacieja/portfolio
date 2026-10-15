@@ -45,6 +45,7 @@ model User {
   templatePurchases TemplatePurchase[]
   billingProfile    BillingProfile?
   payments          Payment[]
+  invoices          Invoice[]
 
   @@index([role])
 }
@@ -505,7 +506,7 @@ enum PaymentStatus {
   REFUNDED
 }
 
-/// A charge at the payment provider (subscription invoice or one-time purchase). Invoicing (Phase 6) builds on it.
+/// A charge at the payment provider (subscription invoice or one-time purchase); invoiced via Invoice.
 model Payment {
   id                String        @id @default(cuid())
   userId            String
@@ -524,10 +525,92 @@ model Payment {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
+  /// Provider charge reference (Stripe PaymentIntent id); refunds are matched by it.
+  providerChargeRef String?       @unique
+  /// Cumulative refunded amount in grosze (partial refunds keep status PAID).
+  refundedAmount    Int           @default(0)
+
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  invoices     Invoice[]
 
   @@index([userId, createdAt])
+}
+
+enum InvoiceKind {
+  INVOICE
+  CORRECTION
+}
+
+/// PENDING: waiting for the worker; ISSUED: created at the invoicing provider; FAILED: retries exhausted,
+/// needs manual review in the admin panel.
+enum InvoiceStatus {
+  PENDING
+  ISSUED
+  FAILED
+}
+
+enum KsefStatus {
+  NOT_SENT
+  PROCESSING
+  ACCEPTED
+  ERROR
+  NOT_APPLICABLE
+}
+
+/// VAT invoice (or correction) for a payment, issued by the invoicing provider (Fakturownia / mock).
+/// Amounts in grosze; negative for corrections. Buyer and seller are snapshots taken at creation.
+model Invoice {
+  id                 String        @id @default(cuid())
+  userId             String
+  paymentId          String
+  kind               InvoiceKind
+  /// For corrections: the corrected invoice.
+  correctedInvoiceId String?
+  /// One invoice per payment, one correction per refunded total (see billing/invoices).
+  idempotencyKey     String        @unique
+  status             InvoiceStatus @default(PENDING)
+  number             String?
+  providerInvoiceId  String?
+  issueDate          DateTime?
+  sellDate           DateTime
+  currency           String        @default("PLN")
+  /// "23", "8", "5", "0", "zw" (exempt) or "np" (reverse charge, outside Polish VAT).
+  vatRate            String
+  netAmount          Int
+  vatAmount          Int
+  grossAmount        Int
+  reverseCharge      Boolean       @default(false)
+  positionName       String
+  buyer              Json
+  seller             Json
+  ksefStatus         KsefStatus    @default(NOT_SENT)
+  ksefNumber         String?
+  ksefError          String?
+  attempts           Int           @default(0)
+  lastError          String?
+  emailedAt          DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment          Payment        @relation(fields: [paymentId], references: [id], onDelete: NoAction)
+  correctedInvoice Invoice?       @relation("InvoiceCorrections", fields: [correctedInvoiceId], references: [id], onDelete: NoAction)
+  corrections      Invoice[]      @relation("InvoiceCorrections")
+  document         InvoiceDocument?
+
+  @@index([userId, createdAt])
+  @@index([status, updatedAt])
+  @@index([ksefStatus])
+}
+
+/// Invoice PDF, kept in the database (private, small, backed up with the data) rather than in the public bucket.
+model InvoiceDocument {
+  invoiceId String   @id
+  content   Bytes
+  createdAt DateTime @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 }
 
 /// Processed webhook events (idempotency: an event id is handled at most once).

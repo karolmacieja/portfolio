@@ -48,6 +48,7 @@ describe("parseEnv", () => {
     expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/STORAGE_PROVIDER/);
     expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/THUMBNAIL_PROVIDER/);
     expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/PAYMENTS_PROVIDER/);
+    expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/INVOICING_PROVIDER/);
   });
 
   it("requires Stripe keys for the stripe payments provider", () => {
@@ -70,5 +71,17 @@ describe("parseEnv", () => {
 
   it("allows the mock mailer in a local production build", () => {
     expect(parseEnv({ ...base, NODE_ENV: "production" }).MAIL_PROVIDER).toBe("mock");
+  });
+
+  it("requires Fakturownia credentials for the fakturownia provider", () => {
+    expect(() => parseEnv({ ...base, INVOICING_PROVIDER: "fakturownia" })).toThrow(/FAKTUROWNIA_API_TOKEN/);
+    const env = parseEnv({
+      ...base,
+      INVOICING_PROVIDER: "fakturownia",
+      FAKTUROWNIA_DOMAIN: "firma",
+      FAKTUROWNIA_API_TOKEN: "token",
+      FAKTUROWNIA_KSEF: "false",
+    });
+    expect(env.FAKTUROWNIA_KSEF).toBe(false);
   });
 });

@@ -9,6 +9,11 @@ export class MockMailer implements Mailer {
 
   async send(message: MailMessage): Promise<void> {
     this.sent.push(message);
-    this.log(`[mail:mock] to=${message.to} subject="${message.subject}"\n${message.text}`);
+    const files = message.attachments
+      ?.map((file) => `${file.filename} (${file.content.length} B)`)
+      .join(", ");
+    this.log(
+      `[mail:mock] to=${message.to} subject="${message.subject}"${files ? ` attachments=${files}` : ""}\n${message.text}`,
+    );
   }
 }
