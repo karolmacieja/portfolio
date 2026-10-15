@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { accessTierSchema, DEFAULT_BLOCK_TIERS, type BlockTiers } from "./rules";
 
 export * from "./rules";
-export { getEntitlements } from "./load";
+export { ACTIVE_LICENSE_STATUSES, getEntitlements, isLicenseActive, loadLicense } from "./load";
 
 /** Required tier per block type: DB overrides on top of the code defaults. */
 export async function getBlockTiers(): Promise<BlockTiers> {

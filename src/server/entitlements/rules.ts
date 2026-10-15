@@ -79,6 +79,14 @@ export type PlanLike = {
   storageMb: number;
   features: unknown;
   accessTiers: string[];
+  /** Pricing order; a higher position is the better plan (used to pick between a license and a subscription). */
+  position?: number;
+};
+
+/** An active group license seat (see Organization). */
+export type LicenseLike = {
+  organization: { id: string; name: string; membersCanBuyDomains: boolean };
+  plan: PlanLike;
 };
 
 export type SubscriptionLike = {
@@ -90,9 +98,13 @@ export type SubscriptionLike = {
 };
 
 export type Entitlements = {
-  /** Plan granted by an entitled subscription; null without one. */
+  /** Plan granted by an entitled subscription or a group license; null without one. */
   plan: { id: string; slug: string; name: string } | null;
+  /** Where the plan comes from: the user's own subscription or a group license seat. */
+  source: "subscription" | "license" | null;
   subscription: Omit<SubscriptionLike, "plan"> | null;
+  /** The user's group license (also when their own, better subscription supplies the plan). */
+  license: LicenseLike["organization"] | null;
   /** Publishing requires an entitled subscription (or trial). */
   canPublish: boolean;
   limits: Limits;
@@ -120,27 +132,56 @@ export function parseFeatures(value: unknown): PlanFeatures {
 }
 
 /**
- * Without an entitled subscription a user can still build a site within the limits of the entry
- * plan (`fallbackPlan`, the first active plan), but cannot publish and gets no paid features.
+ * Without an entitled subscription or license seat a user can still build a site within the limits of
+ * the entry plan (`fallbackPlan`, the first active plan), but cannot publish and gets no paid features.
+ * With both, the better plan (higher pricing position) applies; a license that lets members buy domains
+ * adds the domain features to whichever plan applies (the member pays for the domain itself).
  */
 export function buildEntitlements(
   subscription: SubscriptionLike | null,
   fallbackPlan: PlanLike | null,
+  license: LicenseLike | null = null,
 ): Entitlements {
-  if (subscription && ENTITLED_STATUSES.includes(subscription.status)) {
-    const { plan, ...rest } = subscription;
+  const entitledSubscription =
+    subscription && ENTITLED_STATUSES.includes(subscription.status) ? subscription : null;
+  const useLicense =
+    license !== null &&
+    (!entitledSubscription || (license.plan.position ?? 0) > (entitledSubscription.plan.position ?? 0));
+  const domainFeatures = license?.organization.membersCanBuyDomains
+    ? { customDomain: true, domainPurchase: true }
+    : {};
+
+  if (entitledSubscription && !useLicense) {
+    const { plan, ...rest } = entitledSubscription;
     return {
       plan: { id: plan.id, slug: plan.slug, name: plan.name },
+      source: "subscription",
       subscription: rest,
+      license: license?.organization ?? null,
       canPublish: true,
       limits: limitsOf(plan),
-      features: parseFeatures(plan.features),
+      features: { ...parseFeatures(plan.features), ...domainFeatures },
+      accessTiers: tiersOf(plan),
+    };
+  }
+  if (license) {
+    const { plan } = license;
+    return {
+      plan: { id: plan.id, slug: plan.slug, name: plan.name },
+      source: "license",
+      subscription: null,
+      license: license.organization,
+      canPublish: true,
+      limits: limitsOf(plan),
+      features: { ...parseFeatures(plan.features), ...domainFeatures },
       accessTiers: tiersOf(plan),
     };
   }
   return {
     plan: null,
+    source: null,
     subscription: null,
+    license: null,
     canPublish: false,
     limits: fallbackPlan ? limitsOf(fallbackPlan) : FALLBACK_LIMITS,
     features: NO_FEATURES,

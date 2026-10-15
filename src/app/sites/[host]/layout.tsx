@@ -55,6 +55,21 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/sit
         )}
         <div className="flex-1">{children}</div>
         <footer className="site-muted flex flex-wrap justify-center gap-x-4 gap-y-1 px-6 py-6 text-center text-xs">
+          {site?.sponsor && (
+            <span data-testid="site-sponsor">
+              {t.rich("site.supportedBy", {
+                name: site.sponsor.name,
+                link: (chunks) =>
+                  site.sponsor?.url ? (
+                    <a href={site.sponsor.url} rel="sponsored noopener" className="underline">
+                      {chunks}
+                    </a>
+                  ) : (
+                    <>{chunks}</>
+                  ),
+              })}
+            </span>
+          )}
           {(site?.showBranding ?? true) && (
             <span data-testid="site-branding">{t("site.madeWith", { brand })}</span>
           )}

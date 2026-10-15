@@ -168,3 +168,44 @@ describe("limits", () => {
     expect(countProjects(null)).toBe(0);
   });
 });
+
+describe("group licenses", () => {
+  const orgPlan = { ...pro, position: 1 };
+  const license = (membersCanBuyDomains = false) => ({
+    organization: { id: "org-1", name: "Szkoła", membersCanBuyDomains },
+    plan: orgPlan,
+  });
+  const sub = (p: PlanLike): SubscriptionLike => ({
+    status: "ACTIVE",
+    trialEndsAt: null,
+    currentPeriodEnd: null,
+    cancelAtPeriodEnd: false,
+    plan: p,
+  });
+
+  it("grants the license plan to members without their own subscription", () => {
+    const e = buildEntitlements(null, start, license());
+    expect(e).toMatchObject({ source: "license", canPublish: true, plan: { slug: "pro" } });
+    expect(e.license?.name).toBe("Szkoła");
+  });
+
+  it("uses the better plan when the member also pays for one", () => {
+    const business = { ...plan("business", ["basic", "pro", "business"]), position: 2 };
+    expect(buildEntitlements(sub(business), start, license())).toMatchObject({
+      source: "subscription",
+      plan: { slug: "business" },
+      license: { id: "org-1" },
+    });
+    expect(buildEntitlements(sub({ ...start, position: 0 }), start, license()).source).toBe("license");
+  });
+
+  it("adds domain features when the organization allows members to buy domains", () => {
+    const basic = { ...start, position: 1 };
+    const withDomains = buildEntitlements(null, start, { ...license(true), plan: basic });
+    expect(can(withDomains, "domainPurchase")).toBe(true);
+    expect(can(withDomains, "customDomain")).toBe(true);
+    expect(can(buildEntitlements(null, start, { ...license(false), plan: basic }), "domainPurchase")).toBe(
+      false,
+    );
+  });
+});

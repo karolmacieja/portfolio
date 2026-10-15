@@ -5,9 +5,16 @@ import { unstable_cache } from "next/cache";
 import { getDevDomainSlug } from "@/lib/dev-domains";
 import { getEnv } from "@/lib/env";
 import { normalizeHostname } from "@/lib/hosts";
-import { DomainStatus, SiteStatus, type SuspensionReason } from "@/generated/prisma/enums";
+import {
+  DomainStatus,
+  SiteStatus,
+  SponsorRemovalStatus,
+  type LicenseSource,
+  type LicenseStatus,
+  type SuspensionReason,
+} from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
-import { can, getEntitlements } from "@/server/entitlements";
+import { can, getEntitlements, isLicenseActive } from "@/server/entitlements";
 
 import { hostTag, siteTag } from "./cache-tags";
 
@@ -34,6 +41,8 @@ export type PublishedSite = {
   showBranding: boolean;
   /** Plan feature `analytics`: published pages carry the cookie-less view beacon. */
   analytics: boolean;
+  /** "Supported by" footer of the owner's group license (null when off, hidden or bought out). */
+  sponsor: { name: string; url: string | null } | null;
   /** Published theme JSON; parse with parseTheme(). */
   theme: unknown;
   navigation: { path: string; title: string; updatedAt: string }[];
@@ -77,6 +86,34 @@ export function resolveSiteIdByHost(hostname: string): Promise<string | null> {
   })();
 }
 
+type SponsorOwner = {
+  membership: {
+    sponsorFooterHidden: boolean;
+    organization: {
+      status: LicenseStatus;
+      source: LicenseSource;
+      validUntil: Date | null;
+      sponsorFooter: boolean;
+      sponsorName: string | null;
+      sponsorUrl: string | null;
+    };
+  } | null;
+  sponsorRemoval: { status: SponsorRemovalStatus } | null;
+};
+
+/**
+ * The sponsor footer shows on sites of members of an active license with a sponsor name, unless staff
+ * switched it off (for the license or the member) or the member paid to remove it.
+ */
+export function sponsorOf(owner: SponsorOwner): PublishedSite["sponsor"] {
+  const member = owner.membership;
+  if (!member || member.sponsorFooterHidden) return null;
+  const org = member.organization;
+  if (!org.sponsorFooter || !org.sponsorName || !isLicenseActive(org)) return null;
+  if (owner.sponsorRemoval?.status === SponsorRemovalStatus.ACTIVE) return null;
+  return { name: org.sponsorName, url: org.sponsorUrl };
+}
+
 export function getPublishedSite(siteId: string): Promise<PublishedSite | null> {
   return unstable_cache(
     async (): Promise<PublishedSite | null> => {
@@ -93,7 +130,13 @@ export function getPublishedSite(siteId: string): Promise<PublishedSite | null> 
             select: { hostname: true },
             take: 1,
           },
-          owner: { select: { deletionScheduledAt: true } },
+          owner: {
+            select: {
+              deletionScheduledAt: true,
+              membership: { select: { sponsorFooterHidden: true, organization: true } },
+              sponsorRemoval: { select: { status: true } },
+            },
+          },
         },
       });
       if (!site) return null;
@@ -111,6 +154,7 @@ export function getPublishedSite(siteId: string): Promise<PublishedSite | null> 
         faviconUrl: site.faviconUrl,
         showBranding: !can(entitlements, "removeBranding"),
         analytics: can(entitlements, "analytics"),
+        sponsor: sponsorOf(site.owner),
         theme: site.themePublished,
         navigation: site.pages.map((page) => ({
           path: page.path,
