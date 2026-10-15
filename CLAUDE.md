@@ -14,8 +14,9 @@ Next.js 16 ships its own docs in `node_modules/next/dist/docs/` (see `AGENTS.md`
 | 3     | Plans & entitlements: limits, flags, block tiers, plan seed            | done    |
 | 4     | Templates: template mode, versions, gallery, copy, theme/layout change | done    |
 | 5     | Payments (Stripe): checkout, webhooks, portal, dunning, coupons        | done    |
-| 6     | Invoicing (Fakturownia, KSeF)                                          | next    |
-| 7-9   | Domains, admin, polish                                                 | pending |
+| 6     | Invoicing (Fakturownia, KSeF): invoices, corrections, PDFs, panels     | done    |
+| 7     | Domains: Cloudflare for SaaS, Openprovider                             | next    |
+| 8-9   | Admin panel, polish                                                    | pending |
 
 Work in phases; after each phase run lint/typecheck/tests, summarize and wait for the owner's approval.
 
@@ -41,7 +42,7 @@ pnpm install                  # also runs `prisma generate`
 pnpm db:migrate --name x      # create/apply a migration + regenerate the client (Prisma 7 no longer auto-generates)
 pnpm db:seed                  # plans, users (password Password123!), demo sites with generated images
 pnpm dev                      # http://localhost:3000 (marketing), app./admin./jan.localhost:3000
-pnpm worker                   # background jobs (template thumbnails, hourly dunning); needs Redis
+pnpm worker                   # background jobs (thumbnails, dunning, invoices + KSeF sync); needs Redis
 pnpm billing:sync-prices      # create Stripe prices for PlanPrice rows without stripePriceId
 stripe listen --forward-to app.localhost:3000/api/webhooks/stripe   # PAYMENTS_PROVIDER=stripe locally
 pnpm lint | pnpm format | pnpm typecheck | pnpm test | pnpm test:e2e | pnpm build
@@ -159,7 +160,29 @@ with `pnpm db:deploy` and run `pnpm db:generate`.
 - Pages (app host): `/plans` (monthly/yearly, coupon, buy or switch), `/billing` (status, cancel/resume, portal,
   payments), `/billing/profile`, `/billing/success`; admin host: `/coupons`.
 - Worker-side cache invalidation: `remoteInvalidate` -> `/api/internal/revalidate` (signed token).
+- Refunds are made in the Stripe dashboard (mock: "Symuluj zwrot" in the mock portal): `charge.refunded` ->
+  `payment.refunded` (cumulative amount, matched by `Payment.providerChargeRef` = PaymentIntent) -> correction invoice.
+  A fully refunded template purchase revokes the template.
 - E2E create throwaway verified users with `tests/e2e/db.ts` (`createBillingUser`).
+
+## Invoicing
+
+- Adapter `src/server/invoicing` (`INVOICING_PROVIDER` = mock | fakturownia): `createInvoice`, `createCorrection`,
+  `getKsefState`, `resendToKsef`, `getPdf`. Fakturownia: paid VAT invoices with our invoice id as unique `oid`
+  (duplicate after a timeout -> looked up), `gov_save_and_send` for KSeF (all invoices, B2C included). Mock: local
+  numbering (`FV/n/MM/YYYY`, `KOR/...`), PDF via `pdf-lib` + DejaVu subset (`assets/fonts`), KSeF accepted on the next
+  sync; a buyer name containing `[fail]` simulates a rejected invoice.
+- Flow (`service.ts`): billing events create a PENDING `Invoice` (idempotency key `invoice:{paymentId}`, corrections
+  `correction:{paymentId}:{refundedTotal}`) with buyer/seller snapshots and enqueue it (`deps.enqueueInvoice`, BullMQ
+  `invoices`). The worker's `issueInvoice` is resumable: create at provider -> store PDF (`InvoiceDocument`, bytea; never
+  in the public bucket) -> mail with the PDF attached. Retryable errors retry (6 attempts, exponential); the last
+  attempt or a validation error leaves it FAILED ("do ręcznej weryfikacji"). Every 5 minutes the worker re-enqueues
+  stale PENDING invoices and syncs KSeF statuses.
+- VAT: `Setting` "invoicing" (admin `/settings`): rate 23/8/5/0/zw (+ exemption basis, default art. 113), seller data,
+  place of issue. Verified EU business (`reverseCharge`) -> `np` + reverse charge. Prices are gross: net = gross / (1 + rate).
+- Panels: client `/billing` lists issued invoices; PDF via `GET /api/invoices/{id}/pdf` (owner, or staff on the admin
+  host). Admin `/invoices` (staff view; ADMIN retries FAILED invoices with the buyer's current billing data and resends
+  KSeF errors).
 
 ## Published sites and caching
 
@@ -175,6 +198,7 @@ with `pnpm db:deploy` and run `pnpm db:generate`.
 ## Layout
 
 ```
+assets/fonts/               DejaVu Sans subset for mock invoice PDFs (license alongside)
 config/dev-domains.json     local custom-domain -> slug map (development only)
 prisma/                     schema.prisma, migrations/, seed.ts (users + demo sites "jan", "zawieszona")
 messages/{pl,en}.json       UI strings (pl is the source; a test enforces identical keys)
@@ -183,10 +207,11 @@ src/app/(platform)/         root layout for platform hosts
   marketing/                landing (root domain)
   panel/                    client panel (app.): (auth)/..., dashboard, plans, templates, media,
                             sites/[siteId]/(manage)/{pages,theme,template,settings,history}, editor
-  admin/                    admin panel (admin.): login, forbidden, (protected)/ dashboard + templates, (editor)/
+  admin/                    admin panel (admin.): login, forbidden, (protected)/ dashboard, templates, coupons,
+                            invoices, settings; (editor)/
 src/app/sites/[host]/       root layout + renderer for published client sites
 src/app/api/                auth (wrapped with withPublicOrigin), email/verify, media/upload, health,
-                            webhooks/stripe, internal/revalidate
+                            webhooks/stripe, internal/revalidate, invoices/[id]/pdf
 src/app/template-preview/   public template preview (own root layout)
 src/app/storage/            local storage file server (dev)
 src/app/global-not-found.tsx
@@ -210,6 +235,7 @@ src/server/                 server-only domain code
   plans/                    plan listing for the pricing page
   payments/                 PaymentProvider: mock | stripe (normalized billing events)
   billing/                  billing events, dunning, owner-scoped billing service, coupons, actions
+  invoicing/                InvoicingProvider: mock | fakturownia; invoice lifecycle, client/admin reads, settings
   cache/                    remote cache invalidation (worker -> app)
   templates/                schema, admin + client services, content mapping, preview, thumbnail job, actions
   jobs/                     BullMQ queues (enqueue helpers)
@@ -234,6 +260,8 @@ tests/e2e/                  Playwright specs (+ hosts.ts URL helpers, global-set
 - Use `server-only` in modules that must never reach the client. Vitest aliases it to a no-op.
 - Unit/integration tests sit next to the code (`*.test.ts`); E2E in `tests/e2e`. DB/Redis tests use
   `describe.skipIf(!process.env.DATABASE_URL)` / `REDIS_URL`, create uniquely named data and clean up after themselves.
+- E2E sign in through `signInAsClient` / `signInAsAdmin` (they reset the per-IP sign-in counter: all E2E logins come
+  from 127.0.0.1). Playwright also starts `pnpm worker` (health on `WORKER_HEALTH_PORT`, default 3101).
 - E2E: navigate subdomains with `page.goto` (Chromium resolves `*.localhost`; Node-based `request` does not).
   If the dev server gets stuck in a reload loop ("Compiled in 1ms" on every request), delete `.next` and restart.
 - Conventional Commits; small logical commits.

@@ -177,3 +177,32 @@ Lightweight ADR log. Newest at the bottom. Business decisions confirmed by the o
     `AUTH_SECRET` (`INTERNAL_APP_URL` for a private address), because `revalidateTag` only works inside Next.js.
 75. **Plan prices are synced to Stripe by a script** (`pnpm billing:sync-prices`), not on the fly: prices are immutable
     at Stripe, a new amount is a new `PlanPrice` row.
+
+## Phase 6
+
+76. **VAT rate is a setting, not code** (owner: status not decided yet): admin chooses 23/8/5/0/zw and the exemption
+    basis (default art. 113 ust. 1 i 9) in `/settings`; the rate applies to invoices created after the change. Plan
+    prices stay gross, so with "zw" the full price is the invoice amount.
+77. **All invoices go to KSeF**, B2C included (owner decision), via Fakturownia's `gov_save_and_send`. KSeF numbers
+    arrive asynchronously and are polled every 5 minutes (Fakturownia webhooks can replace polling later).
+78. **Reverse charge for verified EU businesses**: VAT "np" with `np_tax_kind: export_service_eu` and
+    `reverse_charge: true`; the gross price is charged as the net amount (no separate EU net pricing). EU consumers are
+    invoiced with Polish VAT (OSS is out of scope until the EU B2C threshold matters).
+79. **Invoices are issued by the worker, never in the request path**: the event handler only creates an idempotent
+    PENDING row and enqueues it; issuing is resumable (provider -> PDF -> mail) and retried; FAILED after the last
+    attempt or a validation error = "needs manual review". Duplicates after a timeout are prevented by Fakturownia's
+    unique `oid` (our invoice id).
+80. **PDFs stored in Postgres** (`InvoiceDocument`, bytea): the media bucket is public, invoices are personal data and
+    small; served only through an authenticated route (owner or staff). Invoices are kept when they could otherwise
+    be cascaded by payments (`NoAction`); account deletion (Phase 9) must respect the 5-year retention.
+81. **Corrections only from refunds** (cumulative refunded total per charge -> at most one correction per new total;
+    "before" state = original minus earlier corrections). A fully refunded premium template is revoked. Refunds are
+    made in Stripe (dashboard); an in-app refund button can come with the admin panel (Phase 8).
+82. **Refund matching via PaymentIntent** (`Payment.providerChargeRef`): Stripe API 2025+ invoices don't expose the
+    PaymentIntent, so `invoice.paid` webhooks look it up via `invoicePayments.list`.
+83. **Mock PDFs with pdf-lib + a DejaVu subset** (Latin + Latin Extended-A, ~50 KB each): standard PDF fonts can't
+    render Polish letters. Production PDFs come from Fakturownia.
+84. **Worker health endpoint** (`WORKER_HEALTH_PORT`, `GET /health`) for orchestration and for Playwright, which now
+    starts the worker next to the app.
+85. **Retrying a FAILED invoice re-reads the buyer's billing profile** if it was never issued, so fixing the client's
+    data (e.g. a NIP rejected by KSeF) and pressing "Ponów" is the whole repair flow.

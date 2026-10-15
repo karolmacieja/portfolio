@@ -68,11 +68,26 @@ Stripe in test mode:
 2. `pnpm billing:sync-prices` creates products/prices at Stripe for plan prices without `stripePriceId`.
 3. Forward webhooks: `stripe listen --forward-to app.localhost:3000/api/webhooks/stripe` and put the printed
    `whsec_...` into `STRIPE_WEBHOOK_SECRET`. Production subscribes to: `checkout.session.completed`,
-   `customer.subscription.created|updated|deleted`, `invoice.paid`, `invoice.payment_failed`.
+   `customer.subscription.created|updated|deleted`, `invoice.paid`, `invoice.payment_failed`, `charge.refunded`.
 4. Enable the customer portal (Billing -> Customer portal) with plan switching off (changes go through `/plans`), and
    card, BLIK and Przelewy24 as payment methods (BLIK/P24 work for one-time template purchases only).
 
 Dunning (reminders and suspension after the grace period) runs hourly in `pnpm worker`.
+
+### Invoices
+
+Invoices are issued by `pnpm worker` a moment after each payment (keep it running to see them). With
+`INVOICING_PROVIDER=mock` (default) PDFs are generated locally (marked as test documents) and KSeF is simulated; the
+client sees them on `/billing`, admins on the admin host under `/invoices`. Refunding a payment ("Symuluj zwrot" in the
+mock portal, or a refund in the Stripe dashboard) issues a correction. VAT rate and seller data: admin `/settings`.
+
+Fakturownia:
+
+1. In Fakturownia: Settings -> API -> API token; connect KSeF (Settings -> KSeF; start in DEMO mode for testing) and
+   keep automatic sending off (the app sends every invoice with `gov_save_and_send`).
+2. Set `INVOICING_PROVIDER=fakturownia`, `FAKTUROWNIA_DOMAIN` (your account subdomain), `FAKTUROWNIA_API_TOKEN`,
+   optionally `FAKTUROWNIA_DEPARTMENT_ID` (seller data/numbering) and `FAKTUROWNIA_KSEF=false` without KSeF.
+3. Fill the seller data and VAT rate in admin `/settings`; issue a test payment and check `/invoices`.
 
 Try it: sign in as the client at http://app.localhost:3000, open "Zarządzaj" on the demo site, edit a page in the
 editor, change the theme and publish; then reload http://jan.localhost:3000.
@@ -87,7 +102,7 @@ editor, change the theme and publish; then reload http://jan.localhost:3000.
 | `pnpm test`                                                          | Unit tests (Vitest); Redis tests run when `REDIS_URL` is set |
 | `pnpm test:e2e`                                                      | E2E tests (Playwright); needs a migrated and seeded database |
 | `pnpm db:migrate`, `pnpm db:seed`, `pnpm db:reset`, `pnpm db:studio` | Database                                                     |
-| `pnpm worker`                                                        | Background jobs (thumbnails, hourly dunning)                 |
+| `pnpm worker`                                                        | Background jobs (thumbnails, dunning, invoices, KSeF sync)   |
 | `pnpm billing:sync-prices`                                           | Create missing Stripe prices for plan prices                 |
 
 ## CI
