@@ -37,7 +37,11 @@ model User {
 
   accounts          Account[]
   sessions          Session[]
-  auditLogs         AuditLog[]         @relation("AuditActor")
+  auditLogs         AuditLog[]             @relation("AuditActor")
+  clientNotes       ClientNote[]           @relation("NoteClient")
+  authoredNotes     ClientNote[]           @relation("NoteAuthor")
+  impersonations    ImpersonationSession[] @relation("ImpersonatedUser")
+  impersonating     ImpersonationSession[] @relation("Impersonator")
   sites             Site[]
   assets            Asset[]
   subscriptions     Subscription[]
@@ -139,6 +143,8 @@ model Site {
   locale            String            @default("pl")
   status            SiteStatus        @default(ACTIVE)
   suspensionReason  SuspensionReason?
+  /// Statement of reasons shown to the owner for moderation suspensions (DSA).
+  suspensionNote    String?
   suspendedAt       DateTime?
   /// Null until the first publication; unpublished sites are not served.
   publishedAt       DateTime?
@@ -160,6 +166,7 @@ model Site {
   pages           Page[]
   domains         Domain[]
   domainOrders    DomainOrder[]
+  abuseReports    AbuseReport[]
   backups         SiteBackup[]
   template        Template?        @relation(fields: [templateId], references: [id], onDelete: SetNull)
   templateVersion TemplateVersion? @relation(fields: [templateVersionId], references: [id], onDelete: SetNull)
@@ -384,7 +391,8 @@ model PlanPrice {
   plan          Plan           @relation(fields: [planId], references: [id], onDelete: Cascade)
   subscriptions Subscription[]
 
-  @@unique([planId, interval, currency])
+  /// One active price per plan/interval/currency (enforced by the admin service); changed amounts get a new row.
+  @@index([planId, interval, currency])
 }
 
 /// Mirrors Stripe subscription statuses.
@@ -722,4 +730,75 @@ model Coupon {
   providerPromotionCodeId String?
   createdAt               DateTime       @default(now())
   updatedAt               DateTime       @updatedAt
+}
+
+/// Internal staff notes about a client (never shown to the client).
+model ClientNote {
+  id        String   @id @default(cuid())
+  userId    String
+  authorId  String?
+  body      String
+  createdAt DateTime @default(now())
+
+  user   User  @relation("NoteClient", fields: [userId], references: [id], onDelete: Cascade)
+  author User? @relation("NoteAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+}
+
+/// Staff signed in as a client. The token that starts it is single-use (usedAt); sessions expire at expiresAt
+/// and can be ended early (endedAt). Every session is audited.
+model ImpersonationSession {
+  id        String    @id @default(cuid())
+  adminId   String
+  userId    String
+  reason    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  endedAt   DateTime?
+  createdAt DateTime  @default(now())
+
+  admin User @relation("Impersonator", fields: [adminId], references: [id], onDelete: Cascade)
+  user  User @relation("ImpersonatedUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum AbuseCategory {
+  ILLEGAL
+  COPYRIGHT
+  PRIVACY
+  FRAUD
+  HATE
+  OTHER
+}
+
+enum AbuseReportStatus {
+  OPEN
+  ACTIONED
+  DISMISSED
+}
+
+/// "Report content" submissions from public sites (DSA notice and action). The reporter's email is optional.
+model AbuseReport {
+  id            String            @id @default(cuid())
+  siteId        String
+  /// Page path the report is about.
+  path          String
+  category      AbuseCategory
+  description   String
+  reporterEmail String?
+  /// Salted hash of the reporter's IP (rate limiting / abuse of the form), never the IP itself.
+  reporterHash  String?
+  status        AbuseReportStatus @default(OPEN)
+  /// Decision and statement of reasons (sent to the reporter and, when actioned, to the site owner).
+  resolution    String?
+  resolvedById  String?
+  resolvedAt    DateTime?
+  createdAt     DateTime          @default(now())
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([siteId])
 }

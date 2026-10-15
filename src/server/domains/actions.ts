@@ -4,12 +4,12 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { DomainOrderStatus, Role } from "@/generated/prisma/enums";
+import { DomainOrderStatus } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { formValues, type ActionState } from "@/server/action-state";
-import { STAFF_ROLES } from "@/server/auth/roles";
-import { requireRole, requireUser } from "@/server/auth/session";
+import { audit } from "@/server/audit";
+import { isImpersonating, requirePermission, requireUser } from "@/server/auth/session";
 import { enqueueDomainJob } from "@/server/jobs/queues";
 import { getRateLimiter, RATE_LIMITS } from "@/server/rate-limit/limiter";
 
@@ -149,6 +149,9 @@ export async function startDomainPurchaseAction(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await requireUser("/dashboard");
+  if (isImpersonating(user)) {
+    return { error: "billing.errors.impersonation" };
+  }
   const values = formValues(formData);
   const siteId = id.safeParse(values.siteId);
   const domain = z.string().trim().toLowerCase().max(253).safeParse(values.domain);
@@ -186,6 +189,9 @@ export async function startDomainPurchaseAction(
 
 export async function setDomainAutoRenewAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser("/dashboard");
+  if (isImpersonating(user)) {
+    return { error: "billing.errors.impersonation" };
+  }
   const orderId = id.safeParse(formData.get("orderId"));
   if (!orderId.success) return { error: "domains.errors.notFound" };
   return run(() => purchase.setDomainAutoRenew(user.id, orderId.data, formData.get("autoRenew") === "1"));
@@ -193,6 +199,9 @@ export async function setDomainAutoRenewAction(_prev: ActionState, formData: For
 
 export async function showAuthCodeAction(_prev: AuthCodeState, formData: FormData): Promise<AuthCodeState> {
   const user = await requireUser("/dashboard");
+  if (isImpersonating(user)) {
+    return { error: "billing.errors.impersonation" };
+  }
   const orderId = id.safeParse(formData.get("orderId"));
   if (!orderId.success) return { error: "domains.errors.notFound" };
   if (await limited(user.id, "domainAuthCodePerUser")) return { error: "domains.errors.rateLimited" };
@@ -208,7 +217,7 @@ export async function showAuthCodeAction(_prev: AuthCodeState, formData: FormDat
 
 /** Staff: verify a domain now (any client). */
 export async function adminCheckDomainAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  await requireRole(STAFF_ROLES);
+  await requirePermission("domains.manage");
   const domainId = id.safeParse(formData.get("domainId"));
   if (!domainId.success) return { error: "domains.errors.notFound" };
   const domain = await db.domain.findUnique({ where: { id: domainId.data } });
@@ -227,9 +236,9 @@ export async function adminCheckDomainAction(_prev: ActionState, formData: FormD
   return { ok: true };
 }
 
-/** Admin: put a failed registration back into the queue. */
+/** Staff: put a failed registration back into the queue. */
 export async function retryDomainOrderAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  await requireRole([Role.ADMIN]);
+  const actor = await requirePermission("domains.manage");
   const orderId = id.safeParse(formData.get("orderId"));
   if (!orderId.success) return { error: "domains.errors.notFound" };
   const order = await db.domainOrder.findUnique({ where: { id: orderId.data } });
@@ -239,6 +248,12 @@ export async function retryDomainOrderAction(_prev: ActionState, formData: FormD
     data: { status: DomainOrderStatus.REGISTERING, attempts: 0, lastError: null },
   });
   await enqueueDomainJob({ name: "register", orderId: order.id }, String(updated.updatedAt.getTime()));
+  await audit(
+    actor,
+    "domain.registration.retry",
+    { type: "DomainOrder", id: order.id },
+    { domain: order.domainName },
+  );
   refresh();
   return { ok: true };
 }
@@ -261,7 +276,7 @@ const settingsForm = z.object({
 });
 
 export async function saveDomainSettingsAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  await requireRole([Role.ADMIN]);
+  const actor = await requirePermission("settings.manage");
   const values = formValues(formData);
   const form = settingsForm.safeParse(values);
   if (!form.success) return { error: "adminSettings.errors.invalid", values };
@@ -274,6 +289,7 @@ export async function saveDomainSettingsAction(_prev: ActionState, formData: For
   });
   if (!parsed.success) return { error: "adminSettings.errors.invalid", values };
   await saveDomainSettings(parsed.data);
+  await audit(actor, "settings.domains", null, { ...parsed.data });
   refresh();
   return { ok: true, values };
 }

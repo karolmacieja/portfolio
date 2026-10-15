@@ -89,11 +89,12 @@ async function seedPlans(db: PrismaClient) {
     const data = { ...plan, accessTiers: [...plan.accessTiers], features: json(features), position };
     const saved = await db.plan.upsert({ where: { slug: plan.slug }, update: data, create: data });
     for (const [interval, amount] of Object.entries(prices) as [BillingInterval, number][]) {
-      await db.planPrice.upsert({
-        where: { planId_interval_currency: { planId: saved.id, interval, currency: "PLN" } },
-        update: { amount, isActive: true },
-        create: { planId: saved.id, interval, amount, currency: "PLN" },
+      // One active price per plan and interval; older (inactive) prices stay for existing subscriptions.
+      const current = await db.planPrice.findFirst({
+        where: { planId: saved.id, interval, currency: "PLN", isActive: true },
       });
+      if (current) await db.planPrice.update({ where: { id: current.id }, data: { amount } });
+      else await db.planPrice.create({ data: { planId: saved.id, interval, amount, currency: "PLN" } });
     }
   }
   for (const [blockType, requiredTier] of Object.entries(DEFAULT_BLOCK_TIERS)) {
@@ -112,7 +113,8 @@ async function seedSubscription(db: PrismaClient, userId: string, planSlug: stri
       planId: plan.id,
       priceId: price?.id,
       status: SubscriptionStatus.ACTIVE,
-      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      // Open-ended manual plan: dated manual plans expire in the worker (billing/manual.ts).
+      currentPeriodEnd: null,
     },
   });
 }

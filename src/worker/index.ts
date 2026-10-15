@@ -5,7 +5,9 @@ import { createServer } from "node:http";
 import { Queue, Worker } from "bullmq";
 
 import { getEnv, platformUrl } from "@/lib/env";
+import { purgeAuditLog } from "@/server/audit/retention";
 import { runDunning } from "@/server/billing/dunning";
+import { expireManualPlans } from "@/server/billing/manual";
 import { createHostnameProvider, createRegistrar } from "@/server/domains/providers";
 import {
   domainMaintenance,
@@ -63,15 +65,22 @@ const thumbnails = new Worker<ThumbnailJob>(
 const billing = new Worker(
   QUEUES.billing,
   async (job) => {
+    if (job.name === "retention") {
+      console.info(`[worker] retention: ${await purgeAuditLog()} audit entries removed`);
+      return;
+    }
     if (job.name !== "dunning") return;
-    const result = await runDunning({
+    const deps = {
       invalidate: remoteInvalidate,
       mailer,
       brand: env.BRAND_NAME,
       billingUrl,
       enqueueInvoice,
       enqueueDomainJob,
-    });
+    };
+    const result = await runDunning(deps);
+    const expired = await expireManualPlans(deps);
+    if (expired) console.info(`[worker] ${expired} manual plan(s) ended`);
     console.info(`[worker] dunning: ${result.reminders} reminders, ${result.suspended} suspended`);
   },
   { connection, concurrency: 1 },
@@ -132,11 +141,10 @@ const invoices = new Worker<InvoiceJob>(
 );
 
 // Schedulers are idempotent: re-registering on restart doesn't duplicate them.
-await new Queue(QUEUES.billing, { connection }).upsertJobScheduler(
-  "dunning-hourly",
-  { pattern: "7 * * * *" },
-  { name: "dunning" },
-);
+const billingQueue = new Queue(QUEUES.billing, { connection });
+await billingQueue.upsertJobScheduler("dunning-hourly", { pattern: "7 * * * *" }, { name: "dunning" });
+// Daily: data retention (audit log older than two years).
+await billingQueue.upsertJobScheduler("retention-daily", { pattern: "41 3 * * *" }, { name: "retention" });
 await new Queue(QUEUES.invoices, { connection }).upsertJobScheduler(
   "invoices-sweep",
   { every: 5 * 60_000 },

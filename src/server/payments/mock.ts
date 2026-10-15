@@ -130,6 +130,10 @@ export class MockPaymentProvider implements PaymentProvider {
     });
   }
 
+  async refund(input: { paymentRef: string; amount: number }) {
+    await this.simulateRefund(input.paymentRef, input.amount);
+  }
+
   priceRef(price: { id: string }) {
     return price.id;
   }

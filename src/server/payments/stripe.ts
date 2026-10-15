@@ -241,6 +241,16 @@ export class StripePaymentProvider implements PaymentProvider {
     await this.stripe.subscriptions.update(input.subscriptionId, { cancel_at_period_end: input.cancel });
   }
 
+  async refund(input: { paymentRef: string; amount: number }) {
+    await this.stripe.refunds.create(
+      { payment_intent: input.paymentRef, amount: input.amount },
+      // Same amount on the same charge twice in a row is almost certainly a double click.
+      {
+        idempotencyKey: `refund-${input.paymentRef}-${input.amount}-${new Date().toISOString().slice(0, 16)}`,
+      },
+    );
+  }
+
   priceRef(price: { id: string; stripePriceId: string | null }) {
     return price.stripePriceId;
   }

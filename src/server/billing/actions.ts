@@ -4,13 +4,14 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { BillingPartyType, CouponDuration, Role } from "@/generated/prisma/enums";
+import { BillingPartyType, CouponDuration } from "@/generated/prisma/enums";
 import { isLocale } from "@/i18n/config";
 import { db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { formValues, type ActionState } from "@/server/action-state";
 import { sendEmailVerification } from "@/server/auth/email-verification";
-import { requireRole, requireUser } from "@/server/auth/session";
+import { audit } from "@/server/audit";
+import { isImpersonating, requirePermission, requireUser } from "@/server/auth/session";
 import { MockPaymentProvider } from "@/server/payments";
 import { getRateLimiter, RATE_LIMITS } from "@/server/rate-limit/limiter";
 
@@ -57,6 +58,9 @@ const checkoutSchema = z.object({
 
 export async function startCheckoutAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser("/plans");
+  if (isImpersonating(user)) {
+    return { error: "billing.errors.impersonation" };
+  }
   const values = formValues(formData);
   const parsed = checkoutSchema.safeParse({ priceId: values.priceId, coupon: values.coupon ?? "" });
   if (!parsed.success) return { error: "billing.errors.invalidInput", values };
@@ -73,6 +77,9 @@ export async function startCheckoutAction(_prev: ActionState, formData: FormData
 
 export async function changePlanAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser("/plans");
+  if (isImpersonating(user)) {
+    return { error: "billing.errors.impersonation" };
+  }
   const priceId = id.safeParse(formData.get("priceId"));
   if (!priceId.success) return { error: "billing.errors.invalidInput" };
   try {
@@ -89,6 +96,9 @@ export async function setCancelAtPeriodEndAction(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await requireUser("/billing");
+  if (isImpersonating(user)) {
+    return { error: "billing.errors.impersonation" };
+  }
   try {
     await service.setCancelAtPeriodEnd(user.id, formData.get("cancel") === "1");
   } catch (error) {
@@ -100,6 +110,9 @@ export async function setCancelAtPeriodEndAction(
 
 export async function openPortalAction(): Promise<ActionState> {
   const user = await requireUser("/billing");
+  if (isImpersonating(user)) {
+    return { error: "billing.errors.impersonation" };
+  }
   return redirectTo(() => service.createPortalUrl(user.id));
 }
 
@@ -130,6 +143,9 @@ const profileSchema = z.object({
 
 export async function saveBillingProfileAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser("/billing/profile");
+  if (isImpersonating(user)) {
+    return { error: "billing.errors.impersonation" };
+  }
   const values = formValues(formData);
   const parsed = profileSchema.safeParse({
     ...values,
@@ -176,6 +192,9 @@ export async function resendVerificationAction(): Promise<ActionState> {
 
 export async function purchaseTemplateAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser("/templates");
+  if (isImpersonating(user)) {
+    return { error: "billing.errors.impersonation" };
+  }
   const templateId = id.safeParse(formData.get("templateId"));
   if (!templateId.success) return { error: "billing.errors.invalidInput" };
   if (!(await checkoutAllowed(user.id))) return { error: "billing.errors.rateLimited" };
@@ -194,6 +213,9 @@ function mockProvider(): MockPaymentProvider {
 
 export async function completeMockCheckoutAction(formData: FormData): Promise<void> {
   const user = await requireUser("/billing");
+  if (isImpersonating(user)) {
+    redirect("/billing");
+  }
   const provider = mockProvider();
   const token = MockPaymentProvider.readToken(String(formData.get("token") ?? ""));
   // The checkout belongs to whoever started it.
@@ -205,6 +227,9 @@ export async function completeMockCheckoutAction(formData: FormData): Promise<vo
 
 export async function mockPortalAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser("/billing");
+  if (isImpersonating(user)) {
+    return { error: "billing.errors.impersonation" };
+  }
   const provider = mockProvider();
   const op = formData.get("op");
   if (op === "refund") {
@@ -236,7 +261,6 @@ export async function mockPortalAction(_prev: ActionState, formData: FormData): 
 
 // --- Coupons (ADMIN) -----------------------------------------------------------------------
 
-const ADMIN_ONLY = [Role.ADMIN] as const;
 const optionalInt = (min: number, max: number) =>
   z
     .string()
@@ -264,7 +288,7 @@ const couponSchema = z.object({
 });
 
 export async function createCouponAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  await requireRole(ADMIN_ONLY);
+  const actor = await requirePermission("coupons.manage");
   const values = formValues(formData);
   const parsed = couponSchema.safeParse({
     percentOff: "",
@@ -278,19 +302,22 @@ export async function createCouponAction(_prev: ActionState, formData: FormData)
   if (parsed.data.duration === CouponDuration.REPEATING && !parsed.data.durationInMonths) {
     return { error: "coupons.errors.invalid", values };
   }
+  let couponId: string;
   try {
-    await createCoupon(parsed.data);
+    couponId = (await createCoupon(parsed.data)).id;
   } catch (error) {
     if (error instanceof CouponError) return { error: `coupons.errors.${error.code}`, values };
     throw error;
   }
+  await audit(actor, "coupon.create", { type: "Coupon", id: couponId }, { code: parsed.data.code });
   refresh();
   return { ok: true };
 }
 
 export async function deactivateCouponAction(formData: FormData): Promise<void> {
-  await requireRole(ADMIN_ONLY);
+  const actor = await requirePermission("coupons.manage");
   const couponId = id.parse(formData.get("couponId"));
   await deactivateCoupon(couponId);
+  await audit(actor, "coupon.deactivate", { type: "Coupon", id: couponId });
   refresh();
 }

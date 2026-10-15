@@ -56,3 +56,43 @@ describe("buildLinkMail", () => {
     expect(mail.html).toContain("&amp;b=&quot;&gt;&lt;script&gt;");
   });
 });
+
+describe.skipIf(!process.env.DATABASE_URL)("mail text overrides (database)", () => {
+  it("uses admin texts with placeholders and falls back to the defaults when one is broken", async () => {
+    const { db } = await import("@/lib/db");
+    const { saveMailOverride } = await import("./overrides");
+    const { buildLinkMail } = await import("./templates");
+    const previous = await db.setting.findUnique({ where: { key: "mailTexts" } });
+    try {
+      await saveMailOverride("en", "paymentReminder", {
+        subject: "Pay within {days} days — {brand}",
+        intro: "",
+        cta: "",
+      });
+      const mail = await buildLinkMail({
+        kind: "paymentReminder",
+        to: "a@b.c",
+        url: "http://x",
+        locale: "en",
+        brand: "B",
+        values: { days: 3 },
+      });
+      expect(mail.subject).toBe("Pay within 3 days — B");
+
+      await saveMailOverride("en", "paymentReminder", { subject: "Broken {days", intro: "", cta: "" });
+      const fallback = await buildLinkMail({
+        kind: "paymentReminder",
+        to: "a@b.c",
+        url: "http://x",
+        locale: "en",
+        brand: "B",
+        values: { days: 3 },
+      });
+      expect(fallback.subject).not.toContain("Broken");
+    } finally {
+      if (previous)
+        await db.setting.update({ where: { key: "mailTexts" }, data: { value: previous.value ?? {} } });
+      else await db.setting.deleteMany({ where: { key: "mailTexts" } });
+    }
+  });
+});
