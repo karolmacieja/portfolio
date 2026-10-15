@@ -1,0 +1,30 @@
+import { Role } from "@/generated/prisma/enums";
+
+/**
+ * Staff permissions per admin action. Owner decision (Phase 8): SUPPORT may do almost everything;
+ * staff roles, platform settings and the plan catalog (prices, limits, block tiers) stay with ADMIN.
+ */
+export const PERMISSIONS = [
+  "clients.view",
+  "clients.manage",
+  "clients.impersonate",
+  "payments.refund",
+  "plans.grant",
+  "invoices.manage",
+  "domains.manage",
+  "sites.moderate",
+  "coupons.manage",
+  "templates.manage",
+  "audit.view",
+  "plans.manage",
+  "settings.manage",
+  "staff.manage",
+] as const;
+export type Permission = (typeof PERMISSIONS)[number];
+
+const ADMIN_ONLY: ReadonlySet<Permission> = new Set(["plans.manage", "settings.manage", "staff.manage"]);
+
+export function hasPermission(role: Role | null | undefined, permission: Permission): boolean {
+  if (role === Role.ADMIN) return true;
+  return role === Role.SUPPORT && !ADMIN_ONLY.has(permission);
+}

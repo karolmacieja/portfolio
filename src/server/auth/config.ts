@@ -17,6 +17,8 @@ import { getMailer } from "@/server/mail";
 import { buildLinkMail } from "@/server/mail/templates";
 import { getRateLimiter, RATE_LIMITS } from "@/server/rate-limit/limiter";
 
+import { consumeImpersonationToken, isImpersonationActive } from "@/server/admin/impersonation";
+
 import { AccountBlockedError, InvalidCredentialsError, RateLimitedError } from "./errors";
 import { hashPassword, verifyPassword } from "./password";
 import { signInSchema } from "./schemas";
@@ -65,6 +67,17 @@ function buildProviders(): Provider[] {
 
         await limiter.reset(`signin:email:${email}`);
         return { id: user.id, email: user.email, name: user.name, image: user.image };
+      },
+    }),
+    // Staff signing in as a client with a single-use token from the admin panel (audited there).
+    Credentials({
+      id: "impersonation",
+      credentials: { token: {} },
+      async authorize(raw) {
+        const token = typeof raw?.token === "string" ? raw.token : "";
+        const result = await consumeImpersonationToken(token);
+        if (!result) throw new InvalidCredentialsError();
+        return result;
       },
     }),
     {
@@ -138,6 +151,12 @@ export function buildAuthConfig(): NextAuthConfig {
       },
       async jwt({ token, user, trigger }) {
         const now = Date.now();
+        // Impersonation: set on that sign-in only, cleared by any other sign-in, ends at its expiry.
+        if (user) {
+          if (user.impersonation) token.impersonation = user.impersonation;
+          else delete token.impersonation;
+        }
+        if (token.impersonation && now > token.impersonation.expiresAt) return null;
         const userId = user?.id ?? token.sub;
         const stale = !token.refreshedAt || now - token.refreshedAt > TOKEN_REFRESH_MS;
         if (!userId || !(user || trigger === "update" || stale)) return token;
@@ -148,6 +167,7 @@ export function buildAuthConfig(): NextAuthConfig {
         });
         // Deleted or blocked users lose their session on the next refresh.
         if (!dbUser || dbUser.blockedAt) return null;
+        if (token.impersonation && !(await isImpersonationActive(token.impersonation.sessionId))) return null;
 
         token.sub = dbUser.id;
         token.role = dbUser.role;
@@ -161,6 +181,7 @@ export function buildAuthConfig(): NextAuthConfig {
         if (token.sub) session.user.id = token.sub;
         session.user.role = token.role as Role;
         session.user.locale = token.locale ?? defaultLocale;
+        if (token.impersonation) session.user.impersonation = token.impersonation;
         return session;
       },
     },
