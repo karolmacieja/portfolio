@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { getTranslator } from "@/i18n/translator";
-import { getEnv } from "@/lib/env";
+import { getEnv, platformUrl } from "@/lib/env";
 import { parseTheme, themeToCssVars } from "@/themes/theme";
 
 import { loadSiteForHost } from "./data";
@@ -54,11 +54,21 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/sit
           </header>
         )}
         <div className="flex-1">{children}</div>
-        {(site?.showBranding ?? true) && (
-          <footer className="site-muted px-6 py-6 text-center text-xs" data-testid="site-branding">
-            {t("site.madeWith", { brand })}
-          </footer>
-        )}
+        <footer className="site-muted flex flex-wrap justify-center gap-x-4 gap-y-1 px-6 py-6 text-center text-xs">
+          {(site?.showBranding ?? true) && (
+            <span data-testid="site-branding">{t("site.madeWith", { brand })}</span>
+          )}
+          {site && (
+            // DSA notice and action: the form lives on the platform domain (client sites set no cookies).
+            <a
+              href={platformUrl(undefined, `/report?site=${site.id}`)}
+              rel="nofollow"
+              className="hover:underline"
+            >
+              {t("site.report")}
+            </a>
+          )}
+        </footer>
       </body>
     </html>
   );

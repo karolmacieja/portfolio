@@ -49,6 +49,11 @@ export default async function SiteManageLayout({ children, params }: LayoutProps
         </div>
       </div>
       {site.hasUnpublishedChanges && site.publishedAt && <Alert>{t("unpublishedChanges")}</Alert>}
+      {site.status === "SUSPENDED" && site.suspensionReason === "MODERATION" && (
+        <Alert variant="destructive" data-testid="moderation-notice">
+          {t("moderated", { reason: site.suspensionNote ?? "—" })}
+        </Alert>
+      )}
       <SiteTabs
         base={base}
         tabs={[

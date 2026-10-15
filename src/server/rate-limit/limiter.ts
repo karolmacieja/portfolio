@@ -22,4 +22,5 @@ export const RATE_LIMITS = {
   domainSearchPerUser: { limit: 30, windowMs: 10 * 60_000 },
   domainChangesPerUser: { limit: 30, windowMs: 10 * 60_000 },
   domainAuthCodePerUser: { limit: 5, windowMs: 60 * 60_000 },
+  abuseReportPerIp: { limit: 5, windowMs: 60 * 60_000 },
 } as const;
