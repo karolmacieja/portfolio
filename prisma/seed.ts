@@ -52,6 +52,9 @@ const plans = [
     features: { customDomain: true, removeBranding: true, analytics: true },
     accessTiers: ["basic", "pro"],
     prices: { MONTH: 3900, YEAR: 39000 },
+    // Group licenses: gross price per seat (cheaper than an individual plan).
+    seatPriceMonthly: 2900,
+    seatPriceYearly: 29000,
   },
   {
     slug: "business",
@@ -70,6 +73,8 @@ const plans = [
     },
     accessTiers: ["basic", "pro", "business"],
     prices: { MONTH: 7900, YEAR: 79000 },
+    seatPriceMonthly: 5900,
+    seatPriceYearly: 59000,
   },
 ] as const;
 

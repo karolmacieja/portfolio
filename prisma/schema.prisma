@@ -44,22 +44,25 @@ model User {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
-  accounts          Account[]
-  sessions          Session[]
-  auditLogs         AuditLog[]             @relation("AuditActor")
-  clientNotes       ClientNote[]           @relation("NoteClient")
-  authoredNotes     ClientNote[]           @relation("NoteAuthor")
-  impersonations    ImpersonationSession[] @relation("ImpersonatedUser")
-  impersonating     ImpersonationSession[] @relation("Impersonator")
-  sites             Site[]
-  assets            Asset[]
-  subscriptions     Subscription[]
-  templateOverrides TemplateOverride[]
-  templatePurchases TemplatePurchase[]
-  billingProfile    BillingProfile?
-  payments          Payment[]
-  invoices          Invoice[]
-  domainOrders      DomainOrder[]
+  accounts             Account[]
+  sessions             Session[]
+  auditLogs            AuditLog[]             @relation("AuditActor")
+  clientNotes          ClientNote[]           @relation("NoteClient")
+  authoredNotes        ClientNote[]           @relation("NoteAuthor")
+  impersonations       ImpersonationSession[] @relation("ImpersonatedUser")
+  impersonating        ImpersonationSession[] @relation("Impersonator")
+  managedOrganizations Organization[]         @relation("OrganizationManager")
+  membership           OrganizationMember?
+  sponsorRemoval       SponsorRemoval?
+  sites                Site[]
+  assets               Asset[]
+  subscriptions        Subscription[]
+  templateOverrides    TemplateOverride[]
+  templatePurchases    TemplatePurchase[]
+  billingProfile       BillingProfile?
+  payments             Payment[]
+  invoices             Invoice[]
+  domainOrders         DomainOrder[]
 
   @@index([role])
 }
@@ -362,30 +365,34 @@ enum BillingInterval {
 
 /// Subscription plan. Editable by admins (no hard-coded plans); see src/server/entitlements.
 model Plan {
-  id              String   @id @default(cuid())
-  slug            String   @unique
-  name            String
-  description     String?
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  name             String
+  description      String?
   /// Order on the pricing page; the first active plan also defines limits for users without a subscription.
-  position        Int      @default(0)
+  position         Int      @default(0)
   /// Inactive plans are hidden and cannot be bought; existing subscribers keep them.
-  isActive        Boolean  @default(true)
-  trialDays       Int      @default(14)
-  maxSites        Int
-  maxPagesPerSite Int
+  isActive         Boolean  @default(true)
+  trialDays        Int      @default(14)
+  maxSites         Int
+  maxPagesPerSite  Int
   /// Null = unlimited.
-  maxProjects     Int?
-  storageMb       Int
+  maxProjects      Int?
+  storageMb        Int
   /// Feature flags, validated by `planFeaturesSchema` (missing = disabled).
-  features        Json     @default("{}")
+  features         Json     @default("{}")
   /// Access tiers for blocks and templates, e.g. ["basic", "pro"].
-  accessTiers     String[]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  accessTiers      String[]
+  /// Gross price per seat of a group license (grosze); null = not offered for self-service licenses.
+  seatPriceMonthly Int?
+  seatPriceYearly  Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   prices            PlanPrice[]
   subscriptions     Subscription[]
   templateOverrides TemplateOverride[]
+  organizations     Organization[]
 }
 
 model PlanPrice {
@@ -592,6 +599,8 @@ enum PaymentKind {
   SUBSCRIPTION
   TEMPLATE
   DOMAIN
+  LICENSE
+  ADDON
 }
 
 enum PaymentStatus {
@@ -625,10 +634,13 @@ model Payment {
   refundedAmount    Int     @default(0)
   /// Domain registration/renewal payments.
   domainOrderId     String?
+  /// Group license payments.
+  organizationId    String?
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
   domainOrder  DomainOrder?  @relation(fields: [domainOrderId], references: [id], onDelete: SetNull)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   invoices     Invoice[]
 
   @@index([userId, createdAt])
@@ -868,4 +880,121 @@ model SiteDailyUnique {
   site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
   @@id([siteId, day])
+}
+
+enum LicenseSource {
+  /// Bought in the panel: a provider subscription with one unit per seat.
+  STRIPE
+  /// Created by staff for an agreed price (invoiced outside the payment provider).
+  MANUAL
+}
+
+enum LicenseStatus {
+  PENDING_PAYMENT
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum OrganizationRole {
+  MANAGER
+  MEMBER
+}
+
+/// A group license: an organization (school, agency...) with a pool of seats on one plan. Members get the
+/// plan through their seat; they can still buy a higher plan or a domain themselves.
+model Organization {
+  id                     String           @id @default(cuid())
+  name                   String
+  planId                 String
+  seats                  Int
+  source                 LicenseSource
+  status                 LicenseStatus    @default(PENDING_PAYMENT)
+  /// Self-service licenses: billing interval, gross price per seat and the provider subscription.
+  interval               BillingInterval?
+  seatPrice              Int?
+  providerSubscriptionId String?          @unique
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean          @default(false)
+  /// Manual licenses: end of the agreed period (null = until cancelled) and the staff note (agreed price...).
+  validUntil             DateTime?
+  note                   String?
+  /// Who manages seats and invitations (and pays for self-service licenses).
+  managerId              String?
+  /// Footer "Strona wspierana przez {sponsorName}" on members' sites; staff can switch it off for everyone.
+  sponsorName            String?
+  sponsorUrl             String?
+  sponsorFooter          Boolean          @default(true)
+  /// Members may connect and buy domains even if the plan lacks those features (they pay for the domain).
+  membersCanBuyDomains   Boolean          @default(true)
+  /// Shareable join link code; the link can be switched off (then only e-mail invitations work).
+  joinCode               String           @unique
+  joinLinkEnabled        Boolean          @default(true)
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+
+  plan     Plan                 @relation(fields: [planId], references: [id])
+  manager  User?                @relation("OrganizationManager", fields: [managerId], references: [id], onDelete: SetNull)
+  members  OrganizationMember[]
+  invites  OrganizationInvite[]
+  payments Payment[]
+
+  @@index([status])
+}
+
+model OrganizationMember {
+  id                  String           @id @default(cuid())
+  organizationId      String
+  /// A user belongs to at most one organization.
+  userId              String           @unique
+  role                OrganizationRole @default(MEMBER)
+  /// Staff switched the sponsor footer off for this member.
+  sponsorFooterHidden Boolean          @default(false)
+  joinedAt            DateTime         @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model OrganizationInvite {
+  id             String    @id @default(cuid())
+  organizationId String
+  email          String
+  /// SHA-256 of the token in the invitation link.
+  tokenHash      String    @unique
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, email])
+}
+
+enum SponsorRemovalMode {
+  MONTHLY
+  ONCE
+}
+
+enum SponsorRemovalStatus {
+  PENDING_PAYMENT
+  ACTIVE
+  CANCELED
+}
+
+/// A member paid to remove the sponsor footer from their sites (monthly add-on or one-time).
+model SponsorRemoval {
+  id                     String               @id @default(cuid())
+  userId                 String               @unique
+  mode                   SponsorRemovalMode
+  status                 SponsorRemovalStatus @default(PENDING_PAYMENT)
+  amount                 Int
+  providerSubscriptionId String?              @unique
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
