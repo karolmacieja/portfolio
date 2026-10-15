@@ -206,12 +206,23 @@ export async function completeMockCheckoutAction(formData: FormData): Promise<vo
 export async function mockPortalAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser("/billing");
   const provider = mockProvider();
+  const op = formData.get("op");
+  if (op === "refund") {
+    // As if staff refunded the latest charge in the provider's dashboard.
+    const payment = await db.payment.findFirst({
+      where: { userId: user.id, status: "PAID", providerChargeRef: { startsWith: "mock_pi_" } },
+      orderBy: { createdAt: "desc" },
+    });
+    if (!payment?.providerChargeRef) return { error: "billing.errors.notFound" };
+    await provider.simulateRefund(payment.providerChargeRef);
+    refresh();
+    return { ok: true };
+  }
   const subscription = await db.subscription.findFirst({
     where: { userId: user.id, providerSubscriptionId: { startsWith: "mock_sub_" } },
     orderBy: { createdAt: "desc" },
   });
   if (!subscription?.providerSubscriptionId) return { error: "billing.errors.noSubscription" };
-  const op = formData.get("op");
   if (op === "renewOk" || op === "renewFail") {
     await provider.simulateRenewal(subscription.providerSubscriptionId, op === "renewOk");
   } else if (op === "end") {

@@ -10,5 +10,7 @@ export type BillingDeps = {
   brand: string;
   /** Absolute URL of the client billing page (links in emails). */
   billingUrl: string;
+  /** Hands an invoice to the worker (BullMQ); a periodic sweep picks up anything that was lost. */
+  enqueueInvoice: (invoiceId: string) => Promise<void> | void;
   now?: () => Date;
 };

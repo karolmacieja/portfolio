@@ -56,6 +56,7 @@ export function mapStripeInvoice(invoice: Stripe.Invoice): ProviderInvoice {
     amountDue: invoice.amount_due,
     currency: invoice.currency.toUpperCase(),
     description: invoice.lines.data[0]?.description ?? invoice.number ?? "Subscription",
+    paymentRef: null,
   };
 }
 
@@ -72,6 +73,7 @@ export function mapStripeEvent(event: Stripe.Event): BillingEvent | null {
         subscriptionId: idOf(session.subscription),
         amountTotal: session.amount_total,
         currency: session.currency?.toUpperCase() ?? null,
+        paymentRef: idOf(session.payment_intent),
         metadata: { ...(session.metadata ?? {}) },
       };
     }
@@ -92,6 +94,18 @@ export function mapStripeEvent(event: Stripe.Event): BillingEvent | null {
       return { id: event.id, type: "invoice.paid", invoice: mapStripeInvoice(event.data.object) };
     case "invoice.payment_failed":
       return { id: event.id, type: "invoice.payment_failed", invoice: mapStripeInvoice(event.data.object) };
+    case "charge.refunded": {
+      const charge = event.data.object;
+      const paymentRef = idOf(charge.payment_intent);
+      if (!paymentRef) return null;
+      return {
+        id: event.id,
+        type: "payment.refunded",
+        paymentRef,
+        amountRefunded: charge.amount_refunded,
+        currency: charge.currency.toUpperCase(),
+      };
+    }
     default:
       return null;
   }
@@ -110,8 +124,13 @@ export class StripePaymentProvider implements PaymentProvider {
   constructor(
     secretKey: string,
     private readonly webhookSecret: string,
+    /** Tests inject a fake HTTP client (Stripe.createFetchHttpClient). */
+    httpClient?: Stripe.HttpClient,
   ) {
-    this.stripe = new Stripe(secretKey, { appInfo: { name: "portfolio-saas" } });
+    this.stripe = new Stripe(secretKey, {
+      appInfo: { name: "portfolio-saas" },
+      ...(httpClient ? { httpClient } : {}),
+    });
   }
 
   async ensureCustomer(user: { id: string; email: string; name: string | null }, existingId: string | null) {
@@ -247,6 +266,16 @@ export class StripePaymentProvider implements PaymentProvider {
     } catch {
       throw new PaymentProviderError("invalidSignature");
     }
-    return mapStripeEvent(event);
+    const mapped = mapStripeEvent(event);
+    // API 2025+: invoices no longer carry the PaymentIntent; refunds are matched by it, so look it up.
+    if (mapped?.type === "invoice.paid" && mapped.invoice.amountPaid > 0) {
+      const payments = await this.stripe.invoicePayments.list({
+        invoice: mapped.invoice.id,
+        status: "paid",
+        limit: 1,
+      });
+      mapped.invoice.paymentRef = idOf(payments.data[0]?.payment.payment_intent);
+    }
+    return mapped;
   }
 }

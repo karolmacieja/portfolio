@@ -21,6 +21,7 @@ describe.skipIf(!process.env.DATABASE_URL)("billing events and dunning (database
   const eventIds: string[] = [];
   let mailer: MockMailer;
   let invalidated: string[];
+  let enqueued: string[];
   let now: Date;
   let deps: BillingDeps;
   let price: { id: string; planId: string };
@@ -68,6 +69,7 @@ describe.skipIf(!process.env.DATABASE_URL)("billing events and dunning (database
       amountDue: amount,
       currency: "PLN",
       description: "Pro (1 mies.)",
+      paymentRef: null,
     },
   });
 
@@ -79,11 +81,13 @@ describe.skipIf(!process.env.DATABASE_URL)("billing events and dunning (database
   beforeEach(() => {
     mailer = new MockMailer(() => {});
     invalidated = [];
+    enqueued = [];
     now = new Date("2026-10-01T10:00:00Z");
     deps = {
       invalidate: (tags) => void invalidated.push(...tags),
       mailer,
       brand: "Test",
+      enqueueInvoice: (invoiceId) => void enqueued.push(invoiceId),
       billingUrl: "http://app.test/billing",
       now: () => now,
     };
@@ -115,6 +119,7 @@ describe.skipIf(!process.env.DATABASE_URL)("billing events and dunning (database
         subscriptionId: `sub_${userId}`,
         amountTotal: 3900,
         currency: "PLN",
+        paymentRef: null,
         metadata: { userId, planId: price.planId, priceId: price.id },
       },
       "test",
@@ -267,6 +272,7 @@ describe.skipIf(!process.env.DATABASE_URL)("billing events and dunning (database
           subscriptionId: null,
           amountTotal: 4900,
           currency: "PLN",
+          paymentRef: null,
           metadata: { kind: "template", userId, templateId: template.id },
         },
         "test",

@@ -144,6 +144,7 @@ export class MockPaymentProvider implements PaymentProvider {
         subscriptionId: null,
         amountTotal: token.amount,
         currency: token.currency,
+        paymentRef: id("mock_pi"),
         metadata: token.metadata,
       });
       return;
@@ -172,6 +173,7 @@ export class MockPaymentProvider implements PaymentProvider {
       subscriptionId: subscription.id,
       amountTotal: trialEnd ? 0 : price.amount,
       currency: price.currency,
+      paymentRef: null,
       metadata: token.metadata,
     });
     await this.emit({ id: eventId(), type: "subscription.updated", subscription });
@@ -187,6 +189,7 @@ export class MockPaymentProvider implements PaymentProvider {
           amountDue: price.amount,
           currency: price.currency,
           description: `${price.plan.name} (${price.interval === BillingInterval.YEAR ? "12" : "1"} mies.)`,
+          paymentRef: id("mock_pi"),
         },
       });
     }
@@ -207,6 +210,7 @@ export class MockPaymentProvider implements PaymentProvider {
       amountDue: price.amount,
       currency: price.currency,
       description: `${price.plan.name} (${price.interval === BillingInterval.YEAR ? "12" : "1"} mies.)`,
+      paymentRef: success ? id("mock_pi") : null,
     };
     if (success) {
       await this.emit({ id: eventId(), type: "invoice.paid", invoice });
@@ -228,6 +232,23 @@ export class MockPaymentProvider implements PaymentProvider {
         subscription: { ...subscription, status: SubscriptionStatus.PAST_DUE },
       });
     }
+  }
+
+  /** Simulates a refund (in the provider's dashboard) of a paid charge; `amount` defaults to the rest. */
+  async simulateRefund(paymentRef: string, amount?: number): Promise<void> {
+    const payment = await db.payment.findUnique({ where: { providerChargeRef: paymentRef } });
+    if (!payment) throw new PaymentProviderError("providerError", `Unknown mock charge ${paymentRef}`);
+    const refund = Math.min(
+      amount ?? payment.amount - payment.refundedAmount,
+      payment.amount - payment.refundedAmount,
+    );
+    await this.emit({
+      id: eventId(),
+      type: "payment.refunded",
+      paymentRef,
+      amountRefunded: payment.refundedAmount + refund,
+      currency: payment.currency,
+    });
   }
 
   /** Simulates the end of the subscription (e.g. cancel at period end reached, or dunning exhausted). */

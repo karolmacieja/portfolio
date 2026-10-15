@@ -3,10 +3,17 @@ import { Prisma, PaymentKind, PaymentStatus, SubscriptionStatus } from "@/genera
 import { db } from "@/lib/db";
 import { ENTITLED_STATUSES } from "@/server/entitlements/rules";
 import { buildLinkMail } from "@/server/mail/templates";
+import { queueCorrectionForRefund, queueInvoiceForPayment } from "@/server/invoicing/service";
 import type { BillingEvent, ProviderInvoice, ProviderSubscription } from "@/server/payments/types";
 
 import type { BillingDeps } from "./deps";
 import { allSiteTags, restoreSitesAfterPayment, suspendSitesForPayment } from "./sites";
+
+/** Creates the invoice row for a paid payment and hands it to the worker. */
+async function invoicePayment(paymentId: string, deps: BillingDeps) {
+  const invoiceId = await queueInvoiceForPayment(paymentId);
+  if (invoiceId) await deps.enqueueInvoice(invoiceId);
+}
 
 /**
  * Applies normalized payment provider events to the database. Idempotent: each event id is recorded
@@ -89,7 +96,7 @@ async function onCheckoutCompleted(
         providerSessionId: event.sessionId,
       },
     });
-    await db.payment.upsert({
+    const payment = await db.payment.upsert({
       where: { providerPaymentId: event.sessionId },
       update: {},
       create: {
@@ -99,11 +106,13 @@ async function onCheckoutCompleted(
         amount: event.amountTotal ?? 0,
         currency: event.currency ?? "PLN",
         providerPaymentId: event.sessionId,
+        providerChargeRef: event.paymentRef,
         description: `Szablon: ${template?.name ?? templateId}`,
         billingSnapshot: await billingSnapshot(userId),
         paidAt: deps.now?.() ?? new Date(),
       },
     });
+    await invoicePayment(payment.id, deps);
   }
 }
 
@@ -182,8 +191,9 @@ async function onInvoicePaid(invoice: ProviderInvoice, deps: BillingDeps) {
       description: invoice.description,
       paidAt: now,
       billingSnapshot: await billingSnapshot(userId),
+      ...(invoice.paymentRef ? { providerChargeRef: invoice.paymentRef } : {}),
     };
-    await db.payment.upsert({
+    const payment = await db.payment.upsert({
       where: { providerPaymentId: invoice.id },
       update: data,
       create: {
@@ -194,7 +204,7 @@ async function onInvoicePaid(invoice: ProviderInvoice, deps: BillingDeps) {
         providerPaymentId: invoice.id,
       },
     });
-    // Phase 6: the paid payment triggers a VAT invoice (InvoicingProvider) here.
+    await invoicePayment(payment.id, deps);
   }
   if (subscription) {
     await db.subscription.update({
@@ -236,6 +246,27 @@ async function onInvoiceFailed(invoice: ProviderInvoice, deps: BillingDeps) {
   }
 }
 
+/** Refunds (made in the provider's dashboard): record the refunded total and issue a correction. */
+async function onPaymentRefunded(
+  event: Extract<BillingEvent, { type: "payment.refunded" }>,
+  deps: BillingDeps,
+) {
+  const payment = await db.payment.findUnique({ where: { providerChargeRef: event.paymentRef } });
+  if (!payment) throw new Error(`Refund for unknown charge ${event.paymentRef}`);
+  const refunded = Math.min(Math.max(event.amountRefunded, payment.refundedAmount), payment.amount);
+  const fullyRefunded = refunded >= payment.amount;
+  await db.payment.update({
+    where: { id: payment.id },
+    data: { refundedAmount: refunded, ...(fullyRefunded ? { status: PaymentStatus.REFUNDED } : {}) },
+  });
+  // A fully refunded template purchase no longer grants the template (sites made from it stay).
+  if (fullyRefunded && payment.kind === PaymentKind.TEMPLATE) {
+    await db.templatePurchase.deleteMany({ where: { providerSessionId: payment.providerPaymentId } });
+  }
+  const correctionId = await queueCorrectionForRefund(payment.id);
+  if (correctionId) await deps.enqueueInvoice(correctionId);
+}
+
 export async function handleBillingEvent(
   event: BillingEvent,
   provider: string,
@@ -263,6 +294,9 @@ export async function handleBillingEvent(
         break;
       case "invoice.payment_failed":
         await onInvoiceFailed(event.invoice, deps);
+        break;
+      case "payment.refunded":
+        await onPaymentRefunded(event, deps);
         break;
     }
   } catch (error) {

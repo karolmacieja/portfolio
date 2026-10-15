@@ -5,7 +5,26 @@ import { StripePaymentProvider } from "./stripe";
 import { PaymentProviderError } from "./types";
 
 const SECRET = "whsec_test_secret";
-const provider = new StripePaymentProvider("sk_test_dummy", SECRET);
+const apiCalls: string[] = [];
+// Stripe API calls made while parsing webhooks (invoice payments lookup) hit this fake.
+const fakeFetch = (async (url: string | URL) => {
+  apiCalls.push(String(url));
+  return new Response(
+    JSON.stringify({
+      object: "list",
+      data: [
+        {
+          id: "inpay_1",
+          object: "invoice_payment",
+          payment: { type: "payment_intent", payment_intent: "pi_1" },
+        },
+      ],
+      has_more: false,
+    }),
+    { status: 200, headers: { "Content-Type": "application/json" } },
+  );
+}) as typeof fetch;
+const provider = new StripePaymentProvider("sk_test_dummy", SECRET, Stripe.createFetchHttpClient(fakeFetch));
 const stripe = new Stripe("sk_test_dummy");
 
 function signed(event: object) {
@@ -84,7 +103,33 @@ describe("StripePaymentProvider webhooks", () => {
         amountDue: 3900,
         currency: "PLN",
         description: "1 × Pro",
+        paymentRef: "pi_1",
       },
+    });
+    expect(apiCalls[0]).toContain("/v1/invoice_payments?invoice=in_1");
+  });
+
+  it("maps refunds to the cumulative refunded amount of the PaymentIntent", async () => {
+    const { payload, header } = signed({
+      id: "evt_5",
+      object: "event",
+      type: "charge.refunded",
+      data: {
+        object: {
+          id: "ch_1",
+          object: "charge",
+          payment_intent: "pi_1",
+          amount_refunded: 1500,
+          currency: "pln",
+        },
+      },
+    });
+    expect(await provider.parseWebhook(payload, header)).toEqual({
+      id: "evt_5",
+      type: "payment.refunded",
+      paymentRef: "pi_1",
+      amountRefunded: 1500,
+      currency: "PLN",
     });
   });
 

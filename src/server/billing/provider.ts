@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getEnv, platformUrl } from "@/lib/env";
+import { enqueueInvoice } from "@/server/jobs/queues";
 import { getMailer } from "@/server/mail";
 import { createPaymentProvider, type BillingEvent, type PaymentProvider } from "@/server/payments";
 import { invalidateTags } from "@/server/sites/invalidate";
@@ -15,6 +16,7 @@ export function nextBillingDeps(): BillingDeps {
     mailer: getMailer(),
     brand: getEnv().BRAND_NAME,
     billingUrl: platformUrl("app", "/billing"),
+    enqueueInvoice: (invoiceId) => enqueueInvoice(invoiceId),
   };
 }
 

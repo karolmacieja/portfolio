@@ -27,6 +27,8 @@ export type ProviderInvoice = {
   amountDue: number;
   currency: string;
   description: string;
+  /** Charge reference (Stripe PaymentIntent) used to match refunds; null when unknown. */
+  paymentRef: string | null;
 };
 
 export type BillingEvent =
@@ -39,10 +41,20 @@ export type BillingEvent =
       subscriptionId: string | null;
       amountTotal: number | null;
       currency: string | null;
+      /** Charge reference of one-time payments (Stripe PaymentIntent). */
+      paymentRef: string | null;
       metadata: Record<string, string>;
     }
   | { id: string; type: "subscription.updated" | "subscription.deleted"; subscription: ProviderSubscription }
-  | { id: string; type: "invoice.paid" | "invoice.payment_failed"; invoice: ProviderInvoice };
+  | { id: string; type: "invoice.paid" | "invoice.payment_failed"; invoice: ProviderInvoice }
+  | {
+      id: string;
+      type: "payment.refunded";
+      paymentRef: string;
+      /** Total refunded so far for the charge (cumulative, smallest currency unit). */
+      amountRefunded: number;
+      currency: string;
+    };
 
 export type CheckoutResult = { url: string; sessionId: string };
 
