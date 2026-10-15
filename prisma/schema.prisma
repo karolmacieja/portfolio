@@ -37,6 +37,9 @@ model User {
   /// Version label of the terms of service accepted at registration (or later), with the time.
   termsVersion        String?
   termsAcceptedAt     DateTime?
+  /// Opt-in for marketing e-mails (newsletter); service announcements don't need it.
+  marketingConsent    Boolean   @default(false)
+  marketingConsentAt  DateTime?
   /// Account deletion requested by the client (RODO); data is erased after the grace period.
   deletionScheduledAt DateTime?
   /// Set when personal data was erased; the row stays (anonymized) for invoices and payments.
@@ -1015,4 +1018,69 @@ model UsageSnapshot {
   /// Page views counted that day (all sites with statistics).
   pageViews      Int
   createdAt      DateTime @default(now())
+}
+
+enum CampaignType {
+  /// Newsletter / offers: only to users with marketing consent, with an unsubscribe link.
+  MARKETING
+  /// Service announcements (terms changes, outages): to every active client.
+  SERVICE
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELED
+}
+
+enum RecipientStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+/// An e-mail campaign written in the admin panel and sent by the worker.
+model Campaign {
+  id              String         @id @default(cuid())
+  subject         String
+  /// Mini markup like the legal documents ("## " heading, "- " list, blank line between paragraphs); {name} placeholder.
+  body            String
+  ctaLabel        String?
+  ctaUrl          String?
+  type            CampaignType
+  /// { segment: "all" | "plan" | "noPlan" | "license" | "organization", planId?, organizationId? }
+  audience        Json
+  status          CampaignStatus @default(DRAFT)
+  scheduledAt     DateTime?
+  startedAt       DateTime?
+  sentAt          DateTime?
+  createdById     String?
+  recipientsCount Int            @default(0)
+  sentCount       Int            @default(0)
+  failedCount     Int            @default(0)
+  unsubscribes    Int            @default(0)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  recipients CampaignRecipient[]
+
+  @@index([status, scheduledAt])
+}
+
+model CampaignRecipient {
+  id         String          @id @default(cuid())
+  campaignId String
+  userId     String?
+  email      String
+  status     RecipientStatus @default(PENDING)
+  error      String?
+  sentAt     DateTime?
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, email])
+  @@index([campaignId, status])
 }
