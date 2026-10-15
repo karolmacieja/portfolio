@@ -125,6 +125,7 @@ export async function registerAction(_prev: AuthFormState, formData: FormData): 
         locale,
         termsVersion: await currentTermsVersion(),
         termsAcceptedAt: new Date(),
+        ...(parsed.data.marketing ? { marketingConsent: true, marketingConsentAt: new Date() } : {}),
       },
     });
   } catch (error) {

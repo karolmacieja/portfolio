@@ -53,7 +53,8 @@
       "needsLetter": "Password must contain a letter.",
       "needsDigit": "Password must contain a digit."
     },
-    "acceptTerms": "I accept the <terms>terms of service</terms> and have read the <privacy>privacy policy</privacy>."
+    "acceptTerms": "I accept the <terms>terms of service</terms> and have read the <privacy>privacy policy</privacy>.",
+    "acceptMarketing": "I'd like to receive the newsletter with news and tips (unsubscribe any time)."
   },
   "dashboard": {
     "title": "Welcome, {name}!",
@@ -727,7 +728,8 @@
     "audit": "Audit log",
     "licenses": "Licenses",
     "finance": "Finance",
-    "usage": "Usage"
+    "usage": "Usage",
+    "newsletter": "Newsletter"
   },
   "adminTemplates": {
     "title": "Templates",
@@ -1012,7 +1014,8 @@
     },
     "errors": {
       "invalid": "Please check the fields.",
-      "legalTooShort": "The document is too short."
+      "legalTooShort": "The document is too short.",
+      "mailBranding": "Check the logo (https URL) and colour."
     },
     "domains": "Domains",
     "domainFields": {
@@ -1096,7 +1099,17 @@
       "monthlyPageViews": "Page views / month",
       "activeSites": "Published sites",
       "warnAtPercent": "Warn at (%)"
-    }
+    },
+    "mailBranding": "Mail look",
+    "mailBrandingHint": "Logo (an https image URL, e.g. from the media library or a CDN), button colour and a footer with company data in every mail. Empty footer = seller data from the invoicing settings.",
+    "mailLogo": "Logo (URL)",
+    "mailAccent": "Button colour",
+    "mailFooter": "Mail footer",
+    "mailFooterPlaceholder": "Company name\nAddress, tax ID\ncontact@…",
+    "mailPreview": "Mail preview",
+    "showPreview": "Show",
+    "sendTest": "Send a test to {email}",
+    "testSent": "Test mail sent."
   },
   "domains": {
     "title": "Domains",
@@ -1544,7 +1557,12 @@
       "notScheduled": "Account deletion is not scheduled.",
       "staffAccount": "Team accounts are removed by an administrator.",
       "provider": "Renewals could not be stopped at the payment provider. Try again later."
-    }
+    },
+    "newsletterTitle": "Newsletter",
+    "newsletterOn": "You are subscribed to the newsletter.",
+    "newsletterOff": "You don't receive the newsletter. Important account information always arrives.",
+    "newsletterSubscribe": "Subscribe me",
+    "newsletterUnsubscribe": "Unsubscribe me"
   },
   "marketing": {
     "nav": {
@@ -1917,5 +1935,85 @@
     "table": "Show table",
     "topSites": "Most visited sites (30 days)",
     "topStorage": "Most storage used"
+  },
+  "newsletter": {
+    "title": "Newsletter and announcements",
+    "consents": "Newsletter consents: {count}",
+    "empty": "No campaigns.",
+    "newCampaign": "New campaign",
+    "createDraft": "Create draft",
+    "fields": {
+      "subject": "Subject",
+      "body": "Body",
+      "bodyHint": "\"## \" heading, \"- \" list item, blank line between paragraphs. '{name}' is replaced with the recipient's name.",
+      "ctaLabel": "Button: label (optional)",
+      "ctaUrl": "Button: URL",
+      "type": "Type",
+      "typeHint": "Marketing goes only to people with consent (with an unsubscribe link); service announcements go to all active clients and only for important service matters.",
+      "segment": "Recipients",
+      "plan": "Plan (for “Clients of a plan”)",
+      "organization": "Organization (for “Organization members”)"
+    },
+    "types": {
+      "MARKETING": "Newsletter (marketing)",
+      "SERVICE": "Service announcement"
+    },
+    "segments": {
+      "all": "All clients",
+      "plan": "Clients of a plan",
+      "noPlan": "Without a plan",
+      "license": "Group license members",
+      "organization": "Organization members"
+    },
+    "statuses": {
+      "DRAFT": "Draft",
+      "SCHEDULED": "Scheduled",
+      "SENDING": "Sending",
+      "SENT": "Sent",
+      "CANCELED": "Canceled"
+    },
+    "columns": {
+      "status": "Status",
+      "sent": "Sent",
+      "date": "Date"
+    },
+    "statsTitle": "Statistics",
+    "stats": "Recipients: {recipients} · sent: {sent} · failed: {failed} · unsubscribes: {unsubscribes}",
+    "timeline": "Scheduled: {scheduled} · started: {started} · finished: {sent}",
+    "sendTitle": "Sending",
+    "audienceSize": "Goes to {count, plural, one {# person} other {# people}} (as of now; the list is frozen when sending starts).",
+    "sendTest": "Send a test to {email}",
+    "testSent": "Test sent.",
+    "sendNow": "Send now",
+    "sendNowConfirm": "Send now to {count} people?",
+    "schedule": "Schedule (Polish time)",
+    "cancel": "Cancel campaign",
+    "stop": "Stop sending",
+    "preview": "Preview (with your data)",
+    "edit": "Edit",
+    "save": "Save",
+    "saved": "Saved.",
+    "mail": {
+      "friend": "Hi",
+      "footerMarketing": "You receive this newsletter because you subscribed at {brand}.",
+      "footerService": "Important information about your {brand} account.",
+      "reason": "Don't want these e-mails?",
+      "unsubscribe": "Unsubscribe"
+    },
+    "unsubscribePage": {
+      "title": "Unsubscribe from the newsletter",
+      "description": "We will stop sending you marketing e-mails. Important account information (payments, terms changes) will still arrive.",
+      "confirm": "Unsubscribe me",
+      "done": "Done — you are unsubscribed."
+    },
+    "errors": {
+      "invalid": "Check the fields.",
+      "audience": "Choose a plan or an organization for these recipients.",
+      "notFound": "Campaign not found.",
+      "notEditable": "This campaign can no longer be changed.",
+      "emptyAudience": "Nobody matches the recipients.",
+      "pastSchedule": "The send time must be in the future.",
+      "unsubscribeInvalid": "The unsubscribe link is invalid or expired. Unsubscribe in your account settings."
+    }
   }
 }

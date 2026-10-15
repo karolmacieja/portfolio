@@ -11,7 +11,9 @@ import {
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ActionForm } from "@/components/action-form";
 import { signOutEverywhereAction } from "@/server/account/actions";
+import { setMarketingConsentAction } from "@/server/newsletter/actions";
 import { DELETION_GRACE_DAYS } from "@/server/account/deletion";
 import { getAccount } from "@/server/account/service";
 import { requireUser } from "@/server/auth/session";
@@ -86,6 +88,24 @@ export default async function AccountPage() {
           <Button asChild size="sm" variant="outline">
             <Link href="/billing">{t("billingOverview")}</Link>
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("newsletterTitle")}</CardTitle>
+          <CardDescription data-testid="newsletter-status">
+            {account.marketingConsent ? t("newsletterOn") : t("newsletterOff")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ActionForm
+            action={setMarketingConsentAction}
+            hidden={{ consent: account.marketingConsent ? "0" : "1" }}
+            label={account.marketingConsent ? t("newsletterUnsubscribe") : t("newsletterSubscribe")}
+            variant="outline"
+            testId="newsletter-toggle"
+          />
         </CardContent>
       </Card>
 

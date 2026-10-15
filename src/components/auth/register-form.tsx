@@ -87,6 +87,11 @@ export function RegisterForm({ termsUrl, privacyUrl }: { termsUrl: string; priva
         {fieldError("terms") && <p className="text-sm text-destructive">{fieldError("terms")}</p>}
       </div>
 
+      <label className="flex items-start gap-2 text-sm">
+        <input type="checkbox" name="marketing" className="mt-1" data-testid="marketing-checkbox" />
+        <span>{t("acceptMarketing")}</span>
+      </label>
+
       {/* Honeypot for bots; hidden from people and assistive tech. */}
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 overflow-hidden">
         <label>

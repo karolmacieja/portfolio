@@ -17,6 +17,7 @@ export const PERMISSIONS = [
   "templates.manage",
   "licenses.manage",
   "finance.view",
+  "newsletter.manage",
   "audit.view",
   "plans.manage",
   "settings.manage",

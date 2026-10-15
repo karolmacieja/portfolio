@@ -22,6 +22,8 @@ export const registerSchema = z.object({
   password: passwordSchema,
   /** Terms of service and privacy policy accepted (checkbox). */
   terms: z.literal("on"),
+  /** Optional opt-in for the newsletter (never pre-checked). */
+  marketing: z.literal("on").optional(),
   // Honeypot: real users never fill it.
   website: z.string().max(0).optional(),
 });

@@ -12,7 +12,11 @@ export const QUEUES = {
   billing: "billing",
   invoices: "invoices",
   domains: "domains",
+  newsletter: "newsletter",
 } as const;
+
+/** One batch of a campaign; the worker re-enqueues the next batch until nobody is left. */
+export type NewsletterJob = { campaignId: string };
 
 export type ThumbnailJob = { templateId: string; versionId: string };
 export type InvoiceJob = { invoiceId: string };
@@ -102,5 +106,25 @@ export async function enqueueDomainJob(
     );
   } catch (error) {
     console.error("Failed to enqueue domain job", job, error);
+  }
+}
+
+/** Starts (or continues) sending a campaign; `delayMs` spaces the batches out. */
+export async function enqueueNewsletterBatch(campaignId: string, delayMs = 0): Promise<void> {
+  try {
+    await getQueue<NewsletterJob>(QUEUES.newsletter).add(
+      "batch",
+      { campaignId },
+      {
+        jobId: `newsletter-${campaignId}-${Date.now()}`,
+        delay: delayMs,
+        attempts: 5,
+        backoff: { type: "exponential", delay: 30_000 },
+        removeOnComplete: 200,
+        removeOnFail: 500,
+      },
+    );
+  } catch (error) {
+    console.error("Failed to enqueue newsletter batch", campaignId, error);
   }
 }

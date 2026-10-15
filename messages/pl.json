@@ -53,7 +53,8 @@
       "needsLetter": "Hasło musi zawierać literę.",
       "needsDigit": "Hasło musi zawierać cyfrę."
     },
-    "acceptTerms": "Akceptuję <terms>regulamin</terms> i zapoznałem(-am) się z <privacy>polityką prywatności</privacy>."
+    "acceptTerms": "Akceptuję <terms>regulamin</terms> i zapoznałem(-am) się z <privacy>polityką prywatności</privacy>.",
+    "acceptMarketing": "Chcę dostawać newsletter z nowościami i poradami (możesz zrezygnować w każdej chwili)."
   },
   "dashboard": {
     "title": "Witaj, {name}!",
@@ -727,7 +728,8 @@
     "audit": "Audit log",
     "licenses": "Licencje",
     "finance": "Finanse",
-    "usage": "Użycie"
+    "usage": "Użycie",
+    "newsletter": "Newsletter"
   },
   "adminTemplates": {
     "title": "Szablony",
@@ -1012,7 +1014,8 @@
     },
     "errors": {
       "invalid": "Sprawdź poprawność pól.",
-      "legalTooShort": "Treść dokumentu jest za krótka."
+      "legalTooShort": "Treść dokumentu jest za krótka.",
+      "mailBranding": "Sprawdź logo (adres https) i kolor."
     },
     "domains": "Domeny",
     "domainFields": {
@@ -1096,7 +1099,17 @@
       "monthlyPageViews": "Wyświetlenia / mies.",
       "activeSites": "Opublikowane strony",
       "warnAtPercent": "Ostrzegaj przy (%)"
-    }
+    },
+    "mailBranding": "Wygląd maili",
+    "mailBrandingHint": "Logo (adres https obrazka, np. z biblioteki mediów lub CDN), kolor przycisków i stopka z danymi firmy w każdym mailu. Pusta stopka = dane sprzedawcy z ustawień faktur.",
+    "mailLogo": "Logo (URL)",
+    "mailAccent": "Kolor przycisków",
+    "mailFooter": "Stopka maili",
+    "mailFooterPlaceholder": "Nazwa firmy\nAdres, NIP\nkontakt@…",
+    "mailPreview": "Podgląd maili",
+    "showPreview": "Pokaż",
+    "sendTest": "Wyślij test na {email}",
+    "testSent": "Wysłano mail testowy."
   },
   "domains": {
     "title": "Domeny",
@@ -1544,7 +1557,12 @@
       "notScheduled": "Usunięcie konta nie jest zaplanowane.",
       "staffAccount": "Konta zespołu usuwa administrator.",
       "provider": "Nie udało się zatrzymać odnowień u operatora płatności. Spróbuj ponownie później."
-    }
+    },
+    "newsletterTitle": "Newsletter",
+    "newsletterOn": "Zapisano Cię na newsletter.",
+    "newsletterOff": "Nie otrzymujesz newslettera. Ważne informacje o koncie przychodzą zawsze.",
+    "newsletterSubscribe": "Zapisz mnie",
+    "newsletterUnsubscribe": "Wypisz mnie"
   },
   "marketing": {
     "nav": {
@@ -1917,5 +1935,85 @@
     "table": "Pokaż tabelę",
     "topSites": "Najczęściej odwiedzane strony (30 dni)",
     "topStorage": "Najwięcej miejsca na pliki"
+  },
+  "newsletter": {
+    "title": "Newsletter i komunikaty",
+    "consents": "Zgody na newsletter: {count}",
+    "empty": "Brak kampanii.",
+    "newCampaign": "Nowa kampania",
+    "createDraft": "Utwórz szkic",
+    "fields": {
+      "subject": "Temat",
+      "body": "Treść",
+      "bodyHint": "„## ” nagłówek, „- ” punkt listy, pusta linia między akapitami. '{name}' zostanie zastąpione imieniem odbiorcy.",
+      "ctaLabel": "Przycisk: tekst (opcjonalnie)",
+      "ctaUrl": "Przycisk: adres",
+      "type": "Rodzaj",
+      "typeHint": "Marketing trafia tylko do osób ze zgodą (z linkiem wypisania); komunikaty serwisowe — do wszystkich aktywnych klientów i tylko w ważnych sprawach usługi.",
+      "segment": "Odbiorcy",
+      "plan": "Plan (dla „Klienci planu”)",
+      "organization": "Organizacja (dla „Członkowie organizacji”)"
+    },
+    "types": {
+      "MARKETING": "Newsletter (marketing)",
+      "SERVICE": "Komunikat serwisowy"
+    },
+    "segments": {
+      "all": "Wszyscy klienci",
+      "plan": "Klienci planu",
+      "noPlan": "Bez planu",
+      "license": "Członkowie licencji grupowych",
+      "organization": "Członkowie organizacji"
+    },
+    "statuses": {
+      "DRAFT": "Szkic",
+      "SCHEDULED": "Zaplanowana",
+      "SENDING": "Wysyłanie",
+      "SENT": "Wysłana",
+      "CANCELED": "Anulowana"
+    },
+    "columns": {
+      "status": "Stan",
+      "sent": "Wysłane",
+      "date": "Data"
+    },
+    "statsTitle": "Statystyki",
+    "stats": "Odbiorcy: {recipients} · wysłane: {sent} · błędy: {failed} · wypisania: {unsubscribes}",
+    "timeline": "Zaplanowana: {scheduled} · start: {started} · zakończona: {sent}",
+    "sendTitle": "Wysyłka",
+    "audienceSize": "Trafi do {count, plural, one {# osoby} other {# osób}} (stan na teraz; lista zamyka się w chwili wysyłki).",
+    "sendTest": "Wyślij test na {email}",
+    "testSent": "Wysłano test.",
+    "sendNow": "Wyślij teraz",
+    "sendNowConfirm": "Wysłać teraz do {count} osób?",
+    "schedule": "Zaplanuj (czas polski)",
+    "cancel": "Anuluj kampanię",
+    "stop": "Zatrzymaj wysyłkę",
+    "preview": "Podgląd (z Twoimi danymi)",
+    "edit": "Edycja",
+    "save": "Zapisz",
+    "saved": "Zapisano.",
+    "mail": {
+      "friend": "Cześć",
+      "footerMarketing": "Dostajesz ten newsletter, bo zapisałeś(-aś) się w {brand}.",
+      "footerService": "Ważna informacja dotycząca Twojego konta w {brand}.",
+      "reason": "Nie chcesz więcej takich wiadomości?",
+      "unsubscribe": "Wypisz się"
+    },
+    "unsubscribePage": {
+      "title": "Wypisz się z newslettera",
+      "description": "Nie będziemy wysyłać Ci wiadomości marketingowych. Ważne informacje o koncie (np. płatności, zmiany regulaminu) nadal będą przychodzić.",
+      "confirm": "Wypisz mnie",
+      "done": "Gotowe — wypisaliśmy Cię z newslettera."
+    },
+    "errors": {
+      "invalid": "Sprawdź poprawność pól.",
+      "audience": "Wybierz plan lub organizację dla tego rodzaju odbiorców.",
+      "notFound": "Nie znaleziono kampanii.",
+      "notEditable": "Tej kampanii nie można już zmienić.",
+      "emptyAudience": "Nikt nie spełnia kryteriów odbiorców.",
+      "pastSchedule": "Termin wysyłki musi być w przyszłości.",
+      "unsubscribeInvalid": "Link wypisania jest nieprawidłowy lub wygasł. Wypisz się w ustawieniach konta."
+    }
   }
 }

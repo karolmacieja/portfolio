@@ -30,18 +30,21 @@ import {
 import {
   enqueueDomainJob,
   enqueueInvoice,
+  enqueueNewsletterBatch,
   DOMAIN_JOB_ATTEMPTS,
   INVOICE_JOB_ATTEMPTS,
   QUEUES,
   redisConnection,
   type DomainJobData,
   type InvoiceJob,
+  type NewsletterJob,
   type ThumbnailJob,
 } from "@/server/jobs/queues";
 import { purgeContactMessages } from "@/server/contact/retention";
 import { takeUsageSnapshot } from "@/server/finance/usage";
 import { createMailer } from "@/server/mail";
 import { createPaymentProvider } from "@/server/payments";
+import { sendCampaignBatch, startDueCampaigns, type NewsletterDeps } from "@/server/newsletter/sending";
 import { rollupStats } from "@/server/stats/rollup";
 import { createStorage } from "@/server/storage";
 import { renderTemplateThumbnail } from "@/server/templates/thumbnail";
@@ -189,7 +192,28 @@ await domainQueue.upsertJobScheduler(
   { name: "maintenance" },
 );
 
-for (const worker of [thumbnails, billing, invoices, domains]) {
+const newsletterDeps: NewsletterDeps = { mailer, enqueueBatch: enqueueNewsletterBatch };
+const newsletter = new Worker<NewsletterJob>(
+  QUEUES.newsletter,
+  async (job) => {
+    if (job.name === "due") {
+      const started = await startDueCampaigns(newsletterDeps);
+      if (started) console.info(`[worker] newsletter: ${started} campaign(s) started`);
+      return;
+    }
+    const remaining = await sendCampaignBatch(job.data.campaignId, newsletterDeps);
+    // Spaced batches keep the mail provider's rate limits.
+    if (remaining > 0) await enqueueNewsletterBatch(job.data.campaignId, 5_000);
+  },
+  { connection, concurrency: 1 },
+);
+await new Queue(QUEUES.newsletter, { connection }).upsertJobScheduler(
+  "newsletter-due",
+  { every: 60_000 },
+  { name: "due" },
+);
+
+for (const worker of [thumbnails, billing, invoices, domains, newsletter]) {
   worker.on("failed", (job, error) => console.error(`[worker] ${worker.name} job ${job?.id} failed`, error));
 }
 
@@ -197,18 +221,25 @@ for (const worker of [thumbnails, billing, invoices, domains]) {
 const health = env.WORKER_HEALTH_PORT
   ? createServer((request, response) => {
       const ok =
-        request.url === "/health" && [thumbnails, billing, invoices, domains].every((w) => w.isRunning());
+        request.url === "/health" &&
+        [thumbnails, billing, invoices, domains, newsletter].every((w) => w.isRunning());
       response.writeHead(ok ? 200 : request.url === "/health" ? 503 : 404).end(ok ? "ok" : "");
     }).listen(env.WORKER_HEALTH_PORT)
   : null;
 console.info(
-  `[worker] started: thumbnails, billing (dunning hourly), invoices (sweep + KSeF every 5 min), domains` +
+  `[worker] started: thumbnails, billing (dunning hourly), invoices (sweep + KSeF every 5 min), domains, newsletter` +
     (health ? `; health on :${env.WORKER_HEALTH_PORT}/health` : ""),
 );
 
 async function shutdown() {
   health?.close();
-  await Promise.all([thumbnails.close(), billing.close(), invoices.close(), domains.close()]);
+  await Promise.all([
+    thumbnails.close(),
+    billing.close(),
+    invoices.close(),
+    domains.close(),
+    newsletter.close(),
+  ]);
   process.exit(0);
 }
 process.on("SIGTERM", shutdown);
