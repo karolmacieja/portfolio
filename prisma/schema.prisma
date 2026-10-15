@@ -2,6 +2,7 @@
 // Phase 0: identity, roles, audit, settings. Phase 1: sites, pages, domains.
 // Phase 2: theme, SEO, page versions, media assets. Phase 3: plans, prices, subscriptions, block access.
 // Phase 4: templates, template versions/overrides/purchases, site backups.
+// Phase 5: billing profiles, payments, webhook events, coupons, dunning fields.
 
 generator client {
   provider = "prisma-client"
@@ -29,6 +30,8 @@ model User {
   role          Role      @default(CLIENT)
   locale        String    @default("pl")
   blockedAt     DateTime?
+  /// Customer id at the payment provider (Stripe customer / mock).
+  billingCustomerId String? @unique
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -40,6 +43,8 @@ model User {
   subscriptions     Subscription[]
   templateOverrides TemplateOverride[]
   templatePurchases TemplatePurchase[]
+  billingProfile    BillingProfile?
+  payments          Payment[]
 
   @@index([role])
 }
@@ -330,14 +335,19 @@ model Subscription {
   currentPeriodEnd     DateTime?
   cancelAtPeriodEnd    Boolean            @default(false)
   canceledAt           DateTime?
-  /// Null for subscriptions granted manually (seed, admin).
-  stripeSubscriptionId String?            @unique
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  /// Subscription id at the payment provider; null for subscriptions granted manually (seed, admin).
+  providerSubscriptionId String?            @unique
+  /// Set on the first failed payment, cleared when paid; drives dunning (src/server/billing/dunning.ts).
+  pastDueSince           DateTime?
+  /// Dunning reminders already sent for the current past-due period; -1 once sites were suspended.
+  dunningStage           Int                @default(0)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 
-  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan  Plan       @relation(fields: [planId], references: [id])
-  price PlanPrice? @relation(fields: [priceId], references: [id], onDelete: SetNull)
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan     Plan       @relation(fields: [planId], references: [id])
+  price    PlanPrice? @relation(fields: [priceId], references: [id], onDelete: SetNull)
+  payments Payment[]
 
   @@index([userId, status])
 }
@@ -428,8 +438,9 @@ model TemplatePurchase {
   userId          String
   amount          Int
   currency        String   @default("PLN")
-  stripeSessionId String?  @unique
-  createdAt       DateTime @default(now())
+  /// Checkout session id at the payment provider.
+  providerSessionId String?  @unique
+  createdAt         DateTime @default(now())
 
   template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -450,4 +461,106 @@ model SiteBackup {
   site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
   @@index([siteId, createdAt])
+}
+
+enum BillingPartyType {
+  PERSON
+  COMPANY
+}
+
+/// Invoice details collected before purchase (Phase 6 issues VAT invoices from them).
+model BillingProfile {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  type            BillingPartyType
+  /// Person's name, or contact name for companies.
+  fullName        String
+  companyName     String?
+  /// Polish NIP (10 digits, no separators) for Polish companies.
+  taxId           String?
+  /// EU VAT id with country prefix (e.g. DE123456789) for EU companies outside Poland.
+  euVatId         String?
+  /// Intra-EU B2B reverse charge applies (verified EU VAT id outside PL); used by invoicing.
+  reverseCharge   Boolean          @default(false)
+  taxIdVerifiedAt DateTime?
+  line1           String
+  line2           String?
+  postalCode      String
+  city            String
+  country         String           @default("PL")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum PaymentKind {
+  SUBSCRIPTION
+  TEMPLATE
+}
+
+enum PaymentStatus {
+  PAID
+  FAILED
+  REFUNDED
+}
+
+/// A charge at the payment provider (subscription invoice or one-time purchase). Invoicing (Phase 6) builds on it.
+model Payment {
+  id                String        @id @default(cuid())
+  userId            String
+  subscriptionId    String?
+  kind              PaymentKind
+  status            PaymentStatus
+  /// Gross amount in grosze.
+  amount            Int
+  currency          String        @default("PLN")
+  /// Provider invoice id (subscriptions) or checkout session id (one-time purchases).
+  providerPaymentId String        @unique
+  description       String
+  /// Billing profile at the time of payment (for the invoice).
+  billingSnapshot   Json?
+  paidAt            DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+}
+
+/// Processed webhook events (idempotency: an event id is handled at most once).
+model WebhookEvent {
+  id          String   @id
+  provider    String
+  type        String
+  processedAt DateTime @default(now())
+}
+
+enum CouponDuration {
+  ONCE
+  REPEATING
+  FOREVER
+}
+
+/// Discount code, managed by admins and synced to the payment provider.
+model Coupon {
+  id                      String         @id @default(cuid())
+  /// Code entered by clients (uppercase).
+  code                    String         @unique
+  name                    String
+  percentOff              Int?
+  /// Fixed discount in grosze (PLN).
+  amountOff               Int?
+  duration                CouponDuration @default(ONCE)
+  durationInMonths        Int?
+  maxRedemptions          Int?
+  timesRedeemed           Int            @default(0)
+  expiresAt               DateTime?
+  isActive                Boolean        @default(true)
+  providerCouponId        String?
+  providerPromotionCodeId String?
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
 }

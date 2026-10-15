@@ -105,7 +105,7 @@ async function seedPlans(db: PrismaClient) {
 async function seedSubscription(db: PrismaClient, userId: string, planSlug: string) {
   const plan = await db.plan.findUniqueOrThrow({ where: { slug: planSlug }, include: { prices: true } });
   const price = plan.prices.find((p) => p.interval === BillingInterval.MONTH);
-  await db.subscription.deleteMany({ where: { userId, stripeSubscriptionId: null } });
+  await db.subscription.deleteMany({ where: { userId, providerSubscriptionId: null } });
   await db.subscription.create({
     data: {
       userId,
@@ -301,7 +301,7 @@ async function main() {
         create: { ...user, passwordHash, emailVerified: new Date() },
       });
       if (plan) await seedSubscription(db, saved.id, plan);
-      else await db.subscription.deleteMany({ where: { userId: saved.id, stripeSubscriptionId: null } });
+      else await db.subscription.deleteMany({ where: { userId: saved.id, providerSubscriptionId: null } });
     }
 
     const admin = await db.user.findUniqueOrThrow({ where: { email: "admin@example.com" } });

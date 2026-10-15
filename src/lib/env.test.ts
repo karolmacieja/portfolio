@@ -47,6 +47,11 @@ describe("parseEnv", () => {
     expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/MAIL_PROVIDER/);
     expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/STORAGE_PROVIDER/);
     expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/THUMBNAIL_PROVIDER/);
+    expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/PAYMENTS_PROVIDER/);
+  });
+
+  it("requires Stripe keys for the stripe payments provider", () => {
+    expect(() => parseEnv({ ...base, PAYMENTS_PROVIDER: "stripe" })).toThrow(/STRIPE_SECRET_KEY/);
   });
 
   it("requires bucket credentials for S3 storage", () => {

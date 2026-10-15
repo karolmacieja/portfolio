@@ -27,6 +27,8 @@ export const envSchema = z
 
     DATABASE_URL: z.url(),
     REDIS_URL: z.url(),
+    // Base URL of the web app as reachable from the worker (e.g. http://web:3000); defaults to the public app URL.
+    INTERNAL_APP_URL: z.preprocess(emptyToUndefined, z.url().optional()),
 
     AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 characters"),
     AUTH_GOOGLE_ID: optionalString,
@@ -54,6 +56,13 @@ export const envSchema = z
       .default("true")
       .transform((value) => value === "true"),
     UPLOAD_MAX_MB: z.coerce.number().positive().max(100).default(15),
+
+    // Payments: mock = local test checkout/portal (no keys), stripe = Stripe Billing.
+    PAYMENTS_PROVIDER: z.enum(["mock", "stripe"]).default("mock"),
+    STRIPE_SECRET_KEY: optionalString,
+    STRIPE_WEBHOOK_SECRET: optionalString,
+    // EU VAT id verification for company billing profiles: mock (checksum/format only) or vies (EU VIES service).
+    TAX_ID_PROVIDER: z.enum(["mock", "vies"]).default("mock"),
 
     // Template thumbnails (background worker): mock = generated image, playwright = screenshot of the preview.
     THUMBNAIL_PROVIDER: z.enum(["mock", "playwright"]).default("mock"),
@@ -89,6 +98,19 @@ export const envSchema = z
         code: "custom",
         path: ["STORAGE_PROVIDER"],
         message: "local storage is not allowed in production",
+      });
+    }
+    if (env.PAYMENTS_PROVIDER === "stripe") {
+      for (const key of ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"] as const) {
+        if (!env[key])
+          ctx.addIssue({ code: "custom", path: [key], message: "Required when PAYMENTS_PROVIDER=stripe" });
+      }
+    }
+    if (env.APP_ENV === "production" && env.PAYMENTS_PROVIDER === "mock") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["PAYMENTS_PROVIDER"],
+        message: "mock payments are not allowed in production",
       });
     }
     if (env.APP_ENV === "production" && env.THUMBNAIL_PROVIDER === "mock") {

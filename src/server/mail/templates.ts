@@ -26,7 +26,8 @@ function layout(parts: { intro: string; cta: string; url: string; ignore: string
 </body></html>`;
 }
 
-type LinkMailKind = "magicLink" | "verifyEmail";
+type LinkMailKind =
+  "magicLink" | "verifyEmail" | "paymentFailed" | "paymentReminder" | "sitesSuspended" | "subscriptionEnded";
 
 export async function buildLinkMail(params: {
   kind: LinkMailKind;
@@ -34,10 +35,12 @@ export async function buildLinkMail(params: {
   url: string;
   locale: Locale;
   brand: string;
+  values?: { days?: number };
 }): Promise<MailMessage> {
   const messages = await loadMessages(params.locale);
   const t = createTranslator({ locale: params.locale, messages, namespace: `email.${params.kind}` });
-  const parts = { intro: t("intro"), cta: t("cta"), url: params.url, ignore: t("ignore") };
+  const values = { brand: params.brand, days: String(params.values?.days ?? "") };
+  const parts = { intro: t("intro", values), cta: t("cta"), url: params.url, ignore: t("ignore") };
   return {
     to: params.to,
     subject: t("subject", { brand: params.brand }),
