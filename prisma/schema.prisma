@@ -20,24 +20,24 @@ enum Role {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  emailVerified DateTime?
-  name          String?
-  image         String?
+  id                String    @id @default(cuid())
+  email             String    @unique
+  emailVerified     DateTime?
+  name              String?
+  image             String?
   // Null for users who only sign in via magic link or OAuth.
-  passwordHash  String?
-  role          Role      @default(CLIENT)
-  locale        String    @default("pl")
-  blockedAt     DateTime?
+  passwordHash      String?
+  role              Role      @default(CLIENT)
+  locale            String    @default("pl")
+  blockedAt         DateTime?
   /// Customer id at the payment provider (Stripe customer / mock).
-  billingCustomerId String? @unique
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  billingCustomerId String?   @unique
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  accounts  Account[]
-  sessions  Session[]
-  auditLogs AuditLog[] @relation("AuditActor")
+  accounts          Account[]
+  sessions          Session[]
+  auditLogs         AuditLog[]         @relation("AuditActor")
   sites             Site[]
   assets            Asset[]
   subscriptions     Subscription[]
@@ -46,6 +46,7 @@ model User {
   billingProfile    BillingProfile?
   payments          Payment[]
   invoices          Invoice[]
+  domainOrders      DomainOrder[]
 
   @@index([role])
 }
@@ -129,35 +130,36 @@ enum SuspensionReason {
 
 /// A client's portfolio website, served at {slug}.{ROOT_DOMAIN} and on its connected domains.
 model Site {
-  id               String            @id @default(cuid())
-  ownerId          String
-  name             String
+  id                String            @id @default(cuid())
+  ownerId           String
+  name              String
   /// Subdomain label; unique platform-wide, validated against reserved slugs.
-  slug             String            @unique
+  slug              String            @unique
   /// Language of the published site (system messages, <html lang>).
-  locale           String            @default("pl")
-  status           SiteStatus        @default(ACTIVE)
-  suspensionReason SuspensionReason?
-  suspendedAt      DateTime?
+  locale            String            @default("pl")
+  status            SiteStatus        @default(ACTIVE)
+  suspensionReason  SuspensionReason?
+  suspendedAt       DateTime?
   /// Null until the first publication; unpublished sites are not served.
-  publishedAt      DateTime?
+  publishedAt       DateTime?
   /// Default meta description for pages without their own.
-  description      String?
+  description       String?
   /// Asks search engines not to index the site (robots.txt + meta robots).
-  noIndex          Boolean           @default(false)
-  faviconUrl       String?
+  noIndex           Boolean           @default(false)
+  faviconUrl        String?
   /// Theme being edited (src/themes/theme.ts); copied to themePublished on publish. Null = default theme.
-  themeDraft       Json?
-  themePublished   Json?
+  themeDraft        Json?
+  themePublished    Json?
   /// Template the site was created from / last switched to (statistics, upgrades).
   templateId        String?
   templateVersionId String?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
   owner           User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   pages           Page[]
   domains         Domain[]
+  domainOrders    DomainOrder[]
   backups         SiteBackup[]
   template        Template?        @relation(fields: [templateId], references: [id], onDelete: SetNull)
   templateVersion TemplateVersion? @relation(fields: [templateVersionId], references: [id], onDelete: SetNull)
@@ -201,29 +203,99 @@ enum DomainType {
   PURCHASED
 }
 
+/// DISABLED: switched off because the owner's plan no longer includes custom domains (re-enable after upgrading).
 enum DomainStatus {
   PENDING_DNS
   PENDING_SSL
   ACTIVE
   ERROR
+  DISABLED
 }
 
-/// Custom domains attached to a site. Platform subdomains are derived from Site.slug and need no row.
-/// Provider fields (Cloudflare hostname id, registrar id, expiry) are added in Phase 7.
+/// Custom domains attached to a site (hostnames served through Cloudflare for SaaS). Platform subdomains are
+/// derived from Site.slug and need no row. When a site has an ACTIVE primary domain, every other host of the
+/// site (subdomain, other domains) redirects to it.
 model Domain {
-  id        String       @id @default(cuid())
-  siteId    String
-  /// Lowercase hostname without port, e.g. "www.jan-kowalski.pl".
-  hostname  String       @unique
-  type      DomainType   @default(CONNECTED)
-  status    DomainStatus @default(PENDING_DNS)
-  isPrimary Boolean      @default(false)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id                 String       @id @default(cuid())
+  siteId             String
+  /// Lowercase ASCII (punycode) hostname without port, e.g. "www.jan-kowalski.pl".
+  hostname           String       @unique
+  type               DomainType   @default(CONNECTED)
+  status             DomainStatus @default(PENDING_DNS)
+  isPrimary          Boolean      @default(false)
+  /// Custom hostname id at the hostname provider (Cloudflare); null when not registered there (DISABLED).
+  providerHostnameId String?      @unique
+  /// Provider SSL status (e.g. "pending_validation", "active"), shown to staff.
+  sslStatus          String?
+  /// DNS records the client has to create: [{ type, name, value, purpose }].
+  dnsRecords         Json?
+  lastError          String?
+  checkedAt          DateTime?
+  activatedAt        DateTime?
+  /// Set when the owner's plan lost customDomain; the domain is disabled after the grace period.
+  entitlementLostAt  DateTime?
+  /// Purchased domains: the order (registration) they come from.
+  orderId            String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 
-  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  site  Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  order DomainOrder? @relation(fields: [orderId], references: [id], onDelete: SetNull)
 
   @@index([siteId])
+  @@index([status, checkedAt])
+}
+
+/// PENDING_PAYMENT -> (paid) REGISTERING -> ACTIVE; FAILED needs staff; EXPIRED after expiresAt without renewal;
+/// CANCELED: checkout abandoned.
+enum DomainOrderStatus {
+  PENDING_PAYMENT
+  REGISTERING
+  ACTIVE
+  FAILED
+  EXPIRED
+  CANCELED
+}
+
+/// A domain bought through the platform (registrar: Openprovider). Paid by a yearly provider subscription
+/// (Stripe) that renews it; the domain belongs to the client even without a plan.
+model DomainOrder {
+  id                     String            @id @default(cuid())
+  userId                 String
+  /// Site the domain is connected to after registration (may be changed or removed later).
+  siteId                 String?
+  /// ASCII domain name, e.g. "jan-kowalski.pl".
+  domainName             String
+  status                 DomainOrderStatus @default(PENDING_PAYMENT)
+  /// Yearly gross price charged to the client, in grosze.
+  priceAmount            Int
+  currency               String            @default("PLN")
+  /// Registrar price at order time (minor units of registrarCurrency), for margin reporting.
+  registrarCost          Int?
+  registrarCurrency      String?
+  /// Registrant (abonent) data given by the client: type, names, address, email, phone, tax id.
+  registrant             Json
+  registrarHandle        String?
+  registrarDomainId      String?
+  expiresAt              DateTime?
+  autoRenew              Boolean           @default(true)
+  providerSubscriptionId String?           @unique
+  /// Renewal reminders already sent for the current period (days before expiry, e.g. [30, 7]).
+  remindersSent          Int[]             @default([])
+  lastRenewedAt          DateTime?
+  attempts               Int               @default(0)
+  lastError              String?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site     Site?     @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  domains  Domain[]
+  payments Payment[]
+
+  @@index([userId])
+  @@index([domainName])
+  @@index([status, expiresAt])
 }
 
 /// Snapshot of a page's content taken on every publish (the last N are kept). Restoring copies it into the draft.
@@ -327,15 +399,15 @@ enum SubscriptionStatus {
 }
 
 model Subscription {
-  id                   String             @id @default(cuid())
-  userId               String
-  planId               String
-  priceId              String?
-  status               SubscriptionStatus
-  trialEndsAt          DateTime?
-  currentPeriodEnd     DateTime?
-  cancelAtPeriodEnd    Boolean            @default(false)
-  canceledAt           DateTime?
+  id                     String             @id @default(cuid())
+  userId                 String
+  planId                 String
+  priceId                String?
+  status                 SubscriptionStatus
+  trialEndsAt            DateTime?
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean            @default(false)
+  canceledAt             DateTime?
   /// Subscription id at the payment provider; null for subscriptions granted manually (seed, admin).
   providerSubscriptionId String?            @unique
   /// Set on the first failed payment, cleared when paid; drives dunning (src/server/billing/dunning.ts).
@@ -434,11 +506,11 @@ model TemplateOverride {
 
 /// One-time purchase of a premium template (Stripe Checkout, Phase 5).
 model TemplatePurchase {
-  id              String   @id @default(cuid())
-  templateId      String
-  userId          String
-  amount          Int
-  currency        String   @default("PLN")
+  id                String   @id @default(cuid())
+  templateId        String
+  userId            String
+  amount            Int
+  currency          String   @default("PLN")
   /// Checkout session id at the payment provider.
   providerSessionId String?  @unique
   createdAt         DateTime @default(now())
@@ -498,6 +570,7 @@ model BillingProfile {
 enum PaymentKind {
   SUBSCRIPTION
   TEMPLATE
+  DOMAIN
 }
 
 enum PaymentStatus {
@@ -526,12 +599,15 @@ model Payment {
   updatedAt         DateTime      @updatedAt
 
   /// Provider charge reference (Stripe PaymentIntent id); refunds are matched by it.
-  providerChargeRef String?       @unique
+  providerChargeRef String? @unique
   /// Cumulative refunded amount in grosze (partial refunds keep status PAID).
-  refundedAmount    Int           @default(0)
+  refundedAmount    Int     @default(0)
+  /// Domain registration/renewal payments.
+  domainOrderId     String?
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  domainOrder  DomainOrder?  @relation(fields: [domainOrderId], references: [id], onDelete: SetNull)
   invoices     Invoice[]
 
   @@index([userId, createdAt])
@@ -593,10 +669,10 @@ model Invoice {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  payment          Payment        @relation(fields: [paymentId], references: [id], onDelete: NoAction)
-  correctedInvoice Invoice?       @relation("InvoiceCorrections", fields: [correctedInvoiceId], references: [id], onDelete: NoAction)
-  corrections      Invoice[]      @relation("InvoiceCorrections")
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment          Payment          @relation(fields: [paymentId], references: [id], onDelete: NoAction)
+  correctedInvoice Invoice?         @relation("InvoiceCorrections", fields: [correctedInvoiceId], references: [id], onDelete: NoAction)
+  corrections      Invoice[]        @relation("InvoiceCorrections")
   document         InvoiceDocument?
 
   @@index([userId, createdAt])

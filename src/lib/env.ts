@@ -77,6 +77,46 @@ export const envSchema = z
       .default("true")
       .transform((value) => value === "true"),
 
+    // Custom domains: mock = simulated SSL/DNS checks, cloudflare = Cloudflare for SaaS custom hostnames.
+    HOSTNAME_PROVIDER: z.enum(["mock", "cloudflare"]).default("mock"),
+    CLOUDFLARE_API_TOKEN: optionalString,
+    CLOUDFLARE_ZONE_ID: optionalString,
+    // Hostname clients point their CNAME at (the SaaS fallback origin record), e.g. "sites.example.com".
+    // Empty = "sites.{ROOT_DOMAIN}".
+    CUSTOM_DOMAIN_CNAME_TARGET: optionalString,
+    // Optional comma-separated IPv4 addresses for apex (root) domains (Cloudflare apex proxying).
+    CUSTOM_DOMAIN_APEX_IPS: z.preprocess(
+      emptyToUndefined,
+      z
+        .string()
+        .optional()
+        .transform((value) =>
+          value
+            ? value
+                .split(",")
+                .map((ip) => ip.trim())
+                .filter(Boolean)
+            : [],
+        )
+        .pipe(z.array(z.ipv4())),
+    ),
+
+    // Domain registrar: mock = simulated availability/registration, openprovider = Openprovider API.
+    REGISTRAR_PROVIDER: z.enum(["mock", "openprovider"]).default("mock"),
+    OPENPROVIDER_USERNAME: optionalString,
+    OPENPROVIDER_PASSWORD: optionalString,
+    OPENPROVIDER_API_URL: z.url().default("https://api.openprovider.eu/v1beta"),
+    // Name servers for purchased domains (Openprovider DNS hosts their zones).
+    OPENPROVIDER_NAMESERVERS: z
+      .string()
+      .default("ns1.openprovider.nl,ns2.openprovider.be,ns3.openprovider.eu")
+      .transform((value) =>
+        value
+          .split(",")
+          .map((ns) => ns.trim())
+          .filter(Boolean),
+      ),
+
     // Template thumbnails (background worker): mock = generated image, playwright = screenshot of the preview.
     THUMBNAIL_PROVIDER: z.enum(["mock", "playwright"]).default("mock"),
     // Optional path to a Chromium binary for the playwright renderer (otherwise Playwright's bundled browser).
@@ -137,6 +177,33 @@ export const envSchema = z
             message: "Required when INVOICING_PROVIDER=fakturownia",
           });
         }
+      }
+    }
+    if (env.HOSTNAME_PROVIDER === "cloudflare") {
+      for (const key of ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ZONE_ID"] as const) {
+        if (!env[key]) {
+          ctx.addIssue({
+            code: "custom",
+            path: [key],
+            message: "Required when HOSTNAME_PROVIDER=cloudflare",
+          });
+        }
+      }
+    }
+    if (env.REGISTRAR_PROVIDER === "openprovider") {
+      for (const key of ["OPENPROVIDER_USERNAME", "OPENPROVIDER_PASSWORD"] as const) {
+        if (!env[key]) {
+          ctx.addIssue({
+            code: "custom",
+            path: [key],
+            message: "Required when REGISTRAR_PROVIDER=openprovider",
+          });
+        }
+      }
+    }
+    for (const key of ["HOSTNAME_PROVIDER", "REGISTRAR_PROVIDER"] as const) {
+      if (env.APP_ENV === "production" && env[key] === "mock") {
+        ctx.addIssue({ code: "custom", path: [key], message: `mock ${key} is not allowed in production` });
       }
     }
     if (env.APP_ENV === "production" && env.INVOICING_PROVIDER === "mock") {

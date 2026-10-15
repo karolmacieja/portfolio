@@ -49,6 +49,8 @@ describe("parseEnv", () => {
     expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/THUMBNAIL_PROVIDER/);
     expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/PAYMENTS_PROVIDER/);
     expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/INVOICING_PROVIDER/);
+    expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/HOSTNAME_PROVIDER/);
+    expect(() => parseEnv({ ...base, APP_ENV: "production" })).toThrow(/REGISTRAR_PROVIDER/);
   });
 
   it("requires Stripe keys for the stripe payments provider", () => {
@@ -83,5 +85,14 @@ describe("parseEnv", () => {
       FAKTUROWNIA_KSEF: "false",
     });
     expect(env.FAKTUROWNIA_KSEF).toBe(false);
+  });
+
+  it("parses domain settings and requires provider credentials", () => {
+    expect(() => parseEnv({ ...base, HOSTNAME_PROVIDER: "cloudflare" })).toThrow(/CLOUDFLARE_ZONE_ID/);
+    expect(() => parseEnv({ ...base, REGISTRAR_PROVIDER: "openprovider" })).toThrow(/OPENPROVIDER_PASSWORD/);
+    const env = parseEnv({ ...base, CUSTOM_DOMAIN_APEX_IPS: "192.0.2.1, 192.0.2.2" });
+    expect(env.CUSTOM_DOMAIN_APEX_IPS).toEqual(["192.0.2.1", "192.0.2.2"]);
+    expect(env.OPENPROVIDER_NAMESERVERS).toHaveLength(3);
+    expect(() => parseEnv({ ...base, CUSTOM_DOMAIN_APEX_IPS: "not-an-ip" })).toThrow();
   });
 });
