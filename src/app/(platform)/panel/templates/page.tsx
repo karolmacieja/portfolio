@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { TemplateCard } from "@/components/templates/template-card";
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { requireUser } from "@/server/auth/session";
@@ -16,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function TemplatesGalleryPage({ searchParams }: PageProps<"/panel/templates">) {
   const user = await requireUser("/templates");
-  const { category } = await searchParams;
+  const { category, purchased } = await searchParams;
   const active =
     typeof category === "string" && (TEMPLATE_CATEGORIES as readonly string[]).includes(category)
       ? category
@@ -26,6 +27,7 @@ export default async function TemplatesGalleryPage({ searchParams }: PageProps<"
     getTranslations("templates"),
     getTranslations("common"),
   ]);
+  const tBilling = await getTranslations("billing");
 
   return (
     <main className="mx-auto grid max-w-6xl gap-6 px-6 py-8">
@@ -36,6 +38,7 @@ export default async function TemplatesGalleryPage({ searchParams }: PageProps<"
         <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="text-muted-foreground">{t("description")}</p>
       </div>
+      {purchased === "1" && <Alert data-testid="template-purchased">{tBilling("purchased")}</Alert>}
       <nav className="flex flex-wrap gap-2" aria-label={t("title")}>
         {[undefined, ...TEMPLATE_CATEGORIES].map((c) => (
           <Link

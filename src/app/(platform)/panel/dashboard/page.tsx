@@ -39,6 +39,9 @@ export default async function DashboardPage() {
           <Button asChild variant="ghost" size="sm">
             <Link href="/media">{t("siteNav.media")}</Link>
           </Button>
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/billing">{t("billing.nav")}</Link>
+          </Button>
           {isStaff(user.role) && (
             <Button asChild variant="ghost" size="sm">
               <Link href={platformUrl("admin")}>{t("common.adminPanel")}</Link>

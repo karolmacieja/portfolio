@@ -4,6 +4,8 @@ import { BillingInterval } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { parseFeatures, type AccessTier, type PlanFeatures } from "@/server/entitlements";
 
+export type PlanPriceCard = { id: string; amount: number; currency: string };
+
 export type PlanCard = {
   id: string;
   slug: string;
@@ -16,8 +18,8 @@ export type PlanCard = {
   storageMb: number;
   features: PlanFeatures;
   accessTiers: AccessTier[];
-  monthly: { amount: number; currency: string } | null;
-  yearly: { amount: number; currency: string } | null;
+  monthly: PlanPriceCard | null;
+  yearly: PlanPriceCard | null;
 };
 
 /** Active plans with their active prices, in pricing-page order. */
@@ -30,7 +32,7 @@ export async function listActivePlans(): Promise<PlanCard[]> {
   return plans.map((plan) => {
     const price = (interval: BillingInterval) => {
       const found = plan.prices.find((p) => p.interval === interval);
-      return found ? { amount: found.amount, currency: found.currency } : null;
+      return found ? { id: found.id, amount: found.amount, currency: found.currency } : null;
     };
     return {
       id: plan.id,

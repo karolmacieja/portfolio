@@ -4,7 +4,7 @@ import { normalizeLockRules } from "@/blocks/locks";
 import { Prisma, TemplateStatus } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { validateSlug } from "@/lib/slug";
-import { canAddMore, canUseTemplate, getEntitlements } from "@/server/entitlements";
+import { canAddMore, canUseTemplate, canUseTier, getEntitlements } from "@/server/entitlements";
 import { hostTag, siteTag } from "@/server/sites/cache-tags";
 import { SiteError } from "@/server/sites/errors";
 import { siteSubdomainHostname } from "@/server/sites/urls";
@@ -36,6 +36,8 @@ export type GalleryTemplate = {
   isPremium: boolean;
   priceAmount: number | null;
   canUse: boolean;
+  /** A premium template that the user's plan allows and that can be bought now. */
+  canBuy: boolean;
 };
 
 export async function listGallery(userId: string, category?: string): Promise<GalleryTemplate[]> {
@@ -67,6 +69,12 @@ export async function listGallery(userId: string, category?: string): Promise<Ga
     isPremium: t.isPremium,
     priceAmount: t.priceAmount,
     canUse: canUseTemplate(entitlements, { ...t, overrides }, userId, purchased.has(t.id)),
+    canBuy:
+      t.isPremium &&
+      Boolean(t.priceAmount) &&
+      !purchased.has(t.id) &&
+      !canUseTemplate(entitlements, { ...t, overrides }, userId, false) &&
+      canUseTier(entitlements, t.accessTier),
   }));
 }
 

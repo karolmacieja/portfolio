@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 
+import { BuyTemplateForm } from "@/components/billing/billing-forms";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
@@ -15,6 +16,7 @@ export async function TemplateCard({
   action?: React.ReactNode;
 }) {
   const t = await getTranslations("templates");
+  const tBilling = await getTranslations("billing");
   const locale = await getLocale();
   return (
     <li className="overflow-hidden rounded-xl border" data-testid={`template-${template.slug}`}>
@@ -54,15 +56,18 @@ export async function TemplateCard({
           </Button>
           {template.canUse ? (
             action
-          ) : template.isPremium ? (
-            <span className="text-xs text-muted-foreground">{t("premiumLocked")}</span>
+          ) : template.canBuy && template.priceAmount ? (
+            <BuyTemplateForm
+              templateId={template.id}
+              label={tBilling("buyTemplate", { price: formatMoney(template.priceAmount, "PLN", locale) })}
+            />
           ) : (
             <Button asChild size="sm" variant="secondary">
               <Link href="/plans">{t("upgrade")}</Link>
             </Button>
           )}
         </div>
-        {!template.canUse && !template.isPremium && (
+        {!template.canUse && !template.canBuy && (
           <p className="text-xs text-muted-foreground">{t("locked")}</p>
         )}
       </div>
