@@ -3,10 +3,11 @@
   "tasks": [
     {
       "label": "Setup (first run)",
-      "detail": "Creates .env from .env.example, installs packages, starts Docker, migrates and seeds the database",
-      "type": "shell",
-      "command": "node -e \"const fs=require('fs');fs.existsSync('.env')||fs.copyFileSync('.env.example','.env')\" && pnpm install && docker compose up -d --wait && pnpm db:deploy && pnpm db:seed",
-      "problemMatcher": []
+      "detail": "Creates .env (random AUTH_SECRET), installs packages, starts Docker, migrates and seeds the database",
+      "type": "process",
+      "problemMatcher": [],
+      "command": "node",
+      "args": ["src/scripts/dev-setup.mjs"]
     },
     {
       "label": "Docker: up",
@@ -21,11 +22,20 @@
       "type": "shell",
       "command": "pnpm dev",
       "isBackground": true,
-      "presentation": { "group": "start", "panel": "dedicated" },
+      "presentation": {
+        "group": "start",
+        "panel": "dedicated"
+      },
       "problemMatcher": {
         "owner": "next",
-        "pattern": { "regexp": "^__never__$" },
-        "background": { "activesBegin": true, "beginsPattern": "Next\\.js", "endsPattern": "Ready in" }
+        "pattern": {
+          "regexp": "^__never__$"
+        },
+        "background": {
+          "activesBegin": true,
+          "beginsPattern": "Next\\.js",
+          "endsPattern": "Ready in"
+        }
       }
     },
     {
@@ -34,10 +44,15 @@
       "type": "shell",
       "command": "pnpm worker",
       "isBackground": true,
-      "presentation": { "group": "start", "panel": "dedicated" },
+      "presentation": {
+        "group": "start",
+        "panel": "dedicated"
+      },
       "problemMatcher": {
         "owner": "worker",
-        "pattern": { "regexp": "^__never__$" },
+        "pattern": {
+          "regexp": "^__never__$"
+        },
         "background": {
           "activesBegin": true,
           "beginsPattern": "worker",
@@ -56,14 +71,20 @@
       "dependsOn": ["Docker: up", "App + worker"],
       "dependsOrder": "sequence",
       "problemMatcher": [],
-      "group": { "kind": "build", "isDefault": true }
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
     },
     {
       "label": "Check: lint + typecheck + tests",
       "type": "shell",
-      "command": "pnpm lint && pnpm typecheck && pnpm test",
+      "command": "pnpm check",
       "problemMatcher": ["$tsc"],
-      "group": { "kind": "test", "isDefault": true }
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
     },
     {
       "label": "Database: reset (drop, migrate, seed)",

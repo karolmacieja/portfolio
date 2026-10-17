@@ -16,6 +16,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "next typegen && tsc --noEmit",
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "setup:dev": "node src/scripts/dev-setup.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

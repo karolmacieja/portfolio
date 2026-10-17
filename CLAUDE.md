@@ -49,6 +49,8 @@ pnpm dev                      # http://localhost:3000 (marketing), app./admin./j
 pnpm worker                   # background jobs (thumbnails, dunning, invoices + KSeF, domains); needs Redis
 pnpm billing:sync-prices      # create Stripe prices for PlanPrice rows without stripePriceId
 stripe listen --forward-to app.localhost:3000/api/webhooks/stripe   # PAYMENTS_PROVIDER=stripe locally
+pnpm setup:dev               # first run: .env (random AUTH_SECRET) + install + docker + migrate + seed
+pnpm check                   # lint + typecheck + unit tests
 pnpm lint | pnpm format | pnpm typecheck | pnpm test | pnpm test:e2e | pnpm build
 pnpm db:reset                 # drop, migrate, seed
 ```
@@ -61,7 +63,8 @@ Migrations that rename columns: `prisma migrate dev` needs a TTY, so generate SQ
 with `pnpm db:deploy` and run `pnpm db:generate`.
 `pnpm typecheck` runs `next typegen` first (route types such as `PageProps<"/login">`).
 VS Code: `.vscode/` has tasks ("Setup (first run)", "Start" = Docker + `pnpm dev` + `pnpm worker`, checks, DB reset),
-debug configs (server, browser, worker) and recommended extensions.
+debug configs (server, browser, worker) and recommended extensions. Task commands must not chain with `&&`/`||`
+(Windows PowerShell 5.1 rejects them): put chains in `package.json` scripts or `src/scripts/dev-setup.mjs`.
 
 ## Host routing
 
