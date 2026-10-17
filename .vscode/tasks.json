@@ -1,0 +1,75 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Setup (first run)",
+      "detail": "Creates .env from .env.example, installs packages, starts Docker, migrates and seeds the database",
+      "type": "shell",
+      "command": "node -e \"const fs=require('fs');fs.existsSync('.env')||fs.copyFileSync('.env.example','.env')\" && pnpm install && docker compose up -d --wait && pnpm db:deploy && pnpm db:seed",
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: up",
+      "detail": "Postgres, Redis, MinIO, Mailpit",
+      "type": "shell",
+      "command": "docker compose up -d --wait",
+      "problemMatcher": []
+    },
+    {
+      "label": "App: dev",
+      "detail": "pnpm dev on http://localhost:3000",
+      "type": "shell",
+      "command": "pnpm dev",
+      "isBackground": true,
+      "presentation": { "group": "start", "panel": "dedicated" },
+      "problemMatcher": {
+        "owner": "next",
+        "pattern": { "regexp": "^__never__$" },
+        "background": { "activesBegin": true, "beginsPattern": "Next\\.js", "endsPattern": "Ready in" }
+      }
+    },
+    {
+      "label": "Worker",
+      "detail": "pnpm worker (background jobs)",
+      "type": "shell",
+      "command": "pnpm worker",
+      "isBackground": true,
+      "presentation": { "group": "start", "panel": "dedicated" },
+      "problemMatcher": {
+        "owner": "worker",
+        "pattern": { "regexp": "^__never__$" },
+        "background": {
+          "activesBegin": true,
+          "beginsPattern": "worker",
+          "endsPattern": "\\[worker\\] started"
+        }
+      }
+    },
+    {
+      "label": "App + worker",
+      "dependsOn": ["App: dev", "Worker"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Start",
+      "detail": "Docker, then the app and the worker side by side",
+      "dependsOn": ["Docker: up", "App + worker"],
+      "dependsOrder": "sequence",
+      "problemMatcher": [],
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "Check: lint + typecheck + tests",
+      "type": "shell",
+      "command": "pnpm lint && pnpm typecheck && pnpm test",
+      "problemMatcher": ["$tsc"],
+      "group": { "kind": "test", "isDefault": true }
+    },
+    {
+      "label": "Database: reset (drop, migrate, seed)",
+      "type": "shell",
+      "command": "pnpm db:reset",
+      "problemMatcher": []
+    }
+  ]
+}

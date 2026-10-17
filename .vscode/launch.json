@@ -1,0 +1,34 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Next.js: debug server",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm dev --inspect",
+      "preLaunchTask": "Docker: up",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Next.js: debug browser (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://app.localhost:3000"
+    },
+    {
+      "name": "Worker: debug",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm worker",
+      "preLaunchTask": "Docker: up",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug app + worker",
+      "configurations": ["Next.js: debug server", "Worker: debug"],
+      "stopAll": true
+    }
+  ]
+}

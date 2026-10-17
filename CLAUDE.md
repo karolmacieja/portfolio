@@ -60,6 +60,8 @@ Migrations that rename columns: `prisma migrate dev` needs a TTY, so generate SQ
 `prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`, edit it into RENAMEs, apply
 with `pnpm db:deploy` and run `pnpm db:generate`.
 `pnpm typecheck` runs `next typegen` first (route types such as `PageProps<"/login">`).
+VS Code: `.vscode/` has tasks ("Setup (first run)", "Start" = Docker + `pnpm dev` + `pnpm worker`, checks, DB reset),
+debug configs (server, browser, worker) and recommended extensions.
 
 ## Host routing
 
