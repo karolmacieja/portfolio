@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_THEME, parseTheme, THEME_PRESETS, themeSchema, themeToCssVars } from "./theme";
+import { DEFAULT_THEME, mixHex, parseTheme, THEME_PRESETS, themeSchema, themeToCssVars } from "./theme";
 
 describe("theme", () => {
   it("all presets are valid themes", () => {
@@ -29,5 +29,21 @@ describe("theme", () => {
     const vars = themeToCssVars({ ...DEFAULT_THEME, buttonStyle: "outline" });
     expect(vars["--site-btn-bg"]).toBe("transparent");
     expect(vars["--site-btn-fg"]).toBe(DEFAULT_THEME.colors.primary);
+  });
+
+  it("keeps themes saved before accent/border/heading scale valid, deriving the new values", () => {
+    const { headingScale: _scale, ...legacy } = DEFAULT_THEME;
+    const theme = parseTheme(legacy);
+    expect(theme.headingScale).toBe("md");
+    const vars = themeToCssVars(theme);
+    expect(vars["--site-accent"]).toBe(DEFAULT_THEME.colors.primary);
+    expect(vars["--site-border"]).toBe(mixHex("#111111", "#ffffff", 0.15));
+    expect(vars["--site-c-primaryForeground"]).toBe("#ffffff");
+    expect(vars["--site-heading-scale"]).toBe("1");
+  });
+
+  it("mixes hex colours", () => {
+    expect(mixHex("#000000", "#ffffff", 0.5)).toBe("#808080");
+    expect(mixHex("#ff0000", "#0000ff", 1)).toBe("#ff0000");
   });
 });

@@ -177,6 +177,27 @@ describe.skipIf(!process.env.DATABASE_URL)("templates (database)", async () => {
     await sites.savePageDraft(basicUser, home.id, { root: {}, content: [textEdited, draft.content[0]] });
   });
 
+  it("detaches a site from its template: locks go after a backup, owner only", async () => {
+    const site = await db.site.findFirstOrThrow({ where: { slug: `t-from-${run}` } });
+    expect(await client.countLockedPages(basicUser, site.id)).toBe(1);
+    await expect(client.detachTemplate(stranger, site.id)).rejects.toEqual(new SiteError("notFound"));
+
+    const { value } = await client.detachTemplate(basicUser, site.id);
+    expect(await client.countLockedPages(basicUser, site.id)).toBe(0);
+    const backup = await db.siteBackup.findUniqueOrThrow({ where: { id: value.backupId } });
+    expect(backup.reason).toBe("templateDetach");
+
+    // The formerly delete-locked hero can now be removed; content and the template link stay.
+    const home = await db.page.findFirstOrThrow({ where: { siteId: site.id, path: "" } });
+    expect(home.lockRules).toBeNull();
+    const draft = home.draftContent as { content: { type: string }[] };
+    const withoutHero = draft.content.filter((b) => b.type !== "Hero");
+    await sites.savePageDraft(basicUser, home.id, { root: {}, content: withoutHero });
+    expect((await db.site.findUniqueOrThrow({ where: { id: site.id } })).templateId).toBe(basicTemplate);
+
+    await expect(client.detachTemplate(basicUser, site.id)).rejects.toEqual(new TemplateError("noLocks"));
+  });
+
   it("applies only the theme, or switches the layout with a backup and content mapping", async () => {
     const { value: own } = await sites.createSite(proUser, { name: "Own", slug: `t-own-${run}` });
     const home = await db.page.findFirstOrThrow({ where: { siteId: own.id, path: "" } });

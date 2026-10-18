@@ -33,12 +33,12 @@ test("manages pages, theme, settings and history", async ({ page }) => {
 
   // Pages
   const addPage = page.getByTestId("add-page-form");
-  await addPage.getByLabel("Tytuł").fill("Kontakt");
+  await addPage.getByLabel("Tytuł", { exact: true }).fill("Kontakt");
   await expect(addPage.getByLabel("Adres")).toHaveValue("kontakt");
   await addPage.getByRole("button", { name: "Dodaj podstronę" }).click();
   await expect(page.getByTestId("page-kontakt")).toBeVisible();
 
-  await addPage.getByLabel("Tytuł").fill("API");
+  await addPage.getByLabel("Tytuł", { exact: true }).fill("API");
   await addPage.getByLabel("Adres").fill("api");
   await addPage.getByRole("button", { name: "Dodaj podstronę" }).click();
   await expect(addPage.getByTestId("form-error")).toHaveText("Ten adres jest zarezerwowany.");
@@ -106,6 +106,6 @@ test("uploads an image to the media library", async ({ page }) => {
     buffer: Buffer.from("<svg onload=alert(1)>"),
   });
   await expect(page.getByRole("alert").filter({ hasText: "evil.png" })).toContainText(
-    "Plik nie jest prawidłowym obrazem.",
+    "Plik nie jest prawidłowym obrazem ani dokumentem PDF.",
   );
 });

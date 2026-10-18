@@ -66,6 +66,36 @@ describe.skipIf(!process.env.DATABASE_URL)("media service (database)", async () 
     expect(await storage.read(asset.url.replace("/storage/", ""))).toBeNull();
   });
 
+  it("stores PDFs unchanged as documents, filtered from images, and refuses other files", async () => {
+    const pdf = Buffer.from("%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n");
+    const doc = await media.uploadAsset(owner, { buffer: pdf, name: "Moje CV" });
+    expect(doc.kind).toBe("document");
+    expect(doc.url).toMatch(/^\/storage\/u\/.+\.pdf$/);
+    expect(doc.originalName).toBe("Moje CV.pdf");
+    expect(doc.sizeBytes).toBe(pdf.byteLength);
+    expect(await storage.read(doc.url.replace("/storage/", ""))).toEqual(pdf);
+
+    const photo = await media.uploadAsset(owner, { buffer: await image(10, 10), name: "p.png" });
+    expect((await media.listAssets(owner, "document")).map((a) => a.id)).toEqual([doc.id]);
+    expect((await media.listAssets(owner, "image")).map((a) => a.id)).toEqual([photo.id]);
+    expect(await media.listAssets(stranger, "document")).toEqual([]);
+
+    // A renamed text file is neither an image nor a PDF.
+    await expect(
+      media.uploadAsset(owner, { buffer: Buffer.from("<script>alert(1)</script>"), name: "x.pdf" }),
+    ).rejects.toEqual(new MediaError("invalidImage"));
+    await expect(
+      media.uploadAsset(owner, {
+        buffer: Buffer.concat([Buffer.from("%PDF-"), Buffer.alloc(media.DOCUMENT_MAX_MB * 1024 * 1024)]),
+        name: "big.pdf",
+      }),
+    ).rejects.toEqual(new MediaError("fileTooLarge"));
+
+    await media.deleteAsset(owner, doc.id);
+    await media.deleteAsset(owner, photo.id);
+    expect(await storage.read(doc.url.replace("/storage/", ""))).toBeNull();
+  });
+
   it("enforces the storage quota", async () => {
     // Random noise compresses badly, so a few uploads exceed the 1 MB test quota.
     const noise = await sharp(

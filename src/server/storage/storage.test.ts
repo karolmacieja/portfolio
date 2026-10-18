@@ -6,7 +6,7 @@ import { afterAll, describe, expect, it } from "vitest";
 
 import { LocalStorageProvider } from "./local";
 import { S3StorageProvider } from "./s3";
-import { assertSafeKey } from "./types";
+import { assertSafeKey, attachmentDisposition } from "./types";
 
 describe("assertSafeKey", () => {
   it.each(["u/abc/file.webp", "u/a-b_c/x.thumb.webp"])("accepts %s", (key) => {
@@ -50,5 +50,13 @@ describe("S3StorageProvider", () => {
       forcePathStyle: false,
     });
     expect(storage.publicUrl("u/1/a.webp")).toBe("https://cdn.example.com/u/1/a.webp");
+  });
+});
+
+describe("attachmentDisposition", () => {
+  it("quotes an ASCII fallback and adds the UTF-8 name", () => {
+    expect(attachmentDisposition('Życiorys "nowy".pdf')).toBe(
+      `attachment; filename="_yciorys _nowy_.pdf"; filename*=UTF-8''%C5%BByciorys%20%22nowy%22.pdf`,
+    );
   });
 });

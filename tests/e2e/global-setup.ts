@@ -22,7 +22,7 @@ export default async function globalSetup() {
     await client.query(`DELETE FROM "Site" WHERE slug LIKE 'e2e-%'`);
     await client.query(`DELETE FROM "Organization" WHERE name LIKE 'E2E %'`);
     await client.query(`DELETE FROM "User" WHERE email LIKE 'e2e-%@example.com'`);
-    await client.query(`DELETE FROM "Asset" WHERE "originalName" = 'e2e.png'`);
+    await client.query(`DELETE FROM "Asset" WHERE "originalName" IN ('e2e.png', 'e2e.pdf')`);
     await client.query(`DELETE FROM "Template" WHERE slug LIKE 'e2e-%'`);
     await client.query(`DELETE FROM "Coupon" WHERE code LIKE 'E2E%'`);
     await client.query(`DELETE FROM "Campaign" WHERE subject LIKE 'E2E %'`);

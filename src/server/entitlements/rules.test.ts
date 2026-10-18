@@ -97,8 +97,18 @@ describe("block and template access", () => {
       "Timeline",
       "Testimonials",
       "Video",
+      "Section",
+      "Pricing",
+      "Faq",
+      "Stats",
+      "Logos",
+      "FileDownload",
       "Columns",
     ]);
+    // Simple content blocks are available on the entry plan.
+    for (const type of ["Heading", "Buttons", "Quote", "Divider", "IconList"]) {
+      expect(canUseBlock(startE, type, DEFAULT_BLOCK_TIERS)).toBe(true);
+    }
     expect(lockedBlocks(proE, DEFAULT_BLOCK_TIERS)).toEqual([]);
   });
 

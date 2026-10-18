@@ -7,8 +7,12 @@ import { adminUrl, appUrl } from "./hosts";
 test("mail branding, preview and a test mail", async ({ page }) => {
   await signInAsAdmin(page);
   await page.goto(adminUrl("/settings"));
+  // Filling before hydration lets React restore the old value mid-fill (text gets appended).
+  await page.waitForLoadState("networkidle");
   const form = page.getByTestId("mail-branding-form");
-  await form.getByLabel("Stopka maili").fill("Portfolio Sp. z o.o.\nul. Testowa 1, Warszawa");
+  const footer = form.getByLabel("Stopka maili");
+  await footer.fill("Portfolio Sp. z o.o.\nul. Testowa 1, Warszawa");
+  await expect(footer).toHaveValue("Portfolio Sp. z o.o.\nul. Testowa 1, Warszawa");
   await form.getByRole("button", { name: "Zapisz" }).click();
   await expect(form.getByText("Zapisano.")).toBeVisible();
 
