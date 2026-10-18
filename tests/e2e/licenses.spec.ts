@@ -62,6 +62,8 @@ test("staff create a manual license and hide the sponsor footer for one member",
   const managerEmail = await createBillingUser();
   await signInAsAdmin(page);
   await page.goto(adminUrl("/licenses"));
+  // Filling before hydration races React restoring the form (seen under a loaded dev server).
+  await page.waitForLoadState("networkidle");
   const form = page.getByTestId("manual-license-form");
   await form.getByLabel("E-mail opiekuna").fill(managerEmail);
   await form.getByLabel("Organizacja").fill("E2E Uczelnia");

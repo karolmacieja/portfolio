@@ -9,6 +9,8 @@ export default defineConfig({
   testDir: "./tests/e2e",
   globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: true,
+  // Server actions on a dev server under parallel load (first compiles) can take longer than the 5 s default.
+  expect: { timeout: 10_000 },
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
