@@ -352,10 +352,19 @@ export default async function AdminSettingsPage() {
                   id="mail-accent"
                   name="accentColor"
                   type="color"
-                  defaultValue={mailBranding.accentColor}
+                  defaultValue={mailBranding.accentColor || "#171717"}
                   className="h-9 w-20 p-1"
                 />
               </div>
+              <label className="flex items-center gap-2 self-end pb-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="accentFromPlatform"
+                  value="1"
+                  defaultChecked={!mailBranding.accentColor}
+                />
+                {t("mailAccentFromPlatform")}
+              </label>
             </div>
             <div className="grid gap-1">
               <Label htmlFor="mail-footer">{t("mailFooter")}</Label>

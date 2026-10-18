@@ -905,7 +905,8 @@
       "content": "Content",
       "analytics": "Analytics",
       "system": "System"
-    }
+    },
+    "branding": "Branding"
   },
   "adminTemplates": {
     "title": "Templates",
@@ -1278,14 +1279,15 @@
     },
     "mailBranding": "Mail look",
     "mailBrandingHint": "Logo (an https image URL, e.g. from the media library or a CDN), button colour and a footer with company data in every mail. Empty footer = seller data from the invoicing settings.",
-    "mailLogo": "Logo (URL)",
+    "mailLogo": "Logo (URL, empty = platform logo)",
     "mailAccent": "Button colour",
     "mailFooter": "Mail footer",
     "mailFooterPlaceholder": "Company name\nAddress, tax ID\ncontact@…",
     "mailPreview": "Mail preview",
     "showPreview": "Show",
     "sendTest": "Send a test to {email}",
-    "testSent": "Test mail sent."
+    "testSent": "Test mail sent.",
+    "mailAccentFromPlatform": "Same as the platform's primary colour"
   },
   "domains": {
     "title": "Domains",
@@ -1752,7 +1754,8 @@
       "label": "Information",
       "copyright": "© {year} {brand}",
       "terms": "Terms of service",
-      "privacy": "Privacy policy"
+      "privacy": "Privacy policy",
+      "socials": "Social media"
     },
     "hero": {
       "pricing": "See pricing",
@@ -2190,6 +2193,75 @@
       "emptyAudience": "Nobody matches the recipients.",
       "pastSchedule": "The send time must be in the future.",
       "unsubscribeInvalid": "The unsubscribe link is invalid or expired. Unsubscribe in your account settings."
+    }
+  },
+  "adminBranding": {
+    "title": "Branding",
+    "description": "Name, logo, colours and texts of the service: home page, panels, e-mails and the footer of client sites.",
+    "identity": "Name and logo",
+    "colors": "Colours and font",
+    "contact": "Contact and social media",
+    "landing": "Home page texts ({locale})",
+    "landingHint": "An empty field uses the default text (shown in the field as a hint).",
+    "name": "Service name",
+    "nameHint": "Shown in headers, tab titles, e-mails, terms and the \"Made with …\" footer of client sites. Empty = the name from the server configuration.",
+    "tagline": "Tagline (description in search results)",
+    "logo": "Logo",
+    "logoHint": "PNG, JPG or WebP, up to 5 MB. Preferably horizontal on a transparent background. Without a logo we show the name.",
+    "favicon": "Browser tab icon",
+    "faviconHint": "A square image (e.g. 512×512). Versions for browsers and phones are generated automatically.",
+    "upload": "Upload",
+    "uploading": "Uploading…",
+    "change": "Change",
+    "remove": "Remove",
+    "save": "Save",
+    "saved": "Saved.",
+    "primaryColor": "Primary colour (buttons, links)",
+    "accentColor": "Accent (highlights)",
+    "contrastPrimary": "This colour has low contrast with a white background. Links and buttons may be hard to read.",
+    "contrastAccent": "The accent is very light and may be hard to see on a white background.",
+    "font": "Font",
+    "fontSystem": "System (default)",
+    "preview": "Preview",
+    "previewText": "This is how secondary text looks in the panel.",
+    "previewButton": "Button",
+    "previewSecondary": "Secondary",
+    "previewBadge": "Highlight",
+    "previewLink": "Link",
+    "contactEmail": "Contact e-mail",
+    "contactPhone": "Phone",
+    "socials": "Social media profiles",
+    "socialPlatform": "Service",
+    "socialUrl": "Profile URL",
+    "addSocial": "Add profile",
+    "error": {
+      "generic": "The file could not be uploaded.",
+      "invalidImage": "The file is not a valid image.",
+      "unsupportedType": "PNG, JPG, WebP and AVIF images are allowed.",
+      "fileTooLarge": "The file is too large (max 5 MB)."
+    },
+    "errors": {
+      "invalid": "Check the form fields."
+    },
+    "landingGroup": {
+      "hero": "Main banner",
+      "features": "Features",
+      "templates": "Templates",
+      "steps": "How it works",
+      "pricing": "Pricing",
+      "faq": "FAQ (Pricing page)"
+    },
+    "field": {
+      "heroTitle": "Title",
+      "heroSubtitle": "Subtitle",
+      "heroCta": "Button",
+      "heroNote": "Note below the buttons",
+      "sectionTitle": "Section heading",
+      "sectionSubtitle": "Section subtitle",
+      "itemTitle": "{number}. title",
+      "itemText": "{number}. text",
+      "question": "Question {number}",
+      "answer": "Answer {number}"
     }
   }
 }

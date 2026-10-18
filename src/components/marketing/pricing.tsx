@@ -49,12 +49,16 @@ export async function PricingTable({
             <Card
               key={plan.id}
               data-testid={`pricing-${plan.slug}`}
-              className={cn("flex flex-col", plan.isFeatured && "border-primary shadow-md")}
+              className={cn("flex flex-col", plan.isFeatured && "border-brand-accent shadow-md")}
             >
               <CardHeader>
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle className="text-xl">{plan.name}</CardTitle>
-                  {plan.isFeatured && <Badge>{t("plans.featured")}</Badge>}
+                  {plan.isFeatured && (
+                    <Badge className="bg-brand-accent text-brand-accent-foreground">
+                      {t("plans.featured")}
+                    </Badge>
+                  )}
                 </div>
                 {plan.description && <CardDescription>{plan.description}</CardDescription>}
               </CardHeader>

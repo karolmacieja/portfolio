@@ -1,11 +1,14 @@
 import { z } from "zod";
 
 import { db } from "@/lib/db";
+import { platformUrl } from "@/lib/env";
+import { getPlatformBranding } from "@/server/branding/settings";
 import { getInvoicingSettings } from "@/server/invoicing/settings";
 
 /**
  * Look of every e-mail (Setting "mailBranding", admin /settings): logo (absolute https URL; mail clients don't
  * load relative or local images), accent colour of buttons and links, footer text (default: the seller's data).
+ * Empty logo / colour = the platform branding's logo and primary colour (admin /branding).
  */
 export const mailBrandingSchema = z.object({
   logoUrl: z
@@ -14,10 +17,7 @@ export const mailBrandingSchema = z.object({
     .max(500)
     .refine((v) => v === "" || /^https?:\/\/\S+$/i.test(v))
     .default(""),
-  accentColor: z
-    .string()
-    .regex(/^#[0-9a-fA-F]{6}$/)
-    .default("#18181b"),
+  accentColor: z.union([z.literal(""), z.string().regex(/^#[0-9a-fA-F]{6}$/)]).default(""),
   footerText: z.string().max(1000).default(""),
 });
 export type MailBranding = z.infer<typeof mailBrandingSchema>;
@@ -63,9 +63,14 @@ export async function getMailBranding(): Promise<ResolvedBranding> {
         .filter(Boolean)
         .join("\n");
     }
+    const platform = await getPlatformBranding();
+    // Mail clients need absolute URLs; local storage URLs are relative to the app host.
+    const platformLogo = platform.logoUrl.startsWith("/")
+      ? platformUrl("app", platform.logoUrl)
+      : platform.logoUrl;
     value = {
-      logoUrl: settings.logoUrl || null,
-      accentColor: settings.accentColor,
+      logoUrl: settings.logoUrl || platformLogo || null,
+      accentColor: settings.accentColor || platform.primaryColor,
       footerLines: footer
         .split("\n")
         .map((line) => line.trim())

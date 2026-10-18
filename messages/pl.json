@@ -905,7 +905,8 @@
       "content": "Treści",
       "analytics": "Analizy",
       "system": "System"
-    }
+    },
+    "branding": "Marka"
   },
   "adminTemplates": {
     "title": "Szablony",
@@ -1278,14 +1279,15 @@
     },
     "mailBranding": "Wygląd maili",
     "mailBrandingHint": "Logo (adres https obrazka, np. z biblioteki mediów lub CDN), kolor przycisków i stopka z danymi firmy w każdym mailu. Pusta stopka = dane sprzedawcy z ustawień faktur.",
-    "mailLogo": "Logo (URL)",
+    "mailLogo": "Logo (URL, puste = logo platformy)",
     "mailAccent": "Kolor przycisków",
     "mailFooter": "Stopka maili",
     "mailFooterPlaceholder": "Nazwa firmy\nAdres, NIP\nkontakt@…",
     "mailPreview": "Podgląd maili",
     "showPreview": "Pokaż",
     "sendTest": "Wyślij test na {email}",
-    "testSent": "Wysłano mail testowy."
+    "testSent": "Wysłano mail testowy.",
+    "mailAccentFromPlatform": "Jak kolor główny platformy"
   },
   "domains": {
     "title": "Domeny",
@@ -1752,7 +1754,8 @@
       "label": "Informacje",
       "copyright": "© {year} {brand}",
       "terms": "Regulamin",
-      "privacy": "Polityka prywatności"
+      "privacy": "Polityka prywatności",
+      "socials": "Media społecznościowe"
     },
     "hero": {
       "pricing": "Zobacz cennik",
@@ -2190,6 +2193,75 @@
       "emptyAudience": "Nikt nie spełnia kryteriów odbiorców.",
       "pastSchedule": "Termin wysyłki musi być w przyszłości.",
       "unsubscribeInvalid": "Link wypisania jest nieprawidłowy lub wygasł. Wypisz się w ustawieniach konta."
+    }
+  },
+  "adminBranding": {
+    "title": "Marka",
+    "description": "Nazwa, logo, kolory i teksty serwisu: strona główna, panele, maile i stopka na stronach klientów.",
+    "identity": "Nazwa i logo",
+    "colors": "Kolory i czcionka",
+    "contact": "Kontakt i media społecznościowe",
+    "landing": "Teksty strony głównej ({locale})",
+    "landingHint": "Puste pole oznacza tekst domyślny (widoczny w polu jako podpowiedź).",
+    "name": "Nazwa serwisu",
+    "nameHint": "Widoczna w nagłówkach, tytułach kart, mailach, regulaminie i stopce „Stworzone w …” na stronach klientów. Puste pole = nazwa z konfiguracji serwera.",
+    "tagline": "Hasło (opis w wynikach wyszukiwania)",
+    "logo": "Logo",
+    "logoHint": "PNG, JPG lub WebP, do 5 MB. Najlepiej poziome, na przezroczystym tle. Bez logo pokazujemy nazwę.",
+    "favicon": "Ikona w karcie przeglądarki",
+    "faviconHint": "Kwadratowy obraz (np. 512×512). Wersje dla przeglądarek i telefonów przygotujemy automatycznie.",
+    "upload": "Wgraj",
+    "uploading": "Wgrywanie…",
+    "change": "Zmień",
+    "remove": "Usuń",
+    "save": "Zapisz",
+    "saved": "Zapisano.",
+    "primaryColor": "Kolor główny (przyciski, linki)",
+    "accentColor": "Akcent (wyróżnienia)",
+    "contrastPrimary": "Ten kolor ma słaby kontrast z białym tłem. Linki i przyciski mogą być mało czytelne.",
+    "contrastAccent": "Akcent jest bardzo jasny i może być słabo widoczny na białym tle.",
+    "font": "Czcionka",
+    "fontSystem": "Systemowa (domyślna)",
+    "preview": "Podgląd",
+    "previewText": "Tak wyglądają teksty pomocnicze w panelu.",
+    "previewButton": "Przycisk",
+    "previewSecondary": "Drugorzędny",
+    "previewBadge": "Wyróżnienie",
+    "previewLink": "Odnośnik",
+    "contactEmail": "E-mail kontaktowy",
+    "contactPhone": "Telefon",
+    "socials": "Profile w mediach społecznościowych",
+    "socialPlatform": "Serwis",
+    "socialUrl": "Adres profilu",
+    "addSocial": "Dodaj profil",
+    "error": {
+      "generic": "Nie udało się wgrać pliku.",
+      "invalidImage": "Plik nie jest prawidłowym obrazem.",
+      "unsupportedType": "Dozwolone są obrazy PNG, JPG, WebP i AVIF.",
+      "fileTooLarge": "Plik jest za duży (maks. 5 MB)."
+    },
+    "errors": {
+      "invalid": "Sprawdź pola formularza."
+    },
+    "landingGroup": {
+      "hero": "Baner główny",
+      "features": "Funkcje",
+      "templates": "Szablony",
+      "steps": "Jak to działa",
+      "pricing": "Cennik",
+      "faq": "Najczęstsze pytania (strona Cennik)"
+    },
+    "field": {
+      "heroTitle": "Tytuł",
+      "heroSubtitle": "Podtytuł",
+      "heroCta": "Przycisk",
+      "heroNote": "Notka pod przyciskami",
+      "sectionTitle": "Nagłówek sekcji",
+      "sectionSubtitle": "Podtytuł sekcji",
+      "itemTitle": "{number}. tytuł",
+      "itemText": "{number}. opis",
+      "question": "Pytanie {number}",
+      "answer": "Odpowiedź {number}"
     }
   }
 }

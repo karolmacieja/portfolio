@@ -1,5 +1,7 @@
 import { getFormatter, getTranslations } from "next-intl/server";
 
+import { BrandMark } from "@/components/branding/brand-mark";
+import { ContactLinks } from "@/components/branding/contact-links";
 import { Button } from "@/components/ui/button";
 import { endImpersonationAction } from "@/server/admin/impersonation-actions";
 import { getCurrentUser } from "@/server/auth/session";
@@ -7,7 +9,29 @@ import { getCurrentUser } from "@/server/auth/session";
 /** Client panel: while staff act as the client, every page shows who is acting and a way out. */
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
-  if (!user?.impersonation) return children;
+  // The platform brand above every signed-in panel page (the full-screen editor hides it, see globals.css).
+  const brandBar = user ? (
+    <div className="border-b" data-brandbar>
+      <div className="mx-auto flex max-w-6xl items-center px-6 py-2">
+        <BrandMark href="/dashboard" className="text-base" />
+      </div>
+    </div>
+  ) : null;
+  const footer = user ? (
+    <footer className="border-t text-sm text-muted-foreground" data-brandbar>
+      <div className="mx-auto max-w-6xl px-6 py-4">
+        <ContactLinks />
+      </div>
+    </footer>
+  ) : null;
+  if (!user?.impersonation)
+    return (
+      <>
+        {brandBar}
+        {children}
+        {footer}
+      </>
+    );
   const [t, format] = await Promise.all([getTranslations("impersonation"), getFormatter()]);
   const until = format.dateTime(new Date(user.impersonation.expiresAt), { timeStyle: "short" });
   return (
@@ -24,7 +48,9 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           </Button>
         </form>
       </div>
+      {brandBar}
       {children}
+      {footer}
     </>
   );
 }

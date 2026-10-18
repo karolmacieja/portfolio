@@ -204,107 +204,110 @@ export function PageEditor({
   };
 
   return (
-    <Puck
-      config={config}
-      data={initialData}
-      onChange={onChange}
-      onPublish={() => void publish()}
-      dictionary={messages.puck}
-      metadata={{
-        contact: {
-          name: tContact("name"),
-          email: tContact("email"),
-          message: tContact("message"),
-          submit: tContact("submit"),
-          sent: tContact("sent"),
-          error: tContact("error"),
-          honeypot: tContact("honeypot"),
-        },
-        download: tSite("download"),
-      }}
-      headerTitle={pageTitle}
-      headerPath={`/${pagePath}`}
-      height="100dvh"
-      viewports={[
-        { width: 375, height: "auto", label: t("viewport.mobile"), icon: "Smartphone" },
-        { width: 768, height: "auto", label: t("viewport.tablet"), icon: "Tablet" },
-        { width: 1280, height: "auto", label: t("viewport.desktop"), icon: "Monitor" },
-      ]}
-      overrides={{
-        fields: ({ children }) => (
-          <>
-            {mode === "template" && <LockPanel rules={lockRules} onChange={onLockChange} />}
-            {children}
-          </>
-        ),
-        // Locked blocks render as a non-draggable item with an upgrade link (the server refuses them anyway).
-        drawerItem: ({ children, name }) =>
-          locked.has(name) ? (
-            <div
-              className="mb-2 flex items-center justify-between gap-2 rounded-md border border-dashed px-3 py-3 text-sm text-muted-foreground"
-              title={t("locked")}
-              data-testid={`locked-block-${name}`}
-            >
-              <span>
-                <span aria-hidden="true">🔒 </span>
-                {tBlocks(`names.${name}` as never)}
-              </span>
-              <a href="/plans" className="text-xs font-medium text-foreground underline">
-                {t("lockedCta")}
-              </a>
-            </div>
-          ) : (
-            <>{children}</>
+    // data-editor-root: the panel hides its brand bar above the full-screen editor.
+    <div data-editor-root>
+      <Puck
+        config={config}
+        data={initialData}
+        onChange={onChange}
+        onPublish={() => void publish()}
+        dictionary={messages.puck}
+        metadata={{
+          contact: {
+            name: tContact("name"),
+            email: tContact("email"),
+            message: tContact("message"),
+            submit: tContact("submit"),
+            sent: tContact("sent"),
+            error: tContact("error"),
+            honeypot: tContact("honeypot"),
+          },
+          download: tSite("download"),
+        }}
+        headerTitle={pageTitle}
+        headerPath={`/${pagePath}`}
+        height="100dvh"
+        viewports={[
+          { width: 375, height: "auto", label: t("viewport.mobile"), icon: "Smartphone" },
+          { width: 768, height: "auto", label: t("viewport.tablet"), icon: "Tablet" },
+          { width: 1280, height: "auto", label: t("viewport.desktop"), icon: "Monitor" },
+        ]}
+        overrides={{
+          fields: ({ children }) => (
+            <>
+              {mode === "template" && <LockPanel rules={lockRules} onChange={onLockChange} />}
+              {children}
+            </>
           ),
-        headerActions: () => (
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <Button asChild variant="ghost" size="sm">
-              <a href={backHref}>{t("back")}</a>
-            </Button>
-            <select
-              aria-label={t("page")}
-              className="h-8 rounded-md border bg-background px-2"
-              value={pageKey}
-              onChange={async (event) => {
-                if (status === "unsaved") await save();
-                const target = pages.find((p) => p.key === event.target.value);
-                if (target) router.push(target.href);
-              }}
-            >
-              {pages.map((page) => (
-                <option key={page.key} value={page.key}>
-                  {page.title} (/{page.path})
-                </option>
-              ))}
-            </select>
-            <span
-              className={status === "error" ? "text-destructive" : "text-muted-foreground"}
-              title={error ?? undefined}
-              data-testid="editor-status"
-            >
-              {statusLabel[status]}
-              {error ? `: ${error}` : ""}
-            </span>
-            <Button type="button" variant="outline" size="sm" onClick={() => void save()}>
-              {t("save")}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => void publish()}
-              disabled={status === "publishing"}
-              data-testid="editor-publish"
-            >
-              {t("publish")}
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <a href={previewUrl} target="_blank" rel="noreferrer">
-                {t("preview")}
-              </a>
-            </Button>
-          </div>
-        ),
-      }}
-    />
+          // Locked blocks render as a non-draggable item with an upgrade link (the server refuses them anyway).
+          drawerItem: ({ children, name }) =>
+            locked.has(name) ? (
+              <div
+                className="mb-2 flex items-center justify-between gap-2 rounded-md border border-dashed px-3 py-3 text-sm text-muted-foreground"
+                title={t("locked")}
+                data-testid={`locked-block-${name}`}
+              >
+                <span>
+                  <span aria-hidden="true">🔒 </span>
+                  {tBlocks(`names.${name}` as never)}
+                </span>
+                <a href="/plans" className="text-xs font-medium text-foreground underline">
+                  {t("lockedCta")}
+                </a>
+              </div>
+            ) : (
+              <>{children}</>
+            ),
+          headerActions: () => (
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <Button asChild variant="ghost" size="sm">
+                <a href={backHref}>{t("back")}</a>
+              </Button>
+              <select
+                aria-label={t("page")}
+                className="h-8 rounded-md border bg-background px-2"
+                value={pageKey}
+                onChange={async (event) => {
+                  if (status === "unsaved") await save();
+                  const target = pages.find((p) => p.key === event.target.value);
+                  if (target) router.push(target.href);
+                }}
+              >
+                {pages.map((page) => (
+                  <option key={page.key} value={page.key}>
+                    {page.title} (/{page.path})
+                  </option>
+                ))}
+              </select>
+              <span
+                className={status === "error" ? "text-destructive" : "text-muted-foreground"}
+                title={error ?? undefined}
+                data-testid="editor-status"
+              >
+                {statusLabel[status]}
+                {error ? `: ${error}` : ""}
+              </span>
+              <Button type="button" variant="outline" size="sm" onClick={() => void save()}>
+                {t("save")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => void publish()}
+                disabled={status === "publishing"}
+                data-testid="editor-publish"
+              >
+                {t("publish")}
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <a href={previewUrl} target="_blank" rel="noreferrer">
+                  {t("preview")}
+                </a>
+              </Button>
+            </div>
+          ),
+        }}
+      />
+    </div>
   );
 }

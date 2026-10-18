@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { normalizeHostname } from "@/lib/hosts";
+import { getBrandName } from "@/server/branding/settings";
 import { getInvoicingSettings } from "@/server/invoicing/settings";
 
 import { DEFAULT_PRIVACY, DEFAULT_TERMS } from "./defaults";
@@ -79,7 +80,7 @@ export async function fillLegalPlaceholders(content: string): Promise<string> {
   const values: Record<string, string> = {
     company,
     email: seller.email || `kontakt@${host}`,
-    brand: env.BRAND_NAME,
+    brand: await getBrandName(),
     domain: host,
   };
   return content.replace(/\{(company|email|brand|domain)\}/g, (_, key: string) => values[key] ?? "");

@@ -27,12 +27,16 @@ export async function saveMailBrandingAction(_prev: ActionState, formData: FormD
         .max(500)
         .refine((v) => v === "" || /^https?:\/\/\S+$/i.test(v)),
       accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+      accentFromPlatform: z.string().optional(),
       footerText: z.string().max(1000),
     })
     .safeParse({ logoUrl: "", footerText: "", ...values });
   if (!parsed.success) return { error: "adminSettings.errors.mailBranding", values };
-  await saveMailBranding(parsed.data);
-  await audit(actor, "settings.mailBranding", null, parsed.data);
+  // "Like the platform" stores an empty colour, so later branding changes apply to mails too.
+  const { accentFromPlatform, ...branding } = parsed.data;
+  if (accentFromPlatform) branding.accentColor = "";
+  await saveMailBranding(branding);
+  await audit(actor, "settings.mailBranding", null, branding);
   refresh();
   return { ok: true };
 }

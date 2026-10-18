@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 
 import { AdminNav, type AdminNavEntry } from "@/components/admin/admin-nav";
+import { BrandMark } from "@/components/branding/brand-mark";
 import { SignOutButton } from "@/components/sign-out-button";
 import { hasPermission, type Permission } from "@/server/auth/permissions";
 import { STAFF_ROLES } from "@/server/auth/roles";
@@ -23,6 +24,7 @@ type NavKey =
   | "plans"
   | "staff"
   | "audit"
+  | "branding"
   | "settings";
 type NavItem = { href: string; key: NavKey; permission: Permission };
 type NavGroupKey = "customers" | "sales" | "content" | "analytics" | "system";
@@ -68,6 +70,7 @@ const GROUPS: { key: NavGroupKey; items: NavItem[] }[] = [
     items: [
       { href: "/staff", key: "staff", permission: "staff.manage" },
       { href: "/audit", key: "audit", permission: "audit.view" },
+      { href: "/branding", key: "branding", permission: "settings.manage" },
       { href: "/settings", key: "settings", permission: "settings.manage" },
     ],
   },
@@ -92,6 +95,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-dvh">
       <header className="border-b">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-6 py-3">
+          <BrandMark href="/" className="text-base" />
           <AdminNav entries={entries} label={t("label")} />
           <div className="ml-auto flex items-center gap-3 text-sm text-muted-foreground">
             {user.email}

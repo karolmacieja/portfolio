@@ -67,6 +67,20 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  /* Platform branding (admin /branding, applied on <body>): accent colour and font. */
+  --color-brand-accent: var(--brand-accent, var(--primary));
+  --color-brand-accent-foreground: var(--brand-accent-foreground, var(--primary-foreground));
+  --color-brand-accent-soft: var(--brand-accent-soft, var(--muted));
+  --font-sans: var(
+    --platform-font,
+    ui-sans-serif,
+    system-ui,
+    sans-serif,
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Segoe UI Symbol",
+    "Noto Color Emoji"
+  );
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -78,6 +92,12 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    /* font-sans here (not only on <html>): the platform font variable is set on <body>. */
+    @apply bg-background font-sans text-foreground antialiased;
   }
+}
+
+/* The page editor is full-screen: no platform brand bar above it. */
+body:has([data-editor-root]) [data-brandbar] {
+  display: none;
 }

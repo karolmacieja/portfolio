@@ -3,6 +3,7 @@ import { defaultLocale, isLocale } from "@/i18n/config";
 import { getTranslator } from "@/i18n/translator";
 import { getEnv, platformUrl } from "@/lib/env";
 import { createSignedToken } from "@/lib/signed-token";
+import { getBrandName } from "@/server/branding/settings";
 import { getMailBranding } from "@/server/mail/branding";
 import { renderCampaignMail } from "@/server/mail/layout";
 import type { MailMessage } from "@/server/mail/types";
@@ -38,7 +39,7 @@ export async function buildCampaignMail(
   const t = await getTranslator(locale);
   const fill = (text: string) =>
     text.replaceAll("{name}", recipient.name?.trim() || t("newsletter.mail.friend"));
-  const brand = getEnv().BRAND_NAME;
+  const brand = await getBrandName();
   const marketing = campaign.type === CampaignType.MARKETING && recipient.userId;
   const token = marketing ? unsubscribeToken(recipient.userId!, campaign.id) : null;
   const unsubscribePage = token

@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { getTranslator } from "@/i18n/translator";
-import { getEnv, platformUrl } from "@/lib/env";
+import { platformUrl } from "@/lib/env";
+import { getRenderBranding } from "@/server/branding/public";
+import { brandNameOf } from "@/server/branding/settings";
 import { parseTheme, themeToCssVars } from "@/themes/theme";
 
 import { loadSiteForHost } from "./data";
@@ -29,7 +31,8 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/sit
   const site = await loadSiteForHost(host);
   const locale = site?.locale ?? "pl";
   const t = await getTranslator(locale);
-  const brand = getEnv().BRAND_NAME;
+  // The platform name is cached with the `platform-branding` tag, so renaming refreshes the footers.
+  const brand = brandNameOf(await getRenderBranding());
   const theme = parseTheme(site?.theme);
   const navigation = site && !site.suspended ? site.navigation : [];
 

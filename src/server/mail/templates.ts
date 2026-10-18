@@ -3,6 +3,7 @@ import { createTranslator } from "next-intl";
 import type { Locale } from "@/i18n/config";
 import { loadMessages } from "@/i18n/messages";
 import { platformUrl } from "@/lib/env";
+import { getPlatformBranding } from "@/server/branding/settings";
 
 import { getMailBranding } from "./branding";
 import { renderLinkMail } from "./layout";
@@ -61,9 +62,11 @@ export async function buildLinkMail(params: {
   attachments?: MailMessage["attachments"];
 }): Promise<MailMessage> {
   const defaults = await loadMessages(params.locale);
+  // The admin's service name (branding) wins over the environment name callers pass.
+  const brand = (await getPlatformBranding()).name || params.brand;
   const override = (await getMailOverrides())[params.locale]?.[params.kind];
   const values = {
-    brand: params.brand,
+    brand,
     days: String(params.values?.days ?? ""),
     number: params.values?.number ?? "",
     domain: params.values?.domain ?? "",
@@ -105,13 +108,13 @@ export async function buildLinkMail(params: {
   const footer = createTranslator({ locale: params.locale, messages: defaults, namespace: "email" })(
     "footer",
     {
-      brand: params.brand,
+      brand,
     },
   );
   const branding = await getMailBranding();
   const { html, text } = await renderLinkMail({
     branding,
-    brand: params.brand,
+    brand,
     homeUrl: platformUrl(undefined, "/"),
     locale: params.locale,
     intro: texts.intro,

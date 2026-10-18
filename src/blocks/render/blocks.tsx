@@ -359,7 +359,7 @@ export function ContactForm({ heading, description, submitLabel, editMode, site 
   );
 }
 
-const SOCIAL_LABELS: Record<BlockProps["SocialLinks"]["items"][number]["platform"], string> = {
+export const SOCIAL_LABELS: Record<BlockProps["SocialLinks"]["items"][number]["platform"], string> = {
   instagram: "Instagram",
   linkedin: "LinkedIn",
   behance: "Behance",
