@@ -29,6 +29,14 @@ if (!existsSync(".env")) {
   const env = readFileSync(".env", "utf8").replace(PLACEHOLDER_SECRET, randomBytes(32).toString("base64url"));
   writeFileSync(".env", env);
   console.log("Created .env from .env.example (with a random AUTH_SECRET).");
+} else {
+  // Older .env files point at host port 5432; docker compose now publishes Postgres on 54320.
+  const OLD_DATABASE_URL = "postgresql://portfolio:portfolio@localhost:5432/portfolio";
+  const env = readFileSync(".env", "utf8");
+  if (env.includes(OLD_DATABASE_URL)) {
+    writeFileSync(".env", env.replace(OLD_DATABASE_URL, OLD_DATABASE_URL.replace(":5432/", ":54320/")));
+    console.log("Updated DATABASE_URL in .env to the docker compose port 54320.");
+  }
 }
 
 const steps = [
