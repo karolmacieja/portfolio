@@ -373,3 +373,15 @@ Lightweight ADR log. Newest at the bottom. Business decisions confirmed by the o
 135. **Richer theme without migrations**: accent and border colours are optional (accent falls back to primary,
      border is mixed from text and background) and the heading scale defaults to standard, so stored themes stay
      valid. Four more presets and four more self-hosted fonts.
+
+## Phase 14
+
+136. **Platform branding as data (owner: everywhere: home page, panels, admin, mails, client-site footer)**: one
+     setting edited in admin `/branding`; `BRAND_NAME` stays as the fallback, the domain stays in the server config
+     (changing it needs DNS and Cloudflare work).
+137. **Colours: primary + accent (owner)**, with readable text colours and focus rings derived automatically and a
+     contrast warning; no full palette, so the panels stay legible whatever is chosen.
+138. **Logo and favicon uploaded, not linked**: raster only (no SVG, it can carry scripts), stored as PNG (mail
+     clients don't show WebP) under `platform/`, favicons generated in the sizes browsers and phones request.
+139. **Landing texts are overrides of the translations**: empty = the default text, per locale; only a fixed list of
+     keys can be overridden, so the admin can't break other UI strings.

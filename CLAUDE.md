@@ -22,6 +22,7 @@ Next.js 16 ships its own docs in `node_modules/next/dist/docs/` (see `AGENTS.md`
 | 11    | Finance: net profit per plan, revenue/profit stats, forecasts, usage       | done  |
 | 12    | Mail template editor, newsletter (consent)                                 | done  |
 | 13    | Editor: new blocks, block appearance, PDF files, richer theme, blank start | done  |
+| 14    | Platform branding: name, logo, favicon, colours, font, contact, home texts | done  |
 
 Work in phases; after each phase run lint/typecheck/tests, summarize and wait for the owner's approval.
 
@@ -305,6 +306,26 @@ debug configs (server, browser, worker) and recommended extensions. Task command
   `/cennik` (plan catalog + FAQ), `/regulamin`, `/polityka-prywatnosci`. Pricing cards come from `listActivePlans`
   (`PricingTable`, `PlanFeatureList` shared with the panel).
 - Onboarding: the dashboard shows "Pierwsze kroki" (plan -> template -> edit and publish) until the first site.
+
+## Platform branding
+
+- Setting "platformBranding" (`src/server/branding/settings.ts`, worker-safe, 60 s process cache): name (empty =
+  `BRAND_NAME`), tagline, logo, favicon PNGs (32/180/192/512), primary + accent colour, font (`system` or a site
+  font), contact e-mail/phone, socials, landing text overrides per locale (`LANDING_TEXT_KEYS`). Admin `/branding`
+  (`settings.manage`, System menu) saves each form's part (`savePlatformBranding` merges; actions keep only the
+  form's keys because `.partial()` fills defaults) and invalidates the tag `platform-branding`.
+- Next renders read `getRenderBranding()` (`branding/public.ts`, `unstable_cache` tagged `platform-branding`), so
+  ISR client sites ("Stworzone w {brand}" footer) refresh on save. Mails resolve the name in `buildLinkMail`
+  (saved name wins over the `brand` callers pass from env); newsletter and legal placeholders use `getBrandName()`.
+- Logo/favicon upload: `POST /api/branding/upload` (admin, `kind` logo|favicon) -> `branding/assets.ts`: sharp
+  checks raster formats (never SVG), PNG output (mail clients), stored under `platform/` (no client quota).
+- Colours (`src/lib/brand-colors.ts`, pure): `platformCssVars` sets `--primary`, readable `--primary-foreground`,
+  `--ring`, `--brand-accent*` and `--platform-font` on the platform `<body>`; Tailwind `bg-brand-accent` etc. and
+  `font-sans` read them (globals.css). Contrast warnings in the admin preview. Mail branding: empty logo/colour =
+  the platform's.
+- `BrandMark` (logo or name) in the marketing header, auth screens, the panel brand bar (hidden in the editor via
+  `data-editor-root`) and the admin header; `ContactLinks` in the marketing and panel footers. Marketing pages use
+  `getLandingTexts()` (override or translated default).
 
 ## Mail and newsletter
 
