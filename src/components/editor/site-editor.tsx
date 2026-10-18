@@ -102,6 +102,7 @@ export function PageEditor({
   const t = useTranslations("editor");
   const tBlocks = useTranslations("blocks");
   const tContact = useTranslations("site.contact");
+  const tSite = useTranslations("site");
   const tErrors = useTranslations(errorNamespace);
   const messages = useMessages();
   const router = useRouter();
@@ -110,8 +111,14 @@ export function PageEditor({
   const lockRulesRef = useRef(lockRules);
   // In site mode the template's locks restrict the editor; in template mode they are being authored.
   const config = useMemo(
-    () => createEditorConfig((key) => tBlocks(key as never), theme, mode === "site" ? initialLockRules : {}),
-    [tBlocks, theme, mode, initialLockRules],
+    () =>
+      createEditorConfig(
+        (key) => tBlocks(key as never),
+        theme,
+        mode === "site" ? initialLockRules : {},
+        t("emptyHint"),
+      ),
+    [tBlocks, t, theme, mode, initialLockRules],
   );
   const locked = useMemo(() => new Set(lockedBlocks), [lockedBlocks]);
   const dataRef = useRef<Data>(initialData);
@@ -213,6 +220,7 @@ export function PageEditor({
           error: tContact("error"),
           honeypot: tContact("honeypot"),
         },
+        download: tSite("download"),
       }}
       headerTitle={pageTitle}
       headerPath={`/${pagePath}`}

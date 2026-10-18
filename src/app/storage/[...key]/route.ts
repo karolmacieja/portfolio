@@ -1,7 +1,14 @@
 import { getEnv } from "@/lib/env";
 import { LocalStorageProvider } from "@/server/storage/local";
 
-const CONTENT_TYPES: Record<string, string> = { webp: "image/webp", png: "image/png", jpg: "image/jpeg" };
+const CONTENT_TYPES: Record<string, string> = {
+  webp: "image/webp",
+  png: "image/png",
+  jpg: "image/jpeg",
+  pdf: "application/pdf",
+};
+/** Documents are always downloaded, never rendered on our origin. */
+const ATTACHMENTS = new Set(["pdf"]);
 
 /** Serves files of the local storage provider (development only; S3/R2 serve files themselves). */
 export async function GET(_request: Request, { params }: RouteContext<"/storage/[...key]">) {
@@ -19,6 +26,7 @@ export async function GET(_request: Request, { params }: RouteContext<"/storage/
       "cache-control": "public, max-age=31536000, immutable",
       "x-content-type-options": "nosniff",
       "content-security-policy": "default-src 'none'; sandbox",
+      ...(ATTACHMENTS.has(extension) ? { "content-disposition": "attachment" } : {}),
     },
   });
 }

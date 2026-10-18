@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { slugify } from "@/lib/slug";
+import { StartChoice } from "@/components/sites/start-choice";
 import { createPageAction, type SiteFormState } from "@/server/sites/actions";
 
 import { FormStatus } from "./form-status";
@@ -65,6 +66,18 @@ export function AddPageForm({ siteId }: { siteId: string }) {
       <Button type="submit" disabled={pending}>
         {t("add")}
       </Button>
+      <div className="sm:col-span-3">
+        <StartChoice
+          name="layout"
+          legend={t("layout.legend")}
+          defaultValue="blank"
+          options={(["blank", "starter"] as const).map((value) => ({
+            value,
+            label: t(`layout.${value}`),
+            description: t(`layout.${value}Description`),
+          }))}
+        />
+      </div>
       <div className="sm:col-span-3">
         <FormStatus state={state} success={t("added")} />
       </div>

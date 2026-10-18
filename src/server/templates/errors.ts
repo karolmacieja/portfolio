@@ -11,6 +11,7 @@ export type TemplateErrorCode =
   | "cannotDeleteHome"
   | "noPublishedVersion"
   | "userNotFound"
+  | "noLocks"
   | `path.${PagePathError}`;
 
 /** Expected template failures; mapped to `templates.errors.*` messages. */

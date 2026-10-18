@@ -1,13 +1,32 @@
 "use client";
 
-import { FieldLabel, type Config, type Field } from "@puckeditor/core";
+import { createUsePuck, FieldLabel, type Config, type Field } from "@puckeditor/core";
 
+import {
+  ANIMATION_OPTIONS,
+  HIDE_OPTIONS,
+  SPACE_OPTIONS,
+  THEME_COLOR_TOKENS,
+  WIDTH_OPTIONS,
+  type ColorValue,
+} from "@/blocks/appearance";
 import { renderConfig, BLOCK_CATEGORIES } from "@/blocks/config";
 import type { LockRules } from "@/blocks/locks";
 import { blockDefaults } from "@/blocks/defaults";
-import { EMPTY_IMAGE, SOCIAL_PLATFORMS, type BlockType, type ImageValue } from "@/blocks/schemas";
+import {
+  EMPTY_FILE,
+  EMPTY_IMAGE,
+  ICON_NAMES,
+  SOCIAL_PLATFORMS,
+  type BlockType,
+  type FileValue,
+  type ImageValue,
+} from "@/blocks/schemas";
+import { FilePicker } from "@/components/media/file-picker";
 import { ImagePicker } from "@/components/media/image-picker";
-import { themeToCssVars, type Theme } from "@/themes/theme";
+import { themePalette, themeToCssVars, type Theme } from "@/themes/theme";
+
+import { ColorField } from "./color-field";
 
 /**
  * Editor config: the shared render config plus fields, labels and categories for Puck.
@@ -16,8 +35,30 @@ import { themeToCssVars, type Theme } from "@/themes/theme";
 
 type Translate = (key: string) => string;
 
+const usePuck = createUsePuck();
+
+/** Layout containers allowed inside each other: Section > Columns > content, never deeper. */
+const COLUMN_DISALLOW = ["Columns", "Section"];
+const SECTION_DISALLOW = ["Section"];
+
+/** Shown on an empty page so a first-time user knows where to start (editor only). */
+function EmptyCanvasHint({ text }: { text: string }) {
+  const empty = usePuck((state) => state.appState.data.content.length === 0);
+  if (!empty) return null;
+  return (
+    <div className="site-container p-6" data-testid="editor-empty-hint">
+      <p className="site-placeholder px-6 text-center">{text}</p>
+    </div>
+  );
+}
+
 /** `lockRules` (client sites created from templates) restrict editing, moving and removing blocks. */
-export function createEditorConfig(t: Translate, theme: Theme, lockRules: LockRules = {}): Config {
+export function createEditorConfig(
+  t: Translate,
+  theme: Theme,
+  lockRules: LockRules = {},
+  emptyHint = "",
+): Config {
   const label = (key: string) => t(`fields.${key}`);
   const option = (value: string) => ({ label: t(`options.${value}`), value });
 
@@ -45,6 +86,48 @@ export function createEditorConfig(t: Translate, theme: Theme, lockRules: LockRu
     };
     return field as Field;
   };
+  const file = (key: string): Field => {
+    const field: Field<FileValue> = {
+      type: "custom",
+      label: label(key),
+      render: ({ value, onChange, name }) => (
+        <FieldLabel label={label(key)} el="div">
+          <FilePicker value={value ?? EMPTY_FILE} onChange={onChange} id={name} />
+        </FieldLabel>
+      ),
+    };
+    return field as Field;
+  };
+  const palette = themePalette(theme);
+  const colorLabels = {
+    inherit: t("appearance.inherit"),
+    custom: t("appearance.custom"),
+    tokens: Object.fromEntries(
+      THEME_COLOR_TOKENS.map((token) => [token, t(`appearance.tokens.${token}`)]),
+    ) as Record<(typeof THEME_COLOR_TOKENS)[number], string>,
+  };
+  /** Colour picker field; labels come from `blocks.appearance.*` or `blocks.fields.*`. */
+  const color = (key: string, scope: "appearance" | "fields" = "appearance"): Field => {
+    const text = t(`${scope}.${key}`);
+    const field: Field<ColorValue> = {
+      type: "custom",
+      label: text,
+      render: ({ value, onChange, name }) => (
+        <FieldLabel label={text} el="div">
+          <ColorField id={name} value={value} onChange={onChange} palette={palette} labels={colorLabels} />
+        </FieldLabel>
+      ),
+    };
+    return field as Field;
+  };
+  const yesNo = (key: string): Field => ({
+    type: "radio",
+    label: label(key),
+    options: [
+      { label: t("options.yes"), value: true },
+      { label: t("options.no"), value: false },
+    ],
+  });
   const array = (
     key: string,
     arrayFields: Record<string, Field>,
@@ -62,7 +145,7 @@ export function createEditorConfig(t: Translate, theme: Theme, lockRules: LockRu
       return `#${index + 1}`;
     },
   });
-  const slot = (key: string): Field => ({ type: "slot", label: label(key), disallow: ["Columns"] });
+  const slot = (key: string, disallow: string[]): Field => ({ type: "slot", label: label(key), disallow });
 
   const fields: Record<BlockType, Record<string, Field>> = {
     Hero: {
@@ -176,6 +259,131 @@ export function createEditorConfig(t: Translate, theme: Theme, lockRules: LockRu
     },
     Video: { url: text("url"), caption: text("caption") },
     Spacer: { size: radio("size", ["sm", "md", "lg"]) },
+    Heading: {
+      text: text("heading"),
+      subtitle: textarea("subtitle"),
+      level: {
+        type: "select",
+        label: label("headingLevel"),
+        options: ["h1", "h2", "h3", "h4"].map((value) => ({ label: value.toUpperCase(), value })),
+      },
+      size: radio("size", ["sm", "md", "lg", "xl"]),
+      align: radio("align", ["left", "center", "right"]),
+    },
+    Buttons: {
+      align: radio("align", ["left", "center", "right"]),
+      items: array(
+        "buttons",
+        {
+          label: text("buttonLabel"),
+          href: text("buttonHref"),
+          variant: radio("variant", ["primary", "secondary"]),
+        },
+        { label: "", href: "", variant: "primary" },
+        "label",
+      ),
+    },
+    Quote: {
+      quote: textarea("quote"),
+      author: text("author"),
+      role: text("role"),
+      image: image("photo"),
+      align: radio("align", ["left", "center"]),
+    },
+    Divider: {
+      variant: radio("dividerStyle", ["line", "dots", "wave"]),
+      width: radio("dividerWidth", ["short", "full"]),
+    },
+    IconList: {
+      heading: text("heading"),
+      columns: select("columns", []),
+      items: array(
+        "items",
+        {
+          icon: {
+            type: "select",
+            label: label("icon"),
+            options: ICON_NAMES.map((name) => ({ label: t(`icons.${name}`), value: name })),
+          },
+          title: text("title"),
+          text: textarea("text"),
+        },
+        { icon: "check", title: "", text: "" },
+        "title",
+      ),
+    },
+    Section: {
+      image: image("backgroundImage"),
+      overlay: radio("overlay", ["none", "light", "dark"]),
+      gradient: select("gradient", ["none", "vertical", "horizontal", "diagonal"]),
+      gradientFrom: color("gradientFrom", "fields"),
+      gradientTo: color("gradientTo", "fields"),
+      minHeight: radio("minHeight", ["auto", "half", "screen"]),
+      verticalAlign: radio("verticalAlign", ["top", "center", "bottom"]),
+      content: slot("content", SECTION_DISALLOW),
+    },
+    Pricing: {
+      heading: text("heading"),
+      description: textarea("description"),
+      items: array(
+        "plans",
+        {
+          name: text("name"),
+          price: text("price"),
+          period: text("period"),
+          description: textarea("description"),
+          features: textarea("features"),
+          buttonLabel: text("buttonLabel"),
+          buttonHref: text("buttonHref"),
+          featured: yesNo("featured"),
+        },
+        {
+          name: "",
+          price: "",
+          period: "",
+          description: "",
+          features: "",
+          buttonLabel: "",
+          buttonHref: "",
+          featured: false,
+        },
+        "name",
+      ),
+    },
+    Faq: {
+      heading: text("heading"),
+      items: array(
+        "questions",
+        { question: text("question"), answer: textarea("answer") },
+        { question: "", answer: "" },
+        "question",
+      ),
+    },
+    Stats: {
+      heading: text("heading"),
+      items: array(
+        "items",
+        { value: text("value"), label: text("statLabel") },
+        { value: "", label: "" },
+        "label",
+      ),
+    },
+    Logos: {
+      heading: text("heading"),
+      grayscale: yesNo("grayscale"),
+      items: array(
+        "logos",
+        { image: image("image"), href: text("href") },
+        { image: EMPTY_IMAGE, href: "" },
+        "href",
+      ),
+    },
+    FileDownload: {
+      heading: text("heading"),
+      description: textarea("description"),
+      file: file("file"),
+      buttonLabel: text("buttonLabel"),
+    },
     Columns: {
       layout: {
         type: "select",
@@ -183,16 +391,38 @@ export function createEditorConfig(t: Translate, theme: Theme, lockRules: LockRu
         options: ["1-1", "1-2", "2-1", "1-1-1"].map((v) => ({ label: v, value: v })),
       },
       gap: radio("gap", ["sm", "md", "lg"]),
-      col1: slot("col1"),
-      col2: slot("col2"),
-      col3: slot("col3"),
+      col1: slot("col1", COLUMN_DISALLOW),
+      col2: slot("col2", COLUMN_DISALLOW),
+      col3: slot("col3", COLUMN_DISALLOW),
     },
   };
+
+  // Shared "Appearance" group at the end of every block's fields (see src/blocks/appearance.ts).
+  const appearanceSelect = (key: string, values: readonly string[]): Field => ({
+    type: "select",
+    label: t(`appearance.${key}`),
+    options: values.map((value) => ({ label: t(`appearance.options.${value}`), value })),
+  });
+  const appearance: Field = {
+    type: "object",
+    label: t("appearance.title"),
+    objectFields: {
+      background: color("background"),
+      text: color("text"),
+      paddingTop: appearanceSelect("paddingTop", SPACE_OPTIONS),
+      paddingBottom: appearanceSelect("paddingBottom", SPACE_OPTIONS),
+      width: appearanceSelect("width", WIDTH_OPTIONS),
+      hideOn: appearanceSelect("hideOn", HIDE_OPTIONS),
+      animation: appearanceSelect("animation", ANIMATION_OPTIONS),
+    },
+  };
+  for (const type of Object.keys(fields) as BlockType[]) fields[type].appearance = appearance;
 
   // Column count options are numbers, not translated words.
   const columnOptions = (values: string[]) => values.map((v) => ({ label: v, value: v }));
   (fields.Gallery.columns as { options: unknown }).options = columnOptions(["2", "3", "4"]);
   (fields.ProjectList.columns as { options: unknown }).options = columnOptions(["2", "3"]);
+  (fields.IconList.columns as { options: unknown }).options = columnOptions(["1", "2", "3"]);
 
   const components = Object.fromEntries(
     (Object.keys(blockDefaults) as BlockType[]).map((type) => [
@@ -231,6 +461,7 @@ export function createEditorConfig(t: Translate, theme: Theme, lockRules: LockRu
       fields: {},
       render: ({ children }: { children: React.ReactNode }) => (
         <div className="site-root min-h-dvh" style={cssVars}>
+          {emptyHint && <EmptyCanvasHint text={emptyHint} />}
           {children}
         </div>
       ),

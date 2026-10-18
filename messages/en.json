@@ -263,7 +263,8 @@
       "error": "The message could not be sent. Check the fields and try again later.",
       "honeypot": "Leave this field empty"
     },
-    "supportedBy": "Supported by <link>{name}</link>"
+    "supportedBy": "Supported by <link>{name}</link>",
+    "download": "Download"
   },
   "sites": {
     "title": "Your sites",
@@ -319,7 +320,16 @@
       "reserved": "This address is reserved. Please choose another one."
     },
     "edit": "Manage",
-    "upgradeLink": "See plans"
+    "upgradeLink": "See plans",
+    "start": {
+      "legend": "How do you want to start?",
+      "starter": "Simple layout",
+      "starterDescription": "A banner and text to replace. A good starting point.",
+      "blank": "Blank page",
+      "blankDescription": "A clean slate with a neutral theme. Build everything your way from blocks.",
+      "template": "From a template",
+      "templateDescription": "A ready-made design from the template gallery."
+    }
   },
   "siteNav": {
     "back": "All sites",
@@ -360,17 +370,29 @@
     "ogImage": "Sharing image (Open Graph)",
     "statusDraft": "Not published",
     "statusChanges": "Changes to publish",
-    "statusLive": "Published"
+    "statusLive": "Published",
+    "starterBody": "Write the page content here.",
+    "layout": {
+      "legend": "Content of the new page",
+      "blank": "Blank",
+      "blankDescription": "No blocks, add them in the editor.",
+      "starter": "Simple layout",
+      "starterDescription": "A heading with the page title and text to replace."
+    }
   },
   "theme": {
     "title": "Theme",
     "description": "Colors, fonts and style of the whole site. Changing the theme doesn't change content and goes live when you publish.",
     "presets": "Presets",
     "preset": {
-      "minimal": "Minimal",
+      "minimal": "Clean",
       "dark": "Dark",
       "editorial": "Editorial",
-      "studio": "Studio"
+      "studio": "Studio",
+      "warm": "Warm",
+      "pastel": "Pastel",
+      "contrast": "High contrast",
+      "elegant": "Elegant"
     },
     "colors": "Colors",
     "color": {
@@ -379,7 +401,9 @@
       "muted": "Secondary text",
       "primary": "Primary color",
       "primaryForeground": "Text on primary",
-      "surface": "Card background"
+      "surface": "Card background",
+      "accent": "Accent",
+      "border": "Borders"
     },
     "fonts": "Fonts",
     "headingFont": "Headings",
@@ -408,7 +432,16 @@
     "previewText": "Sample paragraph text to see how the font and colors look.",
     "previewButton": "Button",
     "save": "Save theme",
-    "saved": "Theme saved. Publish the site to make the changes visible."
+    "saved": "Theme saved. Publish the site to make the changes visible.",
+    "headingScale": "Heading size",
+    "headingScaleOption": {
+      "sm": "Smaller",
+      "md": "Standard",
+      "lg": "Larger"
+    },
+    "previewCard": "Card",
+    "previewLink": "Link",
+    "previewAccent": "Highlight"
   },
   "settings": {
     "title": "Site settings",
@@ -437,13 +470,13 @@
   },
   "media": {
     "title": "Media library",
-    "upload": "Upload images",
+    "upload": "Upload files",
     "uploading": "Uploading…",
-    "empty": "You don't have any images yet.",
+    "empty": "You have no files here yet.",
     "usage": "{used} of {quota} used",
-    "hint": "JPG, PNG, WebP, GIF or AVIF, up to {max} MB. Images are optimized automatically.",
+    "hint": "Images: JPG, PNG, WebP, GIF or AVIF up to {max} MB (optimized automatically). Documents: PDF up to {pdfMax} MB.",
     "delete": "Delete",
-    "deleteConfirm": "Delete this image? It will disappear from every page that uses it.",
+    "deleteConfirm": "Delete this file? It will disappear from every page that uses it.",
     "choose": "Choose image",
     "change": "Change",
     "remove": "Remove image",
@@ -453,12 +486,20 @@
     "altHint": "Describes the image for blind users and search engines.",
     "errors": {
       "notFound": "File not found.",
-      "unsupportedType": "Unsupported file format.",
-      "invalidImage": "The file is not a valid image.",
+      "unsupportedType": "Unsupported file format. Images and PDF are allowed.",
+      "invalidImage": "The file is not a valid image or PDF document.",
       "fileTooLarge": "The file is too large.",
       "quotaExceeded": "Your media library is full.",
       "rateLimited": "Too many uploads. Please wait a moment.",
       "generic": "The file could not be uploaded."
+    },
+    "chooseFile": "Choose a PDF file",
+    "removeFile": "Remove file",
+    "filter": "File type",
+    "filters": {
+      "all": "All",
+      "image": "Images",
+      "document": "Documents"
     }
   },
   "editor": {
@@ -479,7 +520,8 @@
       "desktop": "Desktop"
     },
     "locked": "On a higher plan",
-    "lockedCta": "Upgrade"
+    "lockedCta": "Upgrade",
+    "emptyHint": "Blank page. Drag your first block from the panel on the left, e.g. Heading or Section."
   },
   "blocks": {
     "categories": {
@@ -487,7 +529,8 @@
       "content": "Content",
       "portfolio": "Portfolio",
       "profile": "About me",
-      "contact": "Contact"
+      "contact": "Contact",
+      "business": "Offer"
     },
     "fields": {
       "title": "Title",
@@ -524,7 +567,34 @@
       "gap": "Gap",
       "col1": "Column 1",
       "col2": "Column 2",
-      "col3": "Column 3"
+      "col3": "Column 3",
+      "buttons": "Buttons",
+      "variant": "Style",
+      "photo": "Author photo",
+      "dividerStyle": "Style",
+      "dividerWidth": "Length",
+      "icon": "Icon",
+      "backgroundImage": "Background image",
+      "overlay": "Image overlay",
+      "gradient": "Background gradient",
+      "gradientFrom": "Gradient: start colour",
+      "gradientTo": "Gradient: end colour",
+      "minHeight": "Height",
+      "verticalAlign": "Content position",
+      "content": "Content",
+      "plans": "Packages",
+      "price": "Price",
+      "features": "What's included (one per line)",
+      "featured": "Highlighted",
+      "questions": "Questions",
+      "question": "Question",
+      "answer": "Answer",
+      "value": "Number",
+      "statLabel": "Label",
+      "grayscale": "Greyscale",
+      "logos": "Logos",
+      "file": "PDF file",
+      "headingLevel": "Level (for search engines)"
     },
     "options": {
       "left": "Left",
@@ -540,7 +610,27 @@
       "bars": "Bars",
       "sm": "Small",
       "md": "Medium",
-      "lg": "Large"
+      "lg": "Large",
+      "xl": "Extra large",
+      "primary": "Primary",
+      "secondary": "Secondary",
+      "line": "Line",
+      "dots": "Dots",
+      "wave": "Wave",
+      "short": "Short",
+      "none": "None",
+      "light": "Light",
+      "dark": "Dark",
+      "vertical": "Vertical",
+      "horizontal": "Horizontal",
+      "diagonal": "Diagonal",
+      "auto": "Fit content",
+      "half": "Half screen",
+      "screen": "Full screen",
+      "top": "Top",
+      "bottom": "Bottom",
+      "yes": "Yes",
+      "no": "No"
     },
     "names": {
       "Hero": "Hero",
@@ -557,11 +647,82 @@
       "SocialLinks": "Social links",
       "Video": "Video",
       "Spacer": "Spacer",
-      "Columns": "Columns"
+      "Columns": "Columns",
+      "Heading": "Heading",
+      "Buttons": "Buttons",
+      "Quote": "Quote",
+      "Divider": "Divider",
+      "IconList": "Icon list",
+      "Section": "Section with background",
+      "Pricing": "Services / pricing",
+      "Faq": "FAQ",
+      "Stats": "Numbers",
+      "Logos": "Client logos",
+      "FileDownload": "File download"
     },
     "hints": {
       "video": "A YouTube or Vimeo link.",
       "contactForm": "Sending messages will be enabled soon."
+    },
+    "appearance": {
+      "title": "Appearance",
+      "background": "Background",
+      "text": "Text colour",
+      "paddingTop": "Space above",
+      "paddingBottom": "Space below",
+      "width": "Content width",
+      "hideOn": "Hide on",
+      "animation": "Entrance animation",
+      "inherit": "Unchanged (from theme)",
+      "custom": "Custom colour",
+      "tokens": {
+        "background": "Page background",
+        "foreground": "Text",
+        "muted": "Secondary text",
+        "primary": "Primary",
+        "primaryForeground": "Text on primary",
+        "surface": "Card background",
+        "accent": "Accent",
+        "border": "Borders"
+      },
+      "options": {
+        "default": "Default",
+        "none": "None",
+        "sm": "Small",
+        "md": "Medium",
+        "lg": "Large",
+        "xl": "Extra large",
+        "narrow": "Narrow",
+        "wide": "Wide",
+        "full": "Full width",
+        "mobile": "Phone",
+        "desktop": "Desktop",
+        "fade": "Fade in",
+        "slide-up": "Slide up",
+        "zoom": "Zoom in"
+      }
+    },
+    "icons": {
+      "check": "Check mark",
+      "star": "Star",
+      "heart": "Heart",
+      "zap": "Lightning",
+      "camera": "Camera",
+      "pen": "Pen",
+      "code": "Code",
+      "palette": "Palette",
+      "globe": "Globe",
+      "mail": "Envelope",
+      "phone": "Phone",
+      "pin": "Map pin",
+      "clock": "Clock",
+      "award": "Award",
+      "users": "People",
+      "briefcase": "Briefcase",
+      "rocket": "Rocket",
+      "shield": "Shield",
+      "target": "Target",
+      "sparkles": "Sparkles"
     }
   },
   "puck": {
@@ -688,7 +849,8 @@
     "backupsEmpty": "No backups yet.",
     "backupReason": {
       "templateSwitch": "Before template change",
-      "beforeRestore": "Before restoring a backup"
+      "beforeRestore": "Before restoring a backup",
+      "templateDetach": "Before detaching from the template"
     },
     "restoreBackup": "Restore",
     "restoreConfirm": "Restore this backup? The current state will be backed up too.",
@@ -710,8 +872,13 @@
         "invalidChars": "The address may only contain lowercase letters, digits and single hyphens.",
         "tooDeep": "The address can have at most 3 levels.",
         "reserved": "This address is reserved."
-      }
-    }
+      },
+      "noLocks": "This site has no template locks left."
+    },
+    "detach": "Detach from template",
+    "detachDescription": "{count, plural, one {# page has} other {# pages have}} blocks locked by the template. After detaching you can edit, move and delete every block freely. Content and design stay, and a backup of the current state goes to History.",
+    "detachConfirm": "Detach the site from its template? All locks will be removed. You can restore the backup in History.",
+    "detached": "Locks removed. You can now edit every block freely."
   },
   "adminNav": {
     "dashboard": "Dashboard",

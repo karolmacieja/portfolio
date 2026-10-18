@@ -4,7 +4,7 @@ import { getFormatter, getTranslations } from "next-intl/server";
 
 import { MediaLibrary } from "@/components/media/media-library";
 import { requireUser } from "@/server/auth/session";
-import { getStorageUsage, getUploadLimitBytes, listAssets } from "@/server/media/service";
+import { DOCUMENT_MAX_MB, getStorageUsage, getUploadLimitBytes, listAssets } from "@/server/media/service";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("media");
@@ -33,7 +33,7 @@ export default async function MediaPage() {
           <div className="h-full bg-primary" style={{ width: `${percent}%` }} />
         </div>
         <p className="text-xs text-muted-foreground">
-          {t("media.hint", { max: Math.round(getUploadLimitBytes() / 1024 / 1024) })}
+          {t("media.hint", { max: Math.round(getUploadLimitBytes() / 1024 / 1024), pdfMax: DOCUMENT_MAX_MB })}
         </p>
       </div>
       <MediaLibrary assets={assets} />

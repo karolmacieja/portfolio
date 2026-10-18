@@ -7,9 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { FormMessage } from "@/components/form-message";
 import { SITE_FONT_IDS, SITE_FONTS } from "@/themes/fonts";
-import { THEME_PRESETS, themeToCssVars, type Theme } from "@/themes/theme";
+import { THEME_PRESETS, themePalette, themeToCssVars, type Theme } from "@/themes/theme";
 
-const COLOR_KEYS = ["background", "foreground", "muted", "primary", "primaryForeground", "surface"] as const;
+const COLOR_KEYS = [
+  "background",
+  "foreground",
+  "muted",
+  "primary",
+  "primaryForeground",
+  "surface",
+  "accent",
+  "border",
+] as const;
 
 function Segmented<T extends string>({
   label,
@@ -57,6 +66,7 @@ export function ThemeEditor({
   const [state, setState] = useState<{ ok?: boolean; error?: string }>({});
   const [pending, startTransition] = useTransition();
 
+  const palette = themePalette(theme);
   const update = (patch: Partial<Theme>) => {
     setTheme((current) => ({ ...current, ...patch }));
     setState({});
@@ -86,7 +96,7 @@ export function ThemeEditor({
               <label key={key} className="flex items-center gap-2 text-sm">
                 <input
                   type="color"
-                  value={theme.colors[key]}
+                  value={palette[key]}
                   onChange={(event) => update({ colors: { ...theme.colors, [key]: event.target.value } })}
                   className="h-8 w-10 cursor-pointer rounded border"
                 />
@@ -140,6 +150,15 @@ export function ThemeEditor({
           }))}
         />
         <Segmented
+          label={t("headingScale")}
+          value={theme.headingScale}
+          onChange={(headingScale) => update({ headingScale })}
+          options={(["sm", "md", "lg"] as const).map((v) => ({
+            value: v,
+            label: t(`headingScaleOption.${v}`),
+          }))}
+        />
+        <Segmented
           label={t("buttonStyle")}
           value={theme.buttonStyle}
           onChange={(buttonStyle) => update({ buttonStyle })}
@@ -175,12 +194,17 @@ export function ThemeEditor({
           data-testid="theme-preview"
         >
           <div className="site-section">
-            <h2 className="site-heading text-3xl">{t("previewHeading")}</h2>
+            <h2 className="site-heading text-4xl">{t("previewHeading")}</h2>
             <p className="site-muted mt-3">{t("previewText")}</p>
-            <div className="site-surface mt-6 p-4">
-              <p>{t("previewText")}</p>
+            <div className="site-surface mt-6 border border-[color:var(--site-border)] p-4">
+              <h3 className="site-heading text-xl">{t("previewCard")}</h3>
+              <p className="mt-1">{t("previewText")}</p>
             </div>
-            <span className="site-btn mt-6">{t("previewButton")}</span>
+            <div className="mt-6 flex flex-wrap items-center gap-4">
+              <span className="site-btn">{t("previewButton")}</span>
+              <span className="site-link">{t("previewLink")}</span>
+              <span className="font-semibold text-[color:var(--site-accent)]">{t("previewAccent")}</span>
+            </div>
           </div>
         </div>
       </div>

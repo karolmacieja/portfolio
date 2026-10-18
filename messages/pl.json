@@ -263,7 +263,8 @@
       "error": "Nie udało się wysłać wiadomości. Sprawdź pola i spróbuj ponownie później.",
       "honeypot": "Nie wypełniaj tego pola"
     },
-    "supportedBy": "Strona wspierana przez <link>{name}</link>"
+    "supportedBy": "Strona wspierana przez <link>{name}</link>",
+    "download": "Pobierz"
   },
   "sites": {
     "title": "Twoje strony",
@@ -319,7 +320,16 @@
       "reserved": "Ten adres jest zarezerwowany. Wybierz inny."
     },
     "edit": "Zarządzaj",
-    "upgradeLink": "Zobacz plany"
+    "upgradeLink": "Zobacz plany",
+    "start": {
+      "legend": "Jak chcesz zacząć?",
+      "starter": "Prosty układ",
+      "starterDescription": "Baner i tekst do podmiany. Dobry punkt wyjścia.",
+      "blank": "Pusta strona",
+      "blankDescription": "Czysta kartka i neutralny motyw. Budujesz wszystko po swojemu z bloków.",
+      "template": "Z szablonu",
+      "templateDescription": "Gotowy projekt z galerii szablonów."
+    }
   },
   "siteNav": {
     "back": "Wszystkie strony",
@@ -360,17 +370,29 @@
     "ogImage": "Obraz do udostępniania (Open Graph)",
     "statusDraft": "Nieopublikowana",
     "statusChanges": "Zmiany do opublikowania",
-    "statusLive": "Opublikowana"
+    "statusLive": "Opublikowana",
+    "starterBody": "Tu wpisz treść podstrony.",
+    "layout": {
+      "legend": "Zawartość nowej podstrony",
+      "blank": "Pusta",
+      "blankDescription": "Bez bloków, dodajesz je w edytorze.",
+      "starter": "Prosty układ",
+      "starterDescription": "Nagłówek z tytułem podstrony i tekst do podmiany."
+    }
   },
   "theme": {
     "title": "Motyw",
     "description": "Kolory, fonty i styl całej strony. Zmiana motywu nie zmienia treści i staje się widoczna po opublikowaniu.",
     "presets": "Gotowe style",
     "preset": {
-      "minimal": "Minimalny",
+      "minimal": "Czysty",
       "dark": "Ciemny",
       "editorial": "Edytorski",
-      "studio": "Studio"
+      "studio": "Studio",
+      "warm": "Ciepły",
+      "pastel": "Pastelowy",
+      "contrast": "Kontrastowy",
+      "elegant": "Elegancki"
     },
     "colors": "Kolory",
     "color": {
@@ -379,7 +401,9 @@
       "muted": "Tekst pomocniczy",
       "primary": "Kolor główny",
       "primaryForeground": "Tekst na kolorze głównym",
-      "surface": "Tło kart"
+      "surface": "Tło kart",
+      "accent": "Akcent",
+      "border": "Obramowania"
     },
     "fonts": "Fonty",
     "headingFont": "Nagłówki",
@@ -408,7 +432,16 @@
     "previewText": "Przykładowy tekst akapitu, aby zobaczyć, jak wygląda font i kolory.",
     "previewButton": "Przycisk",
     "save": "Zapisz motyw",
-    "saved": "Motyw zapisany. Opublikuj stronę, aby zmiany były widoczne."
+    "saved": "Motyw zapisany. Opublikuj stronę, aby zmiany były widoczne.",
+    "headingScale": "Wielkość nagłówków",
+    "headingScaleOption": {
+      "sm": "Mniejsze",
+      "md": "Standardowe",
+      "lg": "Większe"
+    },
+    "previewCard": "Karta",
+    "previewLink": "Odnośnik",
+    "previewAccent": "Wyróżnienie"
   },
   "settings": {
     "title": "Ustawienia strony",
@@ -437,13 +470,13 @@
   },
   "media": {
     "title": "Biblioteka mediów",
-    "upload": "Prześlij obrazy",
+    "upload": "Prześlij pliki",
     "uploading": "Przesyłanie…",
-    "empty": "Nie masz jeszcze żadnych obrazów.",
+    "empty": "Nie masz tu jeszcze żadnych plików.",
     "usage": "Wykorzystano {used} z {quota}",
-    "hint": "JPG, PNG, WebP, GIF lub AVIF, do {max} MB. Obrazy są automatycznie optymalizowane.",
+    "hint": "Obrazy: JPG, PNG, WebP, GIF lub AVIF do {max} MB (automatycznie optymalizowane). Dokumenty: PDF do {pdfMax} MB.",
     "delete": "Usuń",
-    "deleteConfirm": "Usunąć ten obraz? Zniknie ze wszystkich stron, na których jest użyty.",
+    "deleteConfirm": "Usunąć ten plik? Zniknie ze wszystkich stron, na których jest użyty.",
     "choose": "Wybierz obraz",
     "change": "Zmień",
     "remove": "Usuń obraz",
@@ -453,12 +486,20 @@
     "altHint": "Opis obrazu dla osób niewidomych i wyszukiwarek.",
     "errors": {
       "notFound": "Nie znaleziono pliku.",
-      "unsupportedType": "Nieobsługiwany format pliku.",
-      "invalidImage": "Plik nie jest prawidłowym obrazem.",
+      "unsupportedType": "Nieobsługiwany format pliku. Dozwolone są obrazy i PDF.",
+      "invalidImage": "Plik nie jest prawidłowym obrazem ani dokumentem PDF.",
       "fileTooLarge": "Plik jest za duży.",
       "quotaExceeded": "Brak miejsca w bibliotece mediów.",
       "rateLimited": "Zbyt wiele przesłanych plików. Spróbuj za chwilę.",
       "generic": "Nie udało się przesłać pliku."
+    },
+    "chooseFile": "Wybierz plik PDF",
+    "removeFile": "Usuń plik",
+    "filter": "Rodzaj plików",
+    "filters": {
+      "all": "Wszystkie",
+      "image": "Obrazy",
+      "document": "Dokumenty"
     }
   },
   "editor": {
@@ -479,7 +520,8 @@
       "desktop": "Komputer"
     },
     "locked": "W wyższym planie",
-    "lockedCta": "Ulepsz"
+    "lockedCta": "Ulepsz",
+    "emptyHint": "Pusta strona. Przeciągnij pierwszy blok z panelu po lewej, np. Nagłówek albo Sekcję z tłem."
   },
   "blocks": {
     "categories": {
@@ -487,7 +529,8 @@
       "content": "Treść",
       "portfolio": "Portfolio",
       "profile": "O mnie",
-      "contact": "Kontakt"
+      "contact": "Kontakt",
+      "business": "Oferta"
     },
     "fields": {
       "title": "Tytuł",
@@ -524,7 +567,34 @@
       "gap": "Odstęp",
       "col1": "Kolumna 1",
       "col2": "Kolumna 2",
-      "col3": "Kolumna 3"
+      "col3": "Kolumna 3",
+      "buttons": "Przyciski",
+      "variant": "Styl",
+      "photo": "Zdjęcie autora",
+      "dividerStyle": "Wygląd",
+      "dividerWidth": "Długość",
+      "icon": "Ikona",
+      "backgroundImage": "Zdjęcie w tle",
+      "overlay": "Przyciemnienie zdjęcia",
+      "gradient": "Gradient w tle",
+      "gradientFrom": "Gradient: kolor początkowy",
+      "gradientTo": "Gradient: kolor końcowy",
+      "minHeight": "Wysokość",
+      "verticalAlign": "Położenie treści",
+      "content": "Zawartość",
+      "plans": "Pakiety",
+      "price": "Cena",
+      "features": "Co zawiera (jedna rzecz w linii)",
+      "featured": "Wyróżniony",
+      "questions": "Pytania",
+      "question": "Pytanie",
+      "answer": "Odpowiedź",
+      "value": "Liczba",
+      "statLabel": "Opis",
+      "grayscale": "W odcieniach szarości",
+      "logos": "Logotypy",
+      "file": "Plik PDF",
+      "headingLevel": "Poziom (dla wyszukiwarek)"
     },
     "options": {
       "left": "Do lewej",
@@ -540,7 +610,27 @@
       "bars": "Paski",
       "sm": "Mały",
       "md": "Średni",
-      "lg": "Duży"
+      "lg": "Duży",
+      "xl": "Bardzo duży",
+      "primary": "Główny",
+      "secondary": "Drugorzędny",
+      "line": "Linia",
+      "dots": "Kropki",
+      "wave": "Fala",
+      "short": "Krótka",
+      "none": "Brak",
+      "light": "Jasne",
+      "dark": "Ciemne",
+      "vertical": "Pionowy",
+      "horizontal": "Poziomy",
+      "diagonal": "Ukośny",
+      "auto": "Dopasowana",
+      "half": "Pół ekranu",
+      "screen": "Cały ekran",
+      "top": "Góra",
+      "bottom": "Dół",
+      "yes": "Tak",
+      "no": "Nie"
     },
     "names": {
       "Hero": "Nagłówek strony",
@@ -557,11 +647,82 @@
       "SocialLinks": "Media społecznościowe",
       "Video": "Wideo",
       "Spacer": "Odstęp",
-      "Columns": "Kolumny"
+      "Columns": "Kolumny",
+      "Heading": "Nagłówek",
+      "Buttons": "Przyciski",
+      "Quote": "Cytat",
+      "Divider": "Separator",
+      "IconList": "Lista z ikonami",
+      "Section": "Sekcja z tłem",
+      "Pricing": "Usługi / cennik",
+      "Faq": "FAQ",
+      "Stats": "Liczby",
+      "Logos": "Logotypy klientów",
+      "FileDownload": "Plik do pobrania"
     },
     "hints": {
       "video": "Link do filmu na YouTube lub Vimeo.",
       "contactForm": "Wysyłka wiadomości zostanie uruchomiona wkrótce."
+    },
+    "appearance": {
+      "title": "Wygląd",
+      "background": "Tło",
+      "text": "Kolor tekstu",
+      "paddingTop": "Odstęp nad",
+      "paddingBottom": "Odstęp pod",
+      "width": "Szerokość treści",
+      "hideOn": "Ukryj na",
+      "animation": "Animacja wejścia",
+      "inherit": "Bez zmian (z motywu)",
+      "custom": "Własny kolor",
+      "tokens": {
+        "background": "Tło strony",
+        "foreground": "Tekst",
+        "muted": "Tekst pomocniczy",
+        "primary": "Kolor główny",
+        "primaryForeground": "Tekst na kolorze głównym",
+        "surface": "Tło kart",
+        "accent": "Akcent",
+        "border": "Obramowania"
+      },
+      "options": {
+        "default": "Domyślnie",
+        "none": "Brak",
+        "sm": "Mały",
+        "md": "Średni",
+        "lg": "Duży",
+        "xl": "Bardzo duży",
+        "narrow": "Wąska",
+        "wide": "Szeroka",
+        "full": "Pełna szerokość",
+        "mobile": "Telefonie",
+        "desktop": "Komputerze",
+        "fade": "Pojawienie",
+        "slide-up": "Wsunięcie z dołu",
+        "zoom": "Przybliżenie"
+      }
+    },
+    "icons": {
+      "check": "Ptaszek",
+      "star": "Gwiazdka",
+      "heart": "Serce",
+      "zap": "Błyskawica",
+      "camera": "Aparat",
+      "pen": "Pióro",
+      "code": "Kod",
+      "palette": "Paleta",
+      "globe": "Glob",
+      "mail": "Koperta",
+      "phone": "Telefon",
+      "pin": "Pinezka",
+      "clock": "Zegar",
+      "award": "Medal",
+      "users": "Ludzie",
+      "briefcase": "Teczka",
+      "rocket": "Rakieta",
+      "shield": "Tarcza",
+      "target": "Cel",
+      "sparkles": "Iskry"
     }
   },
   "puck": {
@@ -688,7 +849,8 @@
     "backupsEmpty": "Brak kopii zapasowych.",
     "backupReason": {
       "templateSwitch": "Przed zmianą szablonu",
-      "beforeRestore": "Przed przywróceniem kopii"
+      "beforeRestore": "Przed przywróceniem kopii",
+      "templateDetach": "Przed odłączeniem od szablonu"
     },
     "restoreBackup": "Przywróć",
     "restoreConfirm": "Przywrócić tę kopię? Obecny stan strony też zostanie zapisany jako kopia.",
@@ -710,8 +872,13 @@
         "invalidChars": "Adres może zawierać tylko małe litery, cyfry i pojedyncze myślniki.",
         "tooDeep": "Adres może mieć najwyżej 3 poziomy.",
         "reserved": "Ten adres jest zarezerwowany."
-      }
-    }
+      },
+      "noLocks": "Ta strona nie ma już blokad szablonu."
+    },
+    "detach": "Odłącz od szablonu",
+    "detachDescription": "{count, plural, one {# podstrona ma} few {# podstrony mają} many {# podstron ma} other {# podstrony ma}} bloki zablokowane przez szablon. Po odłączeniu edytujesz, przesuwasz i usuwasz wszystkie bloki bez ograniczeń. Treść i wygląd zostają, a kopia obecnego stanu trafi do Historii.",
+    "detachConfirm": "Odłączyć stronę od szablonu? Wszystkie blokady zostaną zdjęte. Kopię możesz przywrócić w Historii.",
+    "detached": "Blokady zdjęte. Możesz swobodnie edytować wszystkie bloki."
   },
   "adminNav": {
     "dashboard": "Pulpit",

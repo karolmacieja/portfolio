@@ -18,6 +18,13 @@ export const SITE_FONTS = {
   fraunces: { label: "Fraunces", stack: "'Fraunces Variable', ui-serif, Georgia, serif" },
   lora: { label: "Lora", stack: "'Lora Variable', ui-serif, Georgia, serif" },
   "jetbrains-mono": { label: "JetBrains Mono", stack: "'JetBrains Mono Variable', ui-monospace, monospace" },
+  manrope: { label: "Manrope", stack: "'Manrope Variable', ui-sans-serif, system-ui, sans-serif" },
+  outfit: { label: "Outfit", stack: "'Outfit Variable', ui-sans-serif, system-ui, sans-serif" },
+  raleway: { label: "Raleway", stack: "'Raleway Variable', ui-sans-serif, system-ui, sans-serif" },
+  "cormorant-garamond": {
+    label: "Cormorant Garamond",
+    stack: "'Cormorant Garamond Variable', ui-serif, Georgia, serif",
+  },
 } as const;
 
 export type SiteFontId = keyof typeof SITE_FONTS;

@@ -1,6 +1,6 @@
 import { DeleteObjectsCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
-import { assertSafeKey, type StorageProvider } from "./types";
+import { assertSafeKey, attachmentDisposition, type StorageProvider } from "./types";
 
 export type S3Config = {
   endpoint?: string;
@@ -26,7 +26,12 @@ export class S3StorageProvider implements StorageProvider {
     });
   }
 
-  async put(key: string, body: Buffer, contentType: string): Promise<void> {
+  async put(
+    key: string,
+    body: Buffer,
+    contentType: string,
+    options?: { downloadName?: string },
+  ): Promise<void> {
     assertSafeKey(key);
     await this.client.send(
       new PutObjectCommand({
@@ -34,6 +39,7 @@ export class S3StorageProvider implements StorageProvider {
         Key: key,
         Body: body,
         ContentType: contentType,
+        ...(options?.downloadName ? { ContentDisposition: attachmentDisposition(options.downloadName) } : {}),
         // Keys are unique per upload, so objects never change.
         CacheControl: "public, max-age=31536000, immutable",
       }),

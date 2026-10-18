@@ -236,6 +236,30 @@ export async function switchSiteTemplate(
   return { value: { backupId: backup.id }, invalidate: [siteTag(site.id)] };
 }
 
+/** Whether a page carries any template block lock. */
+function hasLocks(rules: unknown): boolean {
+  return Boolean(rules && typeof rules === "object" && Object.keys(rules).length > 0);
+}
+
+/** Pages of the site that still carry template block locks. */
+export async function countLockedPages(ownerId: string, siteId: string): Promise<number> {
+  const site = await getOwnedSite(ownerId, siteId);
+  return site.pages.filter((page) => hasLocks(page.lockRules)).length;
+}
+
+/**
+ * "Detach from template": removes the template's block locks from every page so the client can edit,
+ * move and delete everything. Content, theme and the template link stay; the site is backed up first
+ * (restorable in History). Locks never reach the live site, so nothing is invalidated.
+ */
+export async function detachTemplate(ownerId: string, siteId: string): Promise<Result<{ backupId: string }>> {
+  const site = await getOwnedSite(ownerId, siteId);
+  if (!site.pages.some((page) => hasLocks(page.lockRules))) throw new TemplateError("noLocks");
+  const backup = await createBackup(site, "templateDetach", ownerId);
+  await db.page.updateMany({ where: { siteId: site.id }, data: { lockRules: Prisma.DbNull } });
+  return { value: { backupId: backup.id }, invalidate: [] };
+}
+
 export async function listBackups(ownerId: string, siteId: string) {
   const site = await getOwnedSite(ownerId, siteId);
   return db.siteBackup.findMany({

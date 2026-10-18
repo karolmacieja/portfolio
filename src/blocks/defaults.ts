@@ -1,4 +1,4 @@
-import { EMPTY_IMAGE, type BlockProps, type BlockType } from "./schemas";
+import { EMPTY_FILE, EMPTY_IMAGE, type BlockProps, type BlockType } from "./schemas";
 
 /** Props of a freshly inserted block (also used by templates/seed). */
 export const blockDefaults: { [K in BlockType]: BlockProps[K] } = {
@@ -16,5 +16,25 @@ export const blockDefaults: { [K in BlockType]: BlockProps[K] } = {
   SocialLinks: { heading: "", align: "center", items: [] },
   Video: { url: "", caption: "" },
   Spacer: { size: "md" },
+  Heading: { text: "", subtitle: "", level: "h2", size: "lg", align: "left" },
+  Buttons: { align: "left", items: [] },
+  Quote: { quote: "", author: "", role: "", align: "center", image: EMPTY_IMAGE },
+  Divider: { variant: "line", width: "full" },
+  IconList: { heading: "", columns: "2", items: [] },
+  Section: {
+    image: EMPTY_IMAGE,
+    overlay: "none",
+    gradient: "none",
+    gradientFrom: "",
+    gradientTo: "",
+    minHeight: "auto",
+    verticalAlign: "center",
+    content: [],
+  },
+  Pricing: { heading: "", description: "", items: [] },
+  Faq: { heading: "", items: [] },
+  Stats: { heading: "", items: [] },
+  Logos: { heading: "", grayscale: true, items: [] },
+  FileDownload: { heading: "", description: "", file: EMPTY_FILE, buttonLabel: "" },
   Columns: { layout: "1-1", gap: "md", col1: [], col2: [], col3: [] },
 };

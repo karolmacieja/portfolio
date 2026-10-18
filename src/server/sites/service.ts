@@ -271,7 +271,7 @@ function checkPath(input: string): string {
 export async function createPage(
   ownerId: string,
   siteId: string,
-  input: { title: string; path: string },
+  input: { title: string; path: string; content?: PageContent },
 ): Promise<MutationResult<{ id: string }>> {
   const site = await getSite(ownerId, siteId);
   const path = checkPath(input.path);
@@ -287,7 +287,7 @@ export async function createPage(
         title: input.title,
         path,
         position: (last._max.position ?? 0) + 1,
-        draftContent: toJson(emptyContent()),
+        draftContent: toJson(input.content ?? emptyContent()),
       },
     });
     // Unpublished pages are not visible, nothing to invalidate.

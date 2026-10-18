@@ -2,13 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { getCurrentUser } from "@/server/auth/session";
 import { MediaError } from "@/server/media/errors";
-import { getUploadLimitBytes, uploadAsset } from "@/server/media/service";
+import { DOCUMENT_MAX_MB, getUploadLimitBytes, uploadAsset } from "@/server/media/service";
 import { getRateLimiter } from "@/server/rate-limit/limiter";
 
 const UPLOADS_PER_WINDOW = 60;
 const WINDOW_MS = 10 * 60_000;
 
-/** Multipart upload of a single image (`file` field) into the signed-in client's media library. */
+/** Multipart upload of a single image or PDF (`file` field) into the signed-in client's media library. */
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -18,7 +18,8 @@ export async function POST(request: NextRequest) {
 
   // Reject oversized bodies before buffering them (multipart overhead allowance: 1 MB).
   const declared = Number(request.headers.get("content-length") ?? 0);
-  if (declared > getUploadLimitBytes() + 1024 * 1024) {
+  const maxBytes = Math.max(getUploadLimitBytes(), DOCUMENT_MAX_MB * 1024 * 1024);
+  if (declared > maxBytes + 1024 * 1024) {
     return NextResponse.json({ error: "fileTooLarge" }, { status: 413 });
   }
 

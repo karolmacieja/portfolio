@@ -74,6 +74,11 @@ export async function switchSiteTemplateAction(_prev: ActionState, formData: For
   return run(() => client.switchSiteTemplate(user.id, siteId, templateId));
 }
 
+export async function detachTemplateAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await requireUser();
+  return run(() => client.detachTemplate(user.id, id.parse(formData.get("siteId"))));
+}
+
 export async function restoreBackupAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const user = await requireUser();
   return run(() => client.restoreBackup(user.id, id.parse(formData.get("backupId"))));

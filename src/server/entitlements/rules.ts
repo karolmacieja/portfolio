@@ -56,6 +56,17 @@ export const DEFAULT_BLOCK_TIERS: Record<BlockType, AccessTier> = {
   Testimonials: "pro",
   Timeline: "pro",
   Columns: "pro",
+  Heading: "basic",
+  Buttons: "basic",
+  Quote: "basic",
+  Divider: "basic",
+  IconList: "basic",
+  Section: "pro",
+  Pricing: "pro",
+  Faq: "pro",
+  Stats: "pro",
+  Logos: "pro",
+  FileDownload: "pro",
 };
 
 export type Limits = {

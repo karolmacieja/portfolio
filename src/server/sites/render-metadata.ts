@@ -9,5 +9,6 @@ export async function siteRenderMetadata(locale: string): Promise<SiteRenderMeta
     contact: Object.fromEntries(
       keys.map((key) => [key, t(`site.contact.${key}`)]),
     ) as SiteRenderMetadata["contact"],
+    download: t("site.download"),
   };
 }

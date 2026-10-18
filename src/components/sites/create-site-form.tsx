@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { slugify } from "@/lib/slug";
 import { createSiteAction, type SiteFormState } from "@/server/sites/actions";
 
+import { StartChoice } from "./start-choice";
+
 type Props = {
   /** Host suffix shown in the address preview, e.g. "example.com" or "localhost:3000". */
   rootDomain: string;
@@ -76,6 +78,19 @@ export function CreateSiteForm({ rootDomain, protocol }: Props) {
           {t("slugHint", { url: `${protocol}://${slug || "…"}.${rootDomain}` })}
         </p>
       </div>
+      <StartChoice
+        name="start"
+        legend={t("start.legend")}
+        defaultValue="starter"
+        options={(["starter", "blank"] as const).map((value) => ({
+          value,
+          label: t(`start.${value}`),
+          description: t(`start.${value}Description`),
+        }))}
+        links={[
+          { href: "/templates", label: t("start.template"), description: t("start.templateDescription") },
+        ]}
+      />
       <Button type="submit" disabled={pending} className="w-fit">
         {t("create")}
       </Button>

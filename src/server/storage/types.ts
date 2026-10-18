@@ -1,7 +1,8 @@
 /** Object storage adapter for uploaded media. Implementations: local disk (dev/test) and S3 (MinIO, R2). */
 export interface StorageProvider {
   readonly name: string;
-  put(key: string, body: Buffer, contentType: string): Promise<void>;
+  /** `downloadName` makes the object download as an attachment under that file name (documents). */
+  put(key: string, body: Buffer, contentType: string, options?: { downloadName?: string }): Promise<void>;
   delete(keys: string[]): Promise<void>;
   /** Public URL under which browsers load the object. */
   publicUrl(key: string): string;
@@ -12,4 +13,10 @@ export function assertSafeKey(key: string): void {
   if (!/^[a-zA-Z0-9][a-zA-Z0-9/_.-]{0,500}$/.test(key) || key.includes("..") || key.includes("//")) {
     throw new Error(`Unsafe storage key: ${key}`);
   }
+}
+
+/** RFC 6266 Content-Disposition for a download, with an ASCII fallback and the UTF-8 name. */
+export function attachmentDisposition(name: string): string {
+  const ascii = name.replace(/[^\x20-\x7e]/g, "_").replace(/["\\]/g, "_");
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(name)}`;
 }

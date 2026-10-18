@@ -17,6 +17,9 @@ export const themeSchema = z.object({
     primary: hexColor,
     primaryForeground: hexColor,
     surface: hexColor,
+    /** Optional (themes saved before Phase 13 lack them): accent defaults to primary, border is derived. */
+    accent: hexColor.optional(),
+    border: hexColor.optional(),
   }),
   fonts: z.object({
     heading: z.enum(SITE_FONT_IDS),
@@ -25,6 +28,7 @@ export const themeSchema = z.object({
   spacing: z.enum(["compact", "normal", "relaxed"]),
   radius: z.enum(["none", "sm", "md", "lg"]),
   buttonStyle: z.enum(["solid", "outline", "pill"]),
+  headingScale: z.enum(["sm", "md", "lg"]).default("md"),
 });
 
 export type Theme = z.infer<typeof themeSchema>;
@@ -42,6 +46,7 @@ export const DEFAULT_THEME: Theme = {
   spacing: "normal",
   radius: "md",
   buttonStyle: "solid",
+  headingScale: "md",
 };
 
 /** Starting points offered in the theme editor. */
@@ -87,6 +92,68 @@ export const THEME_PRESETS: Record<string, Theme> = {
     radius: "lg",
     buttonStyle: "pill",
   },
+  warm: {
+    ...DEFAULT_THEME,
+    colors: {
+      background: "#fffaf3",
+      foreground: "#2b2118",
+      muted: "#7c6a58",
+      primary: "#c2410c",
+      primaryForeground: "#ffffff",
+      surface: "#fbeedd",
+      accent: "#d97706",
+    },
+    fonts: { heading: "outfit", body: "manrope" },
+    radius: "lg",
+  },
+  pastel: {
+    ...DEFAULT_THEME,
+    colors: {
+      background: "#fbfaff",
+      foreground: "#26213b",
+      muted: "#6f6a86",
+      primary: "#7c6cf0",
+      primaryForeground: "#ffffff",
+      surface: "#efedfd",
+      accent: "#f08cb6",
+    },
+    fonts: { heading: "outfit", body: "outfit" },
+    radius: "lg",
+    buttonStyle: "pill",
+  },
+  contrast: {
+    ...DEFAULT_THEME,
+    colors: {
+      background: "#ffffff",
+      foreground: "#000000",
+      muted: "#3f3f46",
+      primary: "#0000ee",
+      primaryForeground: "#ffffff",
+      surface: "#f4f4f5",
+      accent: "#e11d48",
+      border: "#000000",
+    },
+    fonts: { heading: "space-grotesk", body: "inter" },
+    radius: "none",
+    headingScale: "lg",
+  },
+  elegant: {
+    ...DEFAULT_THEME,
+    colors: {
+      background: "#f7f5f0",
+      foreground: "#1f1d1a",
+      muted: "#77716a",
+      primary: "#1f1d1a",
+      primaryForeground: "#f7f5f0",
+      surface: "#ece8df",
+      accent: "#a1855c",
+    },
+    fonts: { heading: "cormorant-garamond", body: "raleway" },
+    radius: "none",
+    spacing: "relaxed",
+    buttonStyle: "outline",
+    headingScale: "lg",
+  },
 };
 
 /** Stored theme JSON -> valid theme (falls back to the default for missing/invalid data). */
@@ -95,13 +162,42 @@ export function parseTheme(value: unknown): Theme {
   return result.success ? result.data : DEFAULT_THEME;
 }
 
+const HEADING_SCALE: Record<Theme["headingScale"], string> = { sm: "0.85", md: "1", lg: "1.15" };
+
+/** Mixes two "#rrggbb" colours (weight = share of `a`), used to derive the border colour. */
+export function mixHex(a: string, b: string, weight: number): string {
+  const channel = (hex: string, i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  return `#${[0, 1, 2]
+    .map((i) =>
+      Math.round(channel(a, i) * weight + channel(b, i) * (1 - weight))
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`;
+}
+
+/** Full palette including the optional colours (accent falls back to primary, border is derived). */
+export function themePalette(theme: Theme): Required<Theme["colors"]> {
+  return {
+    ...theme.colors,
+    accent: theme.colors.accent ?? theme.colors.primary,
+    border: theme.colors.border ?? mixHex(theme.colors.foreground, theme.colors.background, 0.15),
+  };
+}
+
 const SPACING: Record<Theme["spacing"], string> = { compact: "3rem", normal: "5rem", relaxed: "7.5rem" };
 const RADIUS: Record<Theme["radius"], string> = { none: "0px", sm: "0.25rem", md: "0.5rem", lg: "1rem" };
 
 /** CSS custom properties consumed by block styles (src/blocks/blocks.css). */
 export function themeToCssVars(theme: Theme): Record<string, string> {
   const radius = RADIUS[theme.radius];
+  const palette = themePalette(theme);
   return {
+    // Raw palette for block colours chosen from the theme (never overridden inside blocks).
+    ...Object.fromEntries(Object.entries(palette).map(([key, value]) => [`--site-c-${key}`, value])),
+    "--site-accent": palette.accent,
+    "--site-border": palette.border,
+    "--site-heading-scale": HEADING_SCALE[theme.headingScale],
     "--site-bg": theme.colors.background,
     "--site-fg": theme.colors.foreground,
     "--site-muted": theme.colors.muted,

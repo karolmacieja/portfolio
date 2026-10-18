@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import type { ActionState } from "@/server/action-state";
 import {
   applyTemplateThemeAction,
+  detachTemplateAction,
   restoreBackupAction,
   switchSiteTemplateAction,
 } from "@/server/templates/client-actions";
@@ -77,6 +78,25 @@ export function RestoreBackupButton({ backupId }: { backupId: string }) {
       <Button type="submit" size="sm" variant="outline" disabled={pending}>
         {t("restoreBackup")}
       </Button>
+    </form>
+  );
+}
+
+/** Removes the template's block locks (after a backup) so every block can be edited freely. */
+export function DetachTemplateButton({ siteId }: { siteId: string }) {
+  const t = useTranslations("templates");
+  const [state, action, pending] = useActionState<ActionState, FormData>(detachTemplateAction, {});
+  return (
+    <form
+      action={action}
+      onSubmit={(e) => !confirm(t("detachConfirm")) && e.preventDefault()}
+      className="flex flex-wrap items-center gap-3"
+    >
+      <input type="hidden" name="siteId" value={siteId} />
+      <Button type="submit" size="sm" variant="outline" disabled={pending} data-testid="detach-template">
+        {t("detach")}
+      </Button>
+      <FormMessage state={state} success={t("detached")} />
     </form>
   );
 }

@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 import type { DomainRegistrar, HostnameProvider } from "@/server/domains/providers";
 import { ERASED_EMAIL_DOMAIN, type Mailer } from "@/server/mail";
 import { buildLinkMail } from "@/server/mail/templates";
+import { assetStorageKeys } from "@/server/media/keys";
 import type { PaymentProvider } from "@/server/payments";
 import { hostTag, siteTag } from "@/server/sites/cache-tags";
 import { siteSubdomainHostname } from "@/server/sites/urls";
@@ -225,9 +226,7 @@ export async function eraseAccount(userId: string, deps: AccountDeps): Promise<v
     }
   }
   if (user.assets.length) {
-    await deps.storage.delete(
-      user.assets.flatMap((asset) => [asset.key, asset.key.replace(/\.webp$/, "-thumb.webp")]),
-    );
+    await deps.storage.delete(user.assets.flatMap((asset) => assetStorageKeys(asset.key)));
   }
 
   // 2. The final mail goes to the real address before it is anonymized.

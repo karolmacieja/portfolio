@@ -149,11 +149,8 @@ export default async function DashboardPage() {
       </section>
 
       <Card>
-        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
+        <CardHeader>
           <CardTitle>{t("sites.createTitle")}</CardTitle>
-          <Button asChild size="sm">
-            <Link href="/templates">{t("templates.startFromTemplate")}</Link>
-          </Button>
         </CardHeader>
         <CardContent>
           <CreateSiteForm rootDomain={env.ROOT_DOMAIN} protocol={env.APP_PROTOCOL} />

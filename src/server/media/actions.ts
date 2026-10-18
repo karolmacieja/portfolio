@@ -6,11 +6,12 @@ import { z } from "zod";
 import { requireUser } from "@/server/auth/session";
 
 import { MediaError, type MediaErrorCode } from "./errors";
-import { deleteAsset, listAssets, type AssetDto } from "./service";
+import { deleteAsset, listAssets, type AssetDto, type AssetKind } from "./service";
 
-export async function listAssetsAction(): Promise<AssetDto[]> {
+export async function listAssetsAction(kind?: AssetKind): Promise<AssetDto[]> {
   const user = await requireUser();
-  return listAssets(user.id);
+  const parsed = z.enum(["image", "document"]).optional().safeParse(kind);
+  return listAssets(user.id, parsed.success ? parsed.data : "image");
 }
 
 export async function deleteAssetAction(

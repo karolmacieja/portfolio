@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
+import { block, emptyContent } from "@/blocks/content";
 import { imageUrlSchema } from "@/blocks/schemas";
 import { validateSlug, type SlugError } from "@/lib/slug";
 import { requireUser } from "@/server/auth/session";
@@ -66,7 +67,11 @@ const createSiteSchema = z.object({
 
 export async function createSiteAction(_prev: SiteFormState, formData: FormData): Promise<SiteFormState> {
   const user = await requireUser("/dashboard");
-  const values = { name: String(formData.get("name") ?? ""), slug: String(formData.get("slug") ?? "") };
+  const values = {
+    name: String(formData.get("name") ?? ""),
+    slug: String(formData.get("slug") ?? ""),
+    start: formData.get("start") === "blank" ? "blank" : "starter",
+  };
 
   const parsed = createSiteSchema.safeParse(values);
   if (!parsed.success) return { error: "nameRequired", values };
@@ -80,10 +85,14 @@ export async function createSiteAction(_prev: SiteFormState, formData: FormData)
         name: parsed.data.name,
         slug: parsed.data.slug,
         locale: user.locale,
-        content: service.defaultSiteContent(parsed.data.name, {
-          subtitle: t("starterSubtitle"),
-          body: t("starterBody"),
-        }),
+        // "blank": an empty page to build from scratch; "starter": a simple layout to replace.
+        content:
+          values.start === "blank"
+            ? emptyContent()
+            : service.defaultSiteContent(parsed.data.name, {
+                subtitle: t("starterSubtitle"),
+                body: t("starterBody"),
+              }),
       }),
     values,
   );
@@ -138,6 +147,7 @@ const createPageSchema = z.object({
   siteId: id,
   title: z.string().trim().min(1).max(120),
   path: z.string().max(200),
+  layout: z.enum(["blank", "starter"]).default("blank"),
 });
 
 export async function createPageAction(_prev: SiteFormState, formData: FormData): Promise<SiteFormState> {
@@ -145,8 +155,13 @@ export async function createPageAction(_prev: SiteFormState, formData: FormData)
   const values = formValues(formData);
   const parsed = createPageSchema.safeParse(values);
   if (!parsed.success) return { error: "path.empty", values };
-  const { siteId, ...input } = parsed.data;
-  return run(() => service.createPage(user.id, siteId, input), values);
+  const { siteId, layout, ...input } = parsed.data;
+  const t = await getTranslations("pages");
+  const content =
+    layout === "starter"
+      ? { root: { props: {} }, content: [block("Text", { heading: input.title, text: t("starterBody") })] }
+      : emptyContent();
+  return run(() => service.createPage(user.id, siteId, { ...input, content }), values);
 }
 
 const pageMetaSchema = z.object({

@@ -10,10 +10,18 @@ type Props = {
   onUploaded: (asset: AssetDto) => void;
   multiple?: boolean;
   variant?: "default" | "outline";
+  /** Which files the picker offers; the server checks the real type either way. */
+  accept?: "image" | "document" | "any";
 };
 
-/** Uploads images one by one to /api/media/upload and reports each stored asset. */
-export function UploadButton({ onUploaded, multiple = true, variant = "default" }: Props) {
+const ACCEPT = {
+  image: "image/jpeg,image/png,image/webp,image/gif,image/avif",
+  document: "application/pdf",
+  any: "image/jpeg,image/png,image/webp,image/gif,image/avif,application/pdf",
+};
+
+/** Uploads files one by one to /api/media/upload and reports each stored asset. */
+export function UploadButton({ onUploaded, multiple = true, variant = "default", accept = "image" }: Props) {
   const t = useTranslations("media");
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -52,7 +60,7 @@ export function UploadButton({ onUploaded, multiple = true, variant = "default" 
       <input
         ref={input}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+        accept={ACCEPT[accept]}
         multiple={multiple}
         className="hidden"
         data-testid="media-upload-input"

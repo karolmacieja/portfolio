@@ -10,22 +10,120 @@
   line-height: 1.6;
 }
 
+/*
+ * Block frame (src/blocks/appearance.ts): every block is wrapped in .blk, which resets the
+ * per-block variables so a nested block never inherits its parent's spacing or width. A block's
+ * own appearance sets them inline.
+ */
+.blk {
+  --blk-pt: initial;
+  --blk-pb: initial;
+  --blk-px: initial;
+  --blk-max: initial;
+}
+
 .site-section {
-  padding-block: calc(var(--site-section-space, 5rem) / 2);
-  padding-inline: 1.5rem;
+  padding-top: var(--blk-pt, calc(var(--site-section-space, 5rem) / 2));
+  padding-bottom: var(--blk-pb, calc(var(--site-section-space, 5rem) / 2));
+  padding-inline: var(--blk-px, 1.5rem);
 }
 
 .site-container {
   margin-inline: auto;
-  max-width: 72rem;
+  max-width: var(--blk-max, 72rem);
 }
 
 .site-container-narrow {
   margin-inline: auto;
-  max-width: 48rem;
+  max-width: var(--blk-max, 48rem);
+}
+
+/* Full width: content spans the viewport (minus the section's side padding). */
+.blk-full .site-container,
+.blk-full .site-container-narrow {
+  max-width: none;
+}
+
+/* Blocks nested in Columns rely on the columns' spacing (an explicit appearance still wins). */
+.site-columns .blk {
+  --blk-pt: 0px;
+  --blk-pb: 0px;
+  --blk-px: 0px;
+}
+
+/* Visibility per device. In the editor hidden blocks stay selectable, dimmed and outlined. */
+@media (max-width: 767px) {
+  .blk-hide-mobile {
+    display: none;
+  }
+  .blk-edit-hide-mobile {
+    opacity: 0.4;
+    outline: 2px dashed color-mix(in srgb, var(--site-fg, #111111) 35%, transparent);
+    outline-offset: -2px;
+  }
+}
+
+@media (min-width: 768px) {
+  .blk-hide-desktop {
+    display: none;
+  }
+  .blk-edit-hide-desktop {
+    opacity: 0.4;
+    outline: 2px dashed color-mix(in srgb, var(--site-fg, #111111) 35%, transparent);
+    outline-offset: -2px;
+  }
+}
+
+/*
+ * Entrance animations driven by scroll position (CSS scroll-driven animations, no JavaScript).
+ * Browsers without support, and visitors who prefer reduced motion, simply see the content.
+ */
+@keyframes blk-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes blk-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(3rem);
+  }
+}
+
+@keyframes blk-zoom {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .blk-anim-fade,
+    .blk-anim-slide-up,
+    .blk-anim-zoom {
+      animation: blk-fade linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+    .blk-anim-slide-up {
+      animation-name: blk-slide-up;
+    }
+    .blk-anim-zoom {
+      animation-name: blk-zoom;
+    }
+  }
 }
 
 .site-heading {
+  /* Theme heading scale: Tailwind 4 text utilities read these variables. */
+  --text-xl: calc(1.25rem * var(--site-heading-scale, 1));
+  --text-2xl: calc(1.5rem * var(--site-heading-scale, 1));
+  --text-3xl: calc(1.875rem * var(--site-heading-scale, 1));
+  --text-4xl: calc(2.25rem * var(--site-heading-scale, 1));
+  --text-5xl: calc(3rem * var(--site-heading-scale, 1));
+  --text-6xl: calc(3.75rem * var(--site-heading-scale, 1));
   font-family: var(--site-font-heading, inherit);
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -139,4 +237,109 @@
 .site-carousel > * {
   flex: 0 0 min(85%, 40rem);
   scroll-snap-align: center;
+}
+
+.site-btn-secondary {
+  background: transparent;
+  color: var(--site-primary, #111111);
+}
+
+.site-divider {
+  border: 0;
+  border-top: 1px solid var(--site-border, #e4e4e7);
+}
+
+.site-divider-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.site-divider-dots > span {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: var(--site-border, #d4d4d8);
+}
+
+.site-divider-wave {
+  color: var(--site-border, #d4d4d8);
+}
+
+/* Icon badge (IconList, FileDownload): accent colour on a light tint of it. */
+.site-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--site-radius, 0.5rem);
+  background: color-mix(in srgb, var(--site-accent, #111111) 14%, transparent);
+  color: var(--site-accent, #111111);
+}
+
+/* Section block: the band carries the background; nested blocks keep their own side padding. */
+.site-band {
+  padding-inline: 0;
+}
+
+.site-band-dark {
+  --site-fg: #ffffff;
+  --site-muted: rgb(255 255 255 / 0.78);
+  color: #ffffff;
+}
+
+.site-card {
+  border: 1px solid var(--site-border, #e4e4e7);
+  border-radius: var(--site-radius, 0.5rem);
+  background: var(--site-bg, #ffffff);
+  color: var(--site-fg, #111111);
+}
+
+.site-card-featured {
+  border: 2px solid var(--site-primary, #111111);
+  box-shadow: 0 12px 32px -12px color-mix(in srgb, var(--site-primary, #111111) 35%, transparent);
+}
+
+.site-faq {
+  border-bottom: 1px solid var(--site-border, #e4e4e7);
+}
+
+.site-faq > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 1.25rem;
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+
+.site-faq > summary::-webkit-details-marker {
+  display: none;
+}
+
+.site-faq-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.site-faq[open] .site-faq-icon {
+  transform: rotate(45deg);
+}
+
+.site-logo-gray {
+  filter: grayscale(1);
+  opacity: 0.7;
+  transition:
+    filter 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.site-logo-gray:hover {
+  filter: none;
+  opacity: 1;
 }

@@ -5,28 +5,35 @@ import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { listAssetsAction } from "@/server/media/actions";
-import type { AssetDto } from "@/server/media/service";
+import type { AssetDto, AssetKind } from "@/server/media/service";
 
+import { AssetThumb } from "./asset-thumb";
 import { UploadButton } from "./upload-button";
 
-type Props = { open: boolean; onClose: () => void; onSelect: (asset: AssetDto) => void };
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  onSelect: (asset: AssetDto) => void;
+  /** Images (default) or documents (PDF). */
+  kind?: AssetKind;
+};
 
-/** Modal media library: pick an existing image or upload a new one. */
-export function MediaDialog({ open, onClose, onSelect }: Props) {
+/** Modal media library: pick an existing file or upload a new one. */
+export function MediaDialog({ open, onClose, onSelect, kind = "image" }: Props) {
   const t = useTranslations("media");
   const [assets, setAssets] = useState<AssetDto[] | null>(null);
 
   useEffect(() => {
     if (!open) return;
     let active = true;
-    listAssetsAction().then((list) => active && setAssets(list));
+    listAssetsAction(kind).then((list) => active && setAssets(list));
     const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => {
       active = false;
       window.removeEventListener("keydown", onKey);
     };
-  }, [open, onClose]);
+  }, [open, onClose, kind]);
 
   if (!open) return null;
   return (
@@ -46,6 +53,7 @@ export function MediaDialog({ open, onClose, onSelect }: Props) {
           <div className="flex items-center gap-2">
             <UploadButton
               multiple={false}
+              accept={kind}
               onUploaded={(asset) => {
                 setAssets((list) => [asset, ...(list ?? [])]);
                 onSelect(asset);
@@ -67,12 +75,7 @@ export function MediaDialog({ open, onClose, onSelect }: Props) {
                   onClick={() => onSelect(asset)}
                   title={asset.originalName}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element -- thumbnails from our storage */}
-                  <img
-                    src={asset.thumbUrl}
-                    alt={asset.originalName}
-                    className="aspect-square w-full object-cover"
-                  />
+                  <AssetThumb asset={asset} />
                 </button>
               </li>
             ))}
