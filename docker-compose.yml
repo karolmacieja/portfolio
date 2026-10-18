@@ -31,36 +31,38 @@ services:
       timeout: 5s
       retries: 10
 
-  # S3-compatible storage (Cloudflare R2 in production). Console: http://localhost:9001
-  minio:
-    image: minio/minio:latest
-    command: ["server", "/data", "--console-address", ":9001"]
+  # Optional S3-compatible storage (Cloudflare R2 in production), only with `docker compose --profile s3 up -d`
+  # and STORAGE_PROVIDER=s3 (default is local disk). RustFS replaces MinIO, whose images left Docker Hub.
+  # Console: http://localhost:9001 (minioadmin / minioadmin).
+  s3:
+    image: rustfs/rustfs:1.0.3
+    profiles: ["s3"]
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      RUSTFS_ACCESS_KEY: minioadmin
+      RUSTFS_SECRET_KEY: minioadmin
+      RUSTFS_CONSOLE_ENABLE: "true"
     ports:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - minio-data:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      - s3-data:/data
 
   # Creates the bucket used by the app (publicly readable, like an R2 public bucket) and exits.
-  minio-init:
-    image: minio/mc:latest
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set local http://minio:9000 minioadmin minioadmin &&
-      mc mb --ignore-existing local/portfolio &&
-      mc anonymous set download local/portfolio
-      "
+  s3-init:
+    image: amazon/aws-cli:2.27.50
+    profiles: ["s3"]
+    depends_on: [s3]
+    environment:
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        s3="aws --endpoint-url http://s3:9000 s3api"
+        for i in $$(seq 30); do $$s3 list-buckets >/dev/null 2>&1 && break; sleep 1; done
+        $$s3 head-bucket --bucket portfolio 2>/dev/null || $$s3 create-bucket --bucket portfolio
+        $$s3 put-bucket-policy --bucket portfolio --policy '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":["s3:GetObject"],"Resource":["arn:aws:s3:::portfolio/*"]}]}'
     restart: "no"
 
   # SMTP catcher. Web UI with all sent mail: http://localhost:8025
@@ -73,4 +75,4 @@ services:
 volumes:
   postgres-data:
   redis-data:
-  minio-data:
+  s3-data:

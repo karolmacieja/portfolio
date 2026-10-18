@@ -7,7 +7,7 @@ Multi-tenant platform where clients build and publish portfolio websites with a 
 ## Requirements
 
 - Node.js 22 (`.nvmrc`), pnpm 10 (`corepack enable`)
-- Docker with Compose (Postgres, Redis, MinIO, Mailpit)
+- Docker with Compose (Postgres, Redis, Mailpit; optional S3 storage)
 
 ## Getting started
 
@@ -39,18 +39,18 @@ Any `*.localhost` host resolves to your machine in Chrome/Firefox/Safari, so eve
 
 Local services:
 
-| Service               | URL                                             |
-| --------------------- | ----------------------------------------------- |
-| App                   | http://app.localhost:3000                       |
-| Mailpit (sent emails) | http://localhost:8025                           |
-| MinIO console         | http://localhost:9001 (minioadmin / minioadmin) |
-| Health check          | http://app.localhost:3000/api/health            |
+| Service               | URL                                  |
+| --------------------- | ------------------------------------ |
+| App                   | http://app.localhost:3000            |
+| Mailpit (sent emails) | http://localhost:8025                |
+| Health check          | http://app.localhost:3000/api/health |
 
 With `MAIL_PROVIDER=smtp` (default in `.env.example`) all emails land in Mailpit; with `MAIL_PROVIDER=mock` they are
 printed to the dev server console.
 
-Uploads are stored on disk in `.storage/` by default (`STORAGE_PROVIDER=local`). To use MinIO from docker compose (like
-R2 in production) set `STORAGE_PROVIDER=s3`; the remaining `S3_*` values in `.env.example` already match it.
+Uploads are stored on disk in `.storage/` by default (`STORAGE_PROVIDER=local`). To use S3 storage locally (like R2 in
+production), start it with `docker compose --profile s3 up -d` (RustFS, console http://localhost:9001, minioadmin /
+minioadmin) and set `STORAGE_PROVIDER=s3`; the remaining `S3_*` values in `.env.example` already match it.
 
 Background jobs (template thumbnails) run in a separate process: `pnpm worker`. With `THUMBNAIL_PROVIDER=mock`
 (default) no browser is needed; `playwright` takes real screenshots of the template preview.

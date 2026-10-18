@@ -45,7 +45,7 @@ for (const [command, args] of steps) {
     console.error(
       `\n"${command} ${args.join(" ")}" failed${result.error ? `: ${result.error.message}` : ""}.`,
     );
-    if (command === "docker") console.error("Is Docker Desktop running?");
+    if (command === "docker") console.error("See the Docker error above (is Docker Desktop running?).");
     process.exit(result.status ?? 1);
   }
 }

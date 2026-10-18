@@ -33,7 +33,7 @@ Work in phases; after each phase run lint/typecheck/tests, summarize and wait fo
 - next-intl 4 (no locale in URL; cookie `NEXT_LOCALE`, default `pl`)
 - Tailwind CSS 4 + shadcn/ui (new-york, neutral) for panels
 - Redis (ioredis): rate limiting; BullMQ queues + a separate worker process (`pnpm worker`, `src/worker/index.ts`)
-- Media: `sharp` (validation + WebP optimization), storage adapter: local disk (dev) or S3 (`@aws-sdk/client-s3`: MinIO, R2)
+- Media: `sharp` (validation + WebP optimization), storage adapter: local disk (dev) or S3 (`@aws-sdk/client-s3`: RustFS locally, R2)
 - Site fonts self-hosted via `@fontsource-variable/*` (no third-party requests from client sites)
 - Vitest 4 (unit), Playwright (E2E)
 - Production target: VPS + Coolify, BullMQ workers, Cloudflare in front (see `docs/decisions.md`)
@@ -41,7 +41,7 @@ Work in phases; after each phase run lint/typecheck/tests, summarize and wait fo
 ## Commands
 
 ```bash
-docker compose up -d          # Postgres, Redis, MinIO (+bucket), Mailpit
+docker compose up -d          # Postgres, Redis, Mailpit (+ `--profile s3`: RustFS S3 + bucket)
 pnpm install                  # also runs `prisma generate`
 pnpm db:migrate --name x      # create/apply a migration + regenerate the client (Prisma 7 no longer auto-generates)
 pnpm db:seed                  # plans, users (password Password123!), demo sites with generated images
@@ -116,7 +116,7 @@ debug configs (server, browser, worker) and recommended extensions. Task command
   bounds to 2400px and stores WebP + a 480px thumbnail under `u/{ownerId}/{random}.webp`; quota from the plan
   (`limits.storageMb`).
 - Storage adapter (`src/server/storage`): `local` (files in `STORAGE_LOCAL_DIR`, served by `src/app/storage/[...key]`
-  on every host; refused in production) or `s3` (MinIO locally, R2 in production; public bucket URL `S3_PUBLIC_URL`).
+  on every host; refused in production) or `s3` (RustFS locally via compose profile `s3`, R2 in production; public bucket URL `S3_PUBLIC_URL`).
 - Image props store `{ url, alt, width, height }`; deleting an asset does not rewrite pages that use it.
 
 ## Plans and entitlements
