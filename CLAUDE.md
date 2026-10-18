@@ -6,21 +6,22 @@ Next.js 16 ships its own docs in `node_modules/next/dist/docs/` (see `AGENTS.md`
 
 ## Status
 
-| Phase | Scope                                                                  | State |
-| ----- | ---------------------------------------------------------------------- | ----- |
-| 0     | Foundation: Next.js, Docker Compose, Prisma, Auth.js + roles, i18n, CI | done  |
-| 1     | Multi-tenancy (host routing), Site/Page, renderer, cache               | done  |
-| 2     | Editor (Puck), blocks, themes, draft/publish, versions, media, SEO     | done  |
-| 3     | Plans & entitlements: limits, flags, block tiers, plan seed            | done  |
-| 4     | Templates: template mode, versions, gallery, copy, theme/layout change | done  |
-| 5     | Payments (Stripe): checkout, webhooks, portal, dunning, coupons        | done  |
-| 6     | Invoicing (Fakturownia, KSeF): invoices, corrections, PDFs, panels     | done  |
-| 7     | Domains: Cloudflare for SaaS, Openprovider; purchase and renewals      | done  |
-| 8     | Admin panel                                                            | done  |
-| 9     | Polish: forms, stats, landing/pricing, mails, RODO, deployment docs    | done  |
-| 10    | Group licenses, sponsor footer (+ paid removal)                        | done  |
-| 11    | Finance: net profit per plan, revenue/profit stats, forecasts, usage   | done  |
-| 12    | Mail template editor, newsletter (consent)                             | done  |
+| Phase | Scope                                                                      | State |
+| ----- | -------------------------------------------------------------------------- | ----- |
+| 0     | Foundation: Next.js, Docker Compose, Prisma, Auth.js + roles, i18n, CI     | done  |
+| 1     | Multi-tenancy (host routing), Site/Page, renderer, cache                   | done  |
+| 2     | Editor (Puck), blocks, themes, draft/publish, versions, media, SEO         | done  |
+| 3     | Plans & entitlements: limits, flags, block tiers, plan seed                | done  |
+| 4     | Templates: template mode, versions, gallery, copy, theme/layout change     | done  |
+| 5     | Payments (Stripe): checkout, webhooks, portal, dunning, coupons            | done  |
+| 6     | Invoicing (Fakturownia, KSeF): invoices, corrections, PDFs, panels         | done  |
+| 7     | Domains: Cloudflare for SaaS, Openprovider; purchase and renewals          | done  |
+| 8     | Admin panel                                                                | done  |
+| 9     | Polish: forms, stats, landing/pricing, mails, RODO, deployment docs        | done  |
+| 10    | Group licenses, sponsor footer (+ paid removal)                            | done  |
+| 11    | Finance: net profit per plan, revenue/profit stats, forecasts, usage       | done  |
+| 12    | Mail template editor, newsletter (consent)                                 | done  |
+| 13    | Editor: new blocks, block appearance, PDF files, richer theme, blank start | done  |
 
 Work in phases; after each phase run lint/typecheck/tests, summarize and wait for the owner's approval.
 
@@ -97,13 +98,27 @@ debug configs (server, browser, worker) and recommended extensions. Task command
   `defaults.ts`, `render/blocks.tsx` (server-safe renderers, plain text only, `editMode` placeholders),
   `config.tsx` (render-only Puck config + categories), `content.ts` (document parsing: lenient for rendering,
   strict `validatePageContent` for saving, recursive through slots), `blocks.css` (styles driven by theme CSS vars).
-- Adding a block: schema + defaults + renderer + category in `config.tsx` + fields in
-  `src/components/editor/editor-config.tsx` + `blocks.names/fields` messages + a test. Phase 3 adds `requiredTier`.
+- Adding a block: schema (`blockSchema(...)`) + defaults + renderer (+ entry in `BLOCK_RENDERERS`) + category in
+  `config.tsx` + fields in `src/components/editor/editor-config.tsx` + `blocks.names/fields` messages + a tier in
+  `DEFAULT_BLOCK_TIERS` + a test. Slot props go in `SLOT_PROPS`: the render config declares them as slot fields
+  (Puck only turns slots into components when the config declares them, also on published sites).
+- Blocks (26): layout (Hero, Section, Columns, Spacer, Divider), content (Heading, Text, Quote, Buttons, IconList,
+  About, Image, Video), portfolio (Gallery, Project, ProjectList, Logos), profile (Timeline, Skills, Testimonials,
+  Stats), business (Pricing, Faq, FileDownload), contact (ContactForm, SocialLinks). Nesting: Section > Columns >
+  content blocks (editor `disallow`; `MAX_DEPTH` on save).
+- Appearance (`src/blocks/appearance.ts`): every block has an optional `appearance` prop (colours as theme tokens or
+  `#rrggbb`, padding, width, hide on mobile/desktop, entrance animation). `config.tsx` wraps each block in a `.blk`
+  frame with inline custom properties (`--blk-pt/pb/px/max`, reset per frame); CSS only (scroll-driven animations,
+  reduced motion respected), hidden blocks stay selectable in the editor. Theme palette vars `--site-c-{token}`.
 - Editor: `/sites/{id}/editor/{pageId}` (app host) renders `<Puck>` (`src/components/editor/site-editor.tsx`) with a
   Polish dictionary (`messages.puck`), autosave of the draft (server action, strict validation) and "Publish".
   Uses `@puckeditor/core/no-external.css` (the default CSS loads a font from a third party).
 - Theme (`src/themes/`): Zod schema + presets -> CSS variables (`themeToCssVars`), fonts from `fonts.ts`.
-  Stored as `Site.themeDraft` / `themePublished`.
+  Stored as `Site.themeDraft` / `themePublished`. Optional `accent`/`border` colours (`themePalette` derives them)
+  and `headingScale` (scales Tailwind's `--text-*` inside `.site-heading`); default preset "minimal" = "Czysty".
+- New site: "Prosty układ" (starter content), "Pusta strona" (no blocks; the editor shows a hint) or a template;
+  new pages are blank or a heading + text (`StartChoice`). Template tab: "Odłącz od szablonu" (`detachTemplate`)
+  removes all lock rules after a `SiteBackup` (reason `templateDetach`).
 - Draft vs live: page content and theme are drafts until "Publish" (site-wide: all pages + theme). Page structure
   (title, path, order, delete), page SEO fields and site settings apply immediately (and invalidate the cache).
 - Every publish snapshots changed pages into `PageVersion` (last 20 kept); restore copies a version into the draft.
@@ -118,6 +133,10 @@ debug configs (server, browser, worker) and recommended extensions. Task command
 - Storage adapter (`src/server/storage`): `local` (files in `STORAGE_LOCAL_DIR`, served by `src/app/storage/[...key]`
   on every host; refused in production) or `s3` (RustFS locally via compose profile `s3`, R2 in production; public bucket URL `S3_PUBLIC_URL`).
 - Image props store `{ url, alt, width, height }`; deleting an asset does not rewrite pages that use it.
+- PDF documents (`isPdf`: `%PDF-` signature): stored unchanged under `u/{ownerId}/{random}.pdf` (max
+  `DOCUMENT_MAX_MB` = 10, quota applies), `AssetDto.kind` = image | document, `listAssets(owner, kind)`, served as
+  attachments (S3 `ContentDisposition`, local route header). File props store `{ url, name, sizeBytes }`
+  (`FilePicker`). Storage keys of an asset: `assetStorageKeys` (thumbnail only for images).
 
 ## Plans and entitlements
 

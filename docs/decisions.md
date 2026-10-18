@@ -350,3 +350,26 @@ Lightweight ADR log. Newest at the bottom. Business decisions confirmed by the o
      batch every 5 seconds (provider rate limits) and recipients stay PENDING if a batch crashes.
 128. **Mail branding as data**: logo URL, accent colour and footer in a setting applied to every mail (transactional
      and campaigns); the footer defaults to the seller data so mails carry the company details from day one.
+
+## Phase 13
+
+129. **Start without our templates (owner)**: a new site starts from a simple layout, a blank page (no blocks) or a
+     template; the default theme is the neutral "Clean" preset. New pages can be blank or get a heading + text.
+130. **Detach from template (owner: allowed for everyone)**: removes the template's block locks from every page after
+     a site backup (restorable in History); content, theme and the template link stay (template stats unchanged).
+131. **Per-block appearance, CSS only**: every block carries an optional `appearance` (background/text colour as a
+     theme token or a validated `#rrggbb`, spacing, content width, hide on phone/desktop, entrance animation).
+     Applied with inline custom properties on a wrapper that resets inherited values, so published pages stay
+     static and nested blocks never inherit their parent's spacing. Theme tokens follow later theme changes.
+132. **Animations are scroll-driven CSS** (`animation-timeline: view()`), off for `prefers-reduced-motion` and in
+     browsers without support (content simply shows), and off in the editor so nothing hides while editing.
+133. **New blocks and tiers (owner: simple ones for everyone, the rest Pro)**: Heading, Buttons, Quote, Divider and
+     Icon list on the entry plan; Section with background, Pricing, FAQ, Numbers, Logos and File download in Pro.
+     FAQ uses `<details>` (no JS); the Section's background image is an `<img>`, never a CSS `url()`, so stored
+     URLs can't inject styles. Nesting: Section > Columns > content blocks (enforced in the editor, depth on save).
+134. **PDF documents in the media library**: recognised by the `%PDF-` signature, stored unchanged (10 MB, counted
+     in the quota), always served as attachments (`Content-Disposition`, sandbox CSP), never shown inline on our
+     origin.
+135. **Richer theme without migrations**: accent and border colours are optional (accent falls back to primary,
+     border is mixed from text and background) and the heading scale defaults to standard, so stored themes stay
+     valid. Four more presets and four more self-hosted fonts.
